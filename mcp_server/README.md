@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 ```bash
 # Copy the template and fill in your values
-cp env_template.txt .env
+cp env.example .env
 
 # Edit .env with your actual API keys
 OPENAI_API_KEY=your_openai_api_key
