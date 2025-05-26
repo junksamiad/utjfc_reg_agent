@@ -1,1 +1,40 @@
-backend/.env 
+# Environment files
+backend/.env
+
+# Python virtual environments
+backend/.venv/
+backend/venv/
+backend/env/
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node.js
+frontend/web/node_modules/
+frontend/web/.next/
+frontend/web/.env.local
+frontend/web/.env.development.local
+frontend/web/.env.test.local
+frontend/web/.env.production.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo 
