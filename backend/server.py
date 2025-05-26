@@ -25,13 +25,30 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-# Create a default agent instance
-# You can customize this or create different agents for different routes/logic
+# Create default agent instance
 default_agent = Agent(
-    name="MyDefaultAgent",
-    model="gpt-4.1-mini", # Or your preferred model
-    instructions="You are a helpful AI assistant. Please provide clear and concise answers."
-    # tools=[] # Add tool definitions here later
+    name="UTJFC Registration Assistant",
+    model="gpt-4.1",
+    instructions="""You are a helpful assistant for Urmston Town Juniors Football Club (UTJFC). 
+
+You help with player registrations, team information, and general club inquiries. You have access to the club's registration database and can help parents and staff with:
+
+- Looking up player registrations
+- Checking registration status  
+- Finding player information
+- Creating new player registrations
+- Updating existing registrations
+- Answering questions about teams and seasons
+- General club information
+
+To perform any CRUD function on any of the club databases, call the airtable_database_operation, passing in any relevant request data to the tool call. 
+
+Current season: 2025-26 (season code: 2526)
+Previous season: 2024-25 (season code: 2425)
+
+Default to current season (2526) unless user specifies otherwise.
+""",
+    tools=["airtable_database_operation"]
 )
 
 @app.on_event("startup")
@@ -47,80 +64,62 @@ async def read_root():
     return {"message": "Hello from the Refactored Simple Test Backend with History and Agents!"}
 
 @app.post("/chat")
-async def handle_chat(payload: UserPayload):
-    current_session_id = DEFAULT_SESSION_ID 
-
-    print(f"Session [{current_session_id}] received user message: {payload.user_message}")
-
-    add_message_to_session_history(session_id=current_session_id, role="user", content=payload.user_message)
-
-    current_history = get_session_history(session_id=current_session_id)
-    print(f"Session [{current_session_id}] current history being sent to AI: {current_history}")
+async def chat_endpoint(payload: UserPayload):
+    current_session_id = DEFAULT_SESSION_ID
     
-    # Use the default_agent for the chat loop
-    ai_full_response_object = chat_loop_1(
-        agent=default_agent, 
-        input_messages=current_history 
-    ) 
+    print(f"--- Session [{current_session_id}] Received user message: {payload.user_message} ---")
     
-    # Log the raw object and its type for backend debugging
-    print(f"\n--- Session [{current_session_id}] Full OpenAI Response Object (raw) ---")
+    # Add user message to session history
+    add_message_to_session_history(current_session_id, "user", payload.user_message)
+    
+    # Get current session history for context
+    session_history = get_session_history(current_session_id)
+    
+    print(f"--- Session [{current_session_id}] Current session history length: {len(session_history)} ---")
+    
+    # Get AI response using the agent
+    ai_full_response_object = chat_loop_1(default_agent, session_history)
+    
+    print(f"--- Session [{current_session_id}] Full AI Response Object: ---")
     print(ai_full_response_object)
-    if hasattr(ai_full_response_object, 'model_dump_json'):
-        print(f"--- Session [{current_session_id}] Full OpenAI Response (JSON) ---")
-        print(ai_full_response_object.model_dump_json(indent=2))
-    print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\n")
+    print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\\n")
 
-    print(f"--- Session [{current_session_id}] Attempting to parse the above AI response object ---")
+    print(f"--- Session [{current_session_id}] Attempting to parse the above AI response object ---") # Added log line
 
-    assistant_role_to_store = "assistant" # Default role to store
+    assistant_role_to_store = "assistant" 
     assistant_content_to_send = "Error: Could not parse AI response for frontend."
-
-    if isinstance(ai_full_response_object, str) and ai_full_response_object.startswith("Error"):
-        assistant_content_to_send = ai_full_response_object # Error string from chat_loop_1 or OpenAI
-        print(f"Session [{current_session_id}] Error from AI: {assistant_content_to_send}")
-    # Updated parsing logic to be more robust, especially for tool calls later
-    elif hasattr(ai_full_response_object, 'output') and isinstance(ai_full_response_object.output, list) and ai_full_response_object.output:
-        try:
-            # The primary text response is usually in the first message object
-            # and its first content block if it's of type 'output_text'.
-            # Tool calls might appear as other types or in other message objects.
-            final_text_content = []
-            for output_item in ai_full_response_object.output:
-                if output_item.role:
-                    assistant_role_to_store = output_item.role
-                if hasattr(output_item, 'content') and isinstance(output_item.content, list):
-                    for content_block in output_item.content:
-                        if hasattr(content_block, 'type') and content_block.type == 'output_text' and hasattr(content_block, 'text'):
-                            final_text_content.append(content_block.text)
-                        # Later, we'll add handling for content_block.type == 'tool_call'
-            
-            if final_text_content:
-                assistant_content_to_send = " ".join(final_text_content)
-            else:
-                # This case might occur if the AI only makes a tool call and doesn't provide immediate text
-                assistant_content_to_send = "Assistant is processing your request (e.g., using a tool)."
-                print(f"Session [{current_session_id}] AI response did not contain direct text output. Possible tool use or other action.")
-
-        except (IndexError, AttributeError, TypeError) as e:
-            print(f"Session [{current_session_id}] Error parsing AI response structure: {e}")
-    else:
-        # Fallback if the object structure is not as expected but not an error string
-        print(f"Session [{current_session_id}] AI response object structure not recognized for content extraction. Raw: {ai_full_response_object}")
-        assistant_content_to_send = f"Received an unexpected response structure: {str(ai_full_response_object)[:200]}..."
-
-    # Add assistant's (parsed or error) response to history for the current session
-    add_message_to_session_history(session_id=current_session_id, role=assistant_role_to_store, content=assistant_content_to_send)
     
-    print(f"\nSession [{current_session_id}] Refactored backend sending AI content to frontend: {assistant_content_to_send}\n")
-    return {"role": assistant_role_to_store, "content": assistant_content_to_send}
+    try:
+        # Handle the new chat completions response format
+        if hasattr(ai_full_response_object, 'choices') and ai_full_response_object.choices:
+            message = ai_full_response_object.choices[0].message
+            if hasattr(message, 'content') and message.content:
+                assistant_content_to_send = message.content
+            else:
+                assistant_content_to_send = "Assistant is processing your request..."
+        elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
+            assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
+        else:
+            print(f"--- Session [{current_session_id}] Unexpected response format ---")
+            assistant_content_to_send = "Error: Unexpected response format from AI."
+            
+    except Exception as e:
+        print(f"--- Session [{current_session_id}] Error parsing AI response: {e} ---")
+        assistant_content_to_send = f"Error parsing AI response: {str(e)}"
+    
+    print(f"--- Session [{current_session_id}] Final assistant content to send: {assistant_content_to_send} ---")
+    
+    # Add assistant response to session history
+    add_message_to_session_history(current_session_id, assistant_role_to_store, assistant_content_to_send)
+    
+    return {"response": assistant_content_to_send}
 
-@app.post("/chat/clear")
-async def handle_clear_chat():
-    current_session_id = DEFAULT_SESSION_ID # Use default session for now
-    clear_session_history(session_id=current_session_id)
-    print(f"Chat history cleared for session: {current_session_id}")
-    return {"message": f"Chat history for session '{current_session_id}' cleared."}
+@app.post("/clear")
+async def clear_chat_history():
+    current_session_id = DEFAULT_SESSION_ID
+    clear_session_history(current_session_id)
+    print(f"--- Session [{current_session_id}] Chat history cleared ---")
+    return {"message": "Chat history cleared"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 

@@ -158,6 +158,13 @@ const simulateTyping = (
     fullContent: string,
     agentName?: string
 ) => {
+    // Add error handling for undefined or empty content
+    if (!fullContent || typeof fullContent !== 'string') {
+        console.error('simulateTyping: Invalid content provided:', fullContent);
+        dispatch({ type: 'COMPLETE_ASSISTANT_MESSAGE', payload: { id: messageId } });
+        return;
+    }
+
     if (agentName) {
         dispatch({ type: 'UPDATE_AGENT_NAME', payload: { id: messageId, agentName } });
     }
@@ -285,7 +292,7 @@ export default function ChatPage() {
             }
 
             const data = await response.json();
-            simulateTyping(dispatch, assistantMessageId, data.content, data.role);
+            simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
 
         } catch (error) {
             console.error("Failed to send message to simple backend:", error);
