@@ -28,12 +28,24 @@ source .venv/bin/activate
 
 uvicorn server:app --reload --port 8001
 
+
+*** mcp server ***
+
+cd mcp_server
+
+source .venv/bin/activate
+
+python server.py
+
+
 *** frontend ***
 
 cd frontend/web
 
 pnpm dev
 
+
 *** initialise ***
 
 pip install -r requirements.txt
+python -m venv .venv
