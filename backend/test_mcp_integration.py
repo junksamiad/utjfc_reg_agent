@@ -14,9 +14,10 @@ from openai import OpenAI
 load_dotenv()
 
 # Configuration
-BACKEND_URL = "http://localhost:8001"
-MCP_SERVER_URL = "http://localhost:8002"
+BACKEND_URL = "http://localhost:8000"
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "https://utjfc-mcp-server.replit.app")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MCP_AUTH_TOKEN = os.getenv("MCP_AUTH_TOKEN")
 
 def test_mcp_server_health():
     """Test if MCP server is running and healthy"""
@@ -49,7 +50,10 @@ def test_mcp_server_direct():
                 "method": "initialize",
                 "params": {}
             },
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "X-MCP-Auth-Token": MCP_AUTH_TOKEN
+            }
         )
         print(f"   Status: {response.status_code}")
         print(f"   Response: {json.dumps(response.json(), indent=2)}")
@@ -67,7 +71,10 @@ def test_mcp_server_direct():
                 "method": "tools/list",
                 "params": {}
             },
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "X-MCP-Auth-Token": MCP_AUTH_TOKEN
+            }
         )
         print(f"   Status: {response.status_code}")
         print(f"   Response: {json.dumps(response.json(), indent=2)}")
@@ -91,7 +98,10 @@ def test_mcp_server_direct():
                     }
                 }
             },
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "X-MCP-Auth-Token": MCP_AUTH_TOKEN
+            }
         )
         print(f"   Status: {response.status_code}")
         result = response.json()
@@ -153,7 +163,7 @@ def test_openai_mcp_integration():
             tools=[{
                 "type": "mcp",
                 "server_label": "utjfc_registration",
-                "server_url": "http://localhost:8002/mcp",
+                "server_url": MCP_SERVER_URL + "/mcp",
                 "require_approval": "never"
             }],
             input="How many players are registered for season 2526?"

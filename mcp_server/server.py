@@ -378,11 +378,11 @@ async def mcp_options():
         }
     )
 
-# For Replit deployment
+# Main entry point
 if __name__ == "__main__":
-    # Get configuration from environment
-    port = int(os.getenv("PORT", 8002))
-    host = os.getenv("HOST", "0.0.0.0")
+    # Get port from environment variable - Replit sets this
+    port = int(os.getenv("PORT", 8080))
+    host = "0.0.0.0"  # Always use 0.0.0.0 for Replit
     
     print(f"🚀 Starting UTJFC Registration MCP Server")
     print(f"🛠️  Tools available: airtable_database_operation")
@@ -392,8 +392,6 @@ if __name__ == "__main__":
     # Check if running on Replit
     if os.getenv("REPL_ID"):
         print(f"🔧 Running on Replit")
-        host = "0.0.0.0"  # Replit requires this
-        port = 8080  # Replit uses port 8080
     
     # Verify required environment variables
     required_vars = ["OPENAI_API_KEY", "AIRTABLE_API_KEY"]
@@ -415,5 +413,5 @@ if __name__ == "__main__":
     print(f"🔗 MCP endpoint: /mcp")
     print(f"❤️  Health check: /health")
     
-    # Run the FastAPI server
-    uvicorn.run(app, host=host, port=port, log_level="info") 
+    # Run the FastAPI server with explicit app reference
+    uvicorn.run("server:app", host=host, port=port, log_level="info", reload=False) 
