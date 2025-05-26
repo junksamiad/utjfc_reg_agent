@@ -90,8 +90,23 @@ async def chat_endpoint(payload: UserPayload):
     assistant_content_to_send = "Error: Could not parse AI response for frontend."
     
     try:
-        # Handle the new chat completions response format
-        if hasattr(ai_full_response_object, 'choices') and ai_full_response_object.choices:
+        # Handle Responses API format first (new format)
+        if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
+            assistant_content_to_send = ai_full_response_object.output_text
+        elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+            # Fallback to detailed parsing for Responses API
+            if (len(ai_full_response_object.output) > 0 and 
+                hasattr(ai_full_response_object.output[0], 'type') and 
+                ai_full_response_object.output[0].type == 'message' and
+                hasattr(ai_full_response_object.output[0], 'content') and 
+                ai_full_response_object.output[0].content and 
+                len(ai_full_response_object.output[0].content) > 0 and
+                hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                assistant_content_to_send = ai_full_response_object.output[0].content[0].text
+            else:
+                assistant_content_to_send = "Assistant is processing your request..."
+        # Handle legacy Chat Completions API format (fallback)
+        elif hasattr(ai_full_response_object, 'choices') and ai_full_response_object.choices:
             message = ai_full_response_object.choices[0].message
             if hasattr(message, 'content') and message.content:
                 assistant_content_to_send = message.content
@@ -101,6 +116,7 @@ async def chat_endpoint(payload: UserPayload):
             assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
         else:
             print(f"--- Session [{current_session_id}] Unexpected response format ---")
+            print(f"--- Response object attributes: {dir(ai_full_response_object)} ---")
             assistant_content_to_send = "Error: Unexpected response format from AI."
             
     except Exception as e:

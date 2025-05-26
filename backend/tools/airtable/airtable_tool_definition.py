@@ -3,54 +3,52 @@
 
 from .airtable_agent import execute_airtable_request
 
-# Tool definition for OpenAI function calling
+# Tool definition for OpenAI Responses API
 AIRTABLE_DATABASE_OPERATION_TOOL = {
     "type": "function",
-    "function": {
-        "name": "airtable_database_operation",
-        "description": """Execute CRUD operations on UTJFC registration database with automatic data validation and normalization.
-        
-        This tool handles database operations while ensuring all data conforms to schema standards. It will:
-        - Validate and normalize data according to table schema
-        - Convert informal data formats to schema-compliant formats
-        - Execute the database operation with clean data
-        
-        Data normalization examples:
-        - Age groups: "u10s" → "U10", "under 12" → "U12"
-        - Team names: "tigers" → "Tigers", "eagles" → "Eagles"  
-        - Medical flags: "yes" → "Y", "no" → "N"
-        - Names: Proper case formatting
-        
-        Use this tool for any database operation including:
-        - CREATE: Add new player registrations
-        - READ: Search and retrieve registration data
-        - UPDATE: Modify existing registrations
-        - DELETE: Remove registrations (use carefully)
-        """,
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "season": {
-                    "type": "string",
-                    "enum": ["2526", "2425"],
-                    "description": "Season identifier (2526 = 2025-26, 2425 = 2024-25)"
-                },
-                "query": {
-                    "type": "string", 
-                    "description": """Natural language description of the database operation to perform.
-                    
-                    Examples:
-                    - "Create registration for Seb Charlton, age u10s, tigers team, parent John Charlton"
-                    - "Find all players with medical issues"
-                    - "Update Stefan Hayton's team to Eagles"
-                    - "Show all U12 players"
-                    - "Delete registration for duplicate entry"
-                    
-                    Include all relevant data in the query - the tool will validate and normalize it."""
-                }
+    "name": "airtable_database_operation",
+    "description": """Execute CRUD operations on UTJFC registration database with automatic data validation and normalization.
+    
+    This tool handles database operations while ensuring all data conforms to schema standards. It will:
+    - Validate and normalize data according to table schema
+    - Convert informal data formats to schema-compliant formats
+    - Execute the database operation with clean data
+    
+    Data normalization examples:
+    - Age groups: "u10s" → "U10", "under 12" → "U12"
+    - Team names: "tigers" → "Tigers", "eagles" → "Eagles"  
+    - Medical flags: "yes" → "Y", "no" → "N"
+    - Names: Proper case formatting
+    
+    Use this tool for any database operation including:
+    - CREATE: Add new player registrations
+    - READ: Search and retrieve registration data
+    - UPDATE: Modify existing registrations
+    - DELETE: Remove registrations (use carefully)
+    """,
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "season": {
+                "type": "string",
+                "enum": ["2526", "2425"],
+                "description": "Season identifier (2526 = 2025-26, 2425 = 2024-25)"
             },
-            "required": ["season", "query"]
-        }
+            "query": {
+                "type": "string", 
+                "description": """Natural language description of the database operation to perform.
+                
+                Examples:
+                - "Create registration for Seb Charlton, age u10s, tigers team, parent John Charlton"
+                - "Find all players with medical issues"
+                - "Update Stefan Hayton's team to Eagles"
+                - "Show all U12 players"
+                - "Delete registration for duplicate entry"
+                
+                Include all relevant data in the query - the tool will validate and normalize it."""
+            }
+        },
+        "required": ["season", "query"]
     }
 }
 
