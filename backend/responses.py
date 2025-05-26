@@ -38,55 +38,61 @@ def chat_loop_1(agent: Agent, input_messages: list): # Modified to accept an Age
         # Make the API call using Responses API
         response = client.responses.create(**api_params)
         
-        # Check if the response includes function calls
-        if response.output and len(response.output) > 0 and hasattr(response.output[0], 'type') and response.output[0].type == 'function_call':
-            # Handle function calls
-            tool_functions = agent.get_tool_functions()
-            
-            # Start with the original conversation
-            conversation_with_tools = input_conversation.copy()
-            
-            # Process each tool call in the response
-            for tool_call in response.output:
-                if tool_call.type == 'function_call':
-                    function_name = tool_call.name
-                    function_args = json.loads(tool_call.arguments)  # Parse JSON arguments safely
-                    
-                    if function_name in tool_functions:
-                        # Execute the function
-                        function_result = tool_functions[function_name](**function_args)
+        # Handle different types of tool calls
+        if agent.use_mcp:
+            # MCP mode: OpenAI handles tool calls automatically
+            # Just return the response - tool calls are already executed
+            return response
+        else:
+            # Local function calling mode: Handle function calls manually
+            if response.output and len(response.output) > 0 and hasattr(response.output[0], 'type') and response.output[0].type == 'function_call':
+                # Handle function calls
+                tool_functions = agent.get_tool_functions()
+                
+                # Start with the original conversation
+                conversation_with_tools = input_conversation.copy()
+                
+                # Process each tool call in the response
+                for tool_call in response.output:
+                    if tool_call.type == 'function_call':
+                        function_name = tool_call.name
+                        function_args = json.loads(tool_call.arguments)  # Parse JSON arguments safely
                         
-                        # Log the detailed tool response for debugging
-                        print(f"--- TOOL CALL RESPONSE ---")
-                        print(f"Function: {function_name}")
-                        print(f"Arguments: {function_args}")
-                        print(f"Result: {function_result}")
-                        print(f"--- END TOOL CALL RESPONSE ---")
-                        
-                        # Add the tool call to conversation (Responses API format)
-                        conversation_with_tools.append({
-                            "type": "function_call",
-                            "id": tool_call.id,
-                            "call_id": tool_call.call_id,
-                            "name": function_name,
-                            "arguments": tool_call.arguments
-                        })
-                        
-                        # Add the tool result to the conversation (Responses API format)
-                        conversation_with_tools.append({
-                            "type": "function_call_output",
-                            "call_id": tool_call.call_id,
-                            "output": str(function_result)
-                        })
-            
-            # Make another API call to get the final response
-            final_response = client.responses.create(
-                model=agent.model,
-                input=conversation_with_tools,
-                tools=openai_tools if openai_tools else None
-            )
-            
-            return final_response
+                        if function_name in tool_functions:
+                            # Execute the function
+                            function_result = tool_functions[function_name](**function_args)
+                            
+                            # Log the detailed tool response for debugging
+                            print(f"--- TOOL CALL RESPONSE ---")
+                            print(f"Function: {function_name}")
+                            print(f"Arguments: {function_args}")
+                            print(f"Result: {function_result}")
+                            print(f"--- END TOOL CALL RESPONSE ---")
+                            
+                            # Add the tool call to conversation (Responses API format)
+                            conversation_with_tools.append({
+                                "type": "function_call",
+                                "id": tool_call.id,
+                                "call_id": tool_call.call_id,
+                                "name": function_name,
+                                "arguments": tool_call.arguments
+                            })
+                            
+                            # Add the tool result to the conversation (Responses API format)
+                            conversation_with_tools.append({
+                                "type": "function_call_output",
+                                "call_id": tool_call.call_id,
+                                "output": str(function_result)
+                            })
+                
+                # Make another API call to get the final response
+                final_response = client.responses.create(
+                    model=agent.model,
+                    input=conversation_with_tools,
+                    tools=openai_tools if openai_tools else None
+                )
+                
+                return final_response
         
         return response
 

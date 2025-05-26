@@ -25,9 +25,9 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-# Create default agent instance
-default_agent = Agent(
-    name="UTJFC Registration Assistant",
+# Create default agent instances
+local_agent = Agent(
+    name="UTJFC Registration Assistant (Local)",
     model="gpt-4.1",
     instructions="""You are a helpful assistant for Urmston Town Juniors Football Club (UTJFC). 
 
@@ -48,8 +48,38 @@ Previous season: 2024-25 (season code: 2425)
 
 Default to current season (2526) unless user specifies otherwise.
 """,
-    tools=["airtable_database_operation"]
+    tools=["airtable_database_operation"],
+    use_mcp=False  # Local function calling
 )
+
+# Create MCP agent instance
+mcp_agent = Agent.create_mcp_agent(
+    name="UTJFC Registration Assistant (MCP)",
+    instructions="""You are a helpful assistant for Urmston Town Juniors Football Club (UTJFC). 
+
+You help with player registrations, team information, and general club inquiries. You have access to the club's registration database via MCP server and can help parents and staff with:
+
+- Looking up player registrations
+- Checking registration status  
+- Finding player information
+- Creating new player registrations
+- Updating existing registrations
+- Answering questions about teams and seasons
+- General club information
+
+To perform any CRUD function on any of the club databases, call the airtable_database_operation, passing in any relevant request data to the tool call. 
+
+Current season: 2025-26 (season code: 2526)
+Previous season: 2024-25 (season code: 2425)
+
+Default to current season (2526) unless user specifies otherwise.
+"""
+)
+
+# Default to MCP agent (can be changed via environment variable)
+import os
+use_mcp_by_default = os.getenv("USE_MCP", "true").lower() == "true"
+default_agent = mcp_agent if use_mcp_by_default else local_agent
 
 @app.on_event("startup")
 async def startup_event():
@@ -136,6 +166,60 @@ async def clear_chat_history():
     clear_session_history(current_session_id)
     print(f"--- Session [{current_session_id}] Chat history cleared ---")
     return {"message": "Chat history cleared"}
+
+@app.get("/agent/status")
+async def get_agent_status():
+    """Get current agent configuration and status"""
+    return {
+        "current_agent": {
+            "name": default_agent.name,
+            "model": default_agent.model,
+            "use_mcp": default_agent.use_mcp,
+            "mcp_server_url": default_agent.mcp_server_url if default_agent.use_mcp else None,
+            "tools": default_agent.tools
+        },
+        "available_modes": {
+            "local": {
+                "name": local_agent.name,
+                "description": "Uses local function calling (backend tools directly)"
+            },
+            "mcp": {
+                "name": mcp_agent.name,
+                "description": "Uses remote MCP server for tool execution",
+                "server_url": mcp_agent.mcp_server_url
+            }
+        }
+    }
+
+class AgentModeRequest(BaseModel):
+    mode: str  # "local" or "mcp"
+
+@app.post("/agent/mode")
+async def switch_agent_mode(request: AgentModeRequest):
+    """Switch between local function calling and MCP mode"""
+    global default_agent
+    
+    if request.mode == "local":
+        default_agent = local_agent
+        return {
+            "message": "Switched to local function calling mode",
+            "agent": {
+                "name": default_agent.name,
+                "use_mcp": default_agent.use_mcp
+            }
+        }
+    elif request.mode == "mcp":
+        default_agent = mcp_agent
+        return {
+            "message": "Switched to MCP server mode",
+            "agent": {
+                "name": default_agent.name,
+                "use_mcp": default_agent.use_mcp,
+                "mcp_server_url": default_agent.mcp_server_url
+            }
+        }
+    else:
+        return {"error": "Invalid mode. Use 'local' or 'mcp'"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
