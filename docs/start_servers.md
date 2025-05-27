@@ -37,6 +37,10 @@ source .venv/bin/activate
 
 python server.py
 
+-----
+
+now deployed on Replit @ https://utjfc-mcp-server.replit.app/mcp
+
 
 *** frontend ***
 

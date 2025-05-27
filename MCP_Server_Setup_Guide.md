@@ -369,28 +369,82 @@ response = client.responses.create(
 
 ### Environment Configuration
 
-#### Backend .env File
+#### Backend .env File - CRITICAL SETUP
+
+Your backend needs a `.env` file with the following configuration:
+
 ```bash
-# OpenAI API Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+# OpenAI API Configuration (REQUIRED)
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# Airtable Configuration (for local function calling mode)
-AIRTABLE_API_KEY=your_airtable_api_key_here
-AIRTABLE_BASE_ID=your_base_id_here
+# Tool-Specific Configuration (REQUIRED for your tools)
+# Example: Airtable
+AIRTABLE_API_KEY=patxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
 
-# MCP Server Configuration
-MCP_SERVER_URL=https://your-mcp-server.replit.app/mcp  # Note: /mcp endpoint
-USE_MCP=true
+# MCP Server Configuration (REQUIRED for MCP mode)
+# ⚠️ CRITICAL: Must include the full URL with /mcp endpoint!
+MCP_SERVER_URL=https://your-mcp-server.replit.app/mcp  # ← Note the /mcp at the end!
+# ❌ WRONG: https://your-mcp-server.replit.app
+# ✅ CORRECT: https://your-mcp-server.replit.app/mcp
+
+# Enable/Disable MCP Mode
+USE_MCP=true  # Set to 'false' to use local function calling instead
 
 # Server Configuration
-PORT=8000
-HOST=0.0.0.0
+PORT=8000     # Backend server port
+HOST=0.0.0.0  # Listen on all interfaces
 ```
 
-#### Important Notes:
-- **MCP_SERVER_URL**: Must include the `/mcp` endpoint path
-- **USE_MCP**: Set to `true` to enable MCP mode (defaults to true)
-- **API Keys**: Both OpenAI and tool-specific keys must be set
+#### Common .env Mistakes to Avoid:
+
+1. **Missing `/mcp` endpoint**:
+   ```bash
+   # ❌ WRONG - Missing endpoint
+   MCP_SERVER_URL=https://utjfc-mcp-server.replit.app
+   
+   # ✅ CORRECT - Includes /mcp endpoint
+   MCP_SERVER_URL=https://utjfc-mcp-server.replit.app/mcp
+   ```
+
+2. **Using localhost for deployed MCP server**:
+   ```bash
+   # ❌ WRONG - Points to local server
+   MCP_SERVER_URL=http://localhost:8002/mcp
+   
+   # ✅ CORRECT - Points to deployed server
+   MCP_SERVER_URL=https://your-mcp-server.replit.app/mcp
+   ```
+
+3. **Missing API keys**:
+   - Without `OPENAI_API_KEY`: Backend can't call OpenAI
+   - Without tool keys (e.g., `AIRTABLE_API_KEY`): MCP server can't execute tools
+
+#### Verifying Your Configuration:
+
+1. **Check backend is using correct MCP URL**:
+   ```bash
+   curl http://localhost:8000/agent/status
+   ```
+   Should show:
+   ```json
+   {
+     "current_agent": {
+       "use_mcp": true,
+       "mcp_server_url": "https://your-mcp-server.replit.app/mcp"
+     }
+   }
+   ```
+
+2. **Test MCP server is accessible**:
+   ```bash
+   curl https://your-mcp-server.replit.app/health
+   ```
+
+3. **If backend shows wrong URL**, restart it after fixing .env:
+   ```bash
+   cd backend && python server.py
+   ```
 
 ### Complete Integration Flow
 
