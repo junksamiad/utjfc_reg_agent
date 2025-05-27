@@ -26,7 +26,7 @@ cd backend
 
 source .venv/bin/activate
 
-uvicorn server:app --reload --port 8001
+uvicorn server:app --reload --port 8000
 
 
 *** mcp server ***
