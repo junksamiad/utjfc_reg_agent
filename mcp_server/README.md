@@ -157,7 +157,7 @@ The server provides basic logging and health information:
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [OpenAI MCP Integration](https://platform.openai.com/docs/guides/tools-remote-mcp)
-- [Airtable Tool Documentation](./tools/airtable/README.md)
+- [Airtable Tool Documentation](./tools/airtable/README.md) 
 
 ## 🚀 Deployment on Replit
 
