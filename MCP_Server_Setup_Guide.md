@@ -367,6 +367,125 @@ response = client.responses.create(
 )
 ```
 
+### Environment Configuration
+
+#### Backend .env File
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Airtable Configuration (for local function calling mode)
+AIRTABLE_API_KEY=your_airtable_api_key_here
+AIRTABLE_BASE_ID=your_base_id_here
+
+# MCP Server Configuration
+MCP_SERVER_URL=https://your-mcp-server.replit.app/mcp  # Note: /mcp endpoint
+USE_MCP=true
+
+# Server Configuration
+PORT=8000
+HOST=0.0.0.0
+```
+
+#### Important Notes:
+- **MCP_SERVER_URL**: Must include the `/mcp` endpoint path
+- **USE_MCP**: Set to `true` to enable MCP mode (defaults to true)
+- **API Keys**: Both OpenAI and tool-specific keys must be set
+
+### Complete Integration Flow
+
+1. **User Query** → Frontend sends to backend `/chat` endpoint
+2. **Backend Processing**:
+   ```python
+   # Backend receives message
+   # Uses MCP-configured agent
+   # Calls OpenAI Responses API with MCP tool configuration
+   ```
+3. **OpenAI → MCP Server**:
+   - Establishes SSE connection
+   - Sends initialize request
+   - Lists available tools
+   - Calls specific tool with parameters
+4. **MCP Server Processing**:
+   - Receives tool call
+   - Uses Responses API with code interpreter (if needed)
+   - Executes actual tool operation (e.g., Airtable query)
+   - Returns results via SSE stream
+5. **Response Flow**:
+   - MCP Server → OpenAI (via SSE)
+   - OpenAI → Backend (formatted response)
+   - Backend → Frontend (chat response)
+
+## Tool Implementation with Responses API
+
+### Critical Requirements for Code Interpreter Tools
+
+When implementing tools that use OpenAI's Responses API with code interpreter:
+
+#### 1. Tool Definition Format
+```python
+# CRITICAL: Must include container specification
+tools = [{
+    "type": "code_interpreter",
+    "container": {"type": "auto"}  # Required for Responses API
+}]
+```
+
+#### 2. Response Extraction
+```python
+# WRONG - Chat Completions format
+if hasattr(response, 'choices'):
+    content = response.choices[0].message.content
+
+# CORRECT - Responses API format
+if hasattr(response, 'output') and response.output:
+    for output in response.output:
+        if output.type == 'message':
+            for content in output.content:
+                if hasattr(content, 'text'):
+                    extracted_text = content.text
+```
+
+#### 3. Complete Airtable Tool Example
+```python
+def execute_airtable_request(season: str, query: str) -> dict:
+    """Execute Airtable operations using Responses API"""
+    client = OpenAI()
+    
+    # CRITICAL: Use client.responses.create, NOT client.chat.completions.create
+    response = client.responses.create(
+        model="gpt-4o",
+        input=[{
+            "role": "user", 
+            "content": f"Parse this request: {query}"
+        }],
+        tools=[{
+            "type": "code_interpreter",
+            "container": {"type": "auto"}  # Required!
+        }],
+        temperature=1.0
+    )
+    
+    # Extract operation plan from response.output
+    # (See response extraction pattern above)
+```
+
+### Common Tool Implementation Errors
+
+1. **Missing Container Specification**
+   - Error: `"Missing required parameter: 'tools[0].container'"`
+   - Fix: Add `"container": {"type": "auto"}` to tool definition
+
+2. **Wrong API Method**
+   - Error: `"Missing required parameter: 'tools[0].function'"`
+   - Cause: Using `chat.completions.create` instead of `responses.create`
+   - Fix: Use `client.responses.create()` for code interpreter
+
+3. **Wrong Response Format**
+   - Error: `AttributeError: 'Response' object has no attribute 'choices'`
+   - Cause: Trying to access Chat Completions format on Responses API
+   - Fix: Use `response.output` instead of `response.choices`
+
 ## Best Practices
 
 1. **Logging**: Add comprehensive logging for debugging
@@ -376,6 +495,8 @@ response = client.responses.create(
 5. **Monitoring**: Monitor SSE connections and cleanup
 6. **Security**: Use environment variables for secrets
 7. **Documentation**: Document your tools clearly
+8. **API Keys**: Ensure both OPENAI_API_KEY and tool-specific keys (e.g., AIRTABLE_API_KEY) are set
+9. **Response Parsing**: Always check response structure before accessing nested properties
 
 ## Conclusion
 
@@ -384,5 +505,7 @@ Setting up an MCP server for OpenAI requires careful attention to:
 - Correct header names and formats
 - Fast SSE polling
 - Proper response routing
+- Correct Responses API usage for code interpreter tools
+- Proper tool definition format with container specification
 
 Following this guide should help you avoid the common pitfalls and get a working MCP server on the first try. 
