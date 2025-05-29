@@ -86,7 +86,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://api.openai.com", "*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "OPTIONS", "DELETE"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -196,6 +196,45 @@ async def mcp_post_endpoint(request: Request):
     # No SSE session - return directly
     return JSONResponse(response, headers=headers)
 ```
+
+#### 5. DELETE Endpoint for Connection Cleanup
+```python
+@app.delete("/mcp")
+async def mcp_delete_endpoint(request: Request):
+    """Handle DELETE requests for connection cleanup - CRITICAL for OpenAI"""
+    # Check authentication if needed
+    # if not check_auth(request):
+    #     raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Get session ID from headers
+    session_id = request.headers.get("mcp-session-id")
+    
+    if session_id and session_id in session_to_connection:
+        connection_id = session_to_connection[session_id]
+        
+        # Clean up the connection
+        if connection_id in active_connections:
+            del active_connections[connection_id]
+        del session_to_connection[session_id]
+        
+        logger.info(f"Cleaned up connection for session: {session_id}")
+        return Response(status_code=204)  # No Content
+    
+    # Session not found, but that's OK
+    return Response(status_code=204)
+```
+
+@app.options("/mcp")
+async def mcp_options():
+    """Handle OPTIONS requests for CORS preflight"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
 
 ## Deployment on Replit
 
@@ -314,6 +353,7 @@ response = client.responses.create(
 - ❌ Slow polling (30s) → ✅ Use 100ms polling
 - ❌ Wrong header name → ✅ Use `Mcp-Session-Id`
 - ❌ Missing SSE routing → ✅ Return 202 for requests with session
+- ❌ ID mismatch in responses → ✅ Echo exact request ID in response
 
 ### Issue 2: Protocol Errors
 **Symptom**: OpenAI reports protocol errors
@@ -321,6 +361,7 @@ response = client.responses.create(
 - ❌ Bare tools array → ✅ Wrap in `{"result": {"tools": [...]}}`
 - ❌ Missing session ID → ✅ Return in initialize headers
 - ❌ Wrong protocol version → ✅ Use `"2025-03-26"`
+- ❌ Hardcoded response IDs → ✅ Always use request ID from incoming request
 
 ### Issue 3: Authentication Issues
 **Symptom**: OpenAI can't authenticate
@@ -336,6 +377,25 @@ response = client.responses.create(
 - ❌ Wrong module name in uvicorn → ✅ Match filename
 - ❌ Missing HOST env var → ✅ Default to "0.0.0.0"
 - ❌ Python vs python3 → ✅ Use `python` on Replit
+
+### Issue 6: DELETE Method Not Allowed (405)
+**Symptom**: Logs show "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+**Cause**: OpenAI sends DELETE requests to clean up connections
+**Solution**: Implement DELETE endpoint handler and include in CORS allowed methods
+
+### Issue 7: JSON-RPC ID Handling
+**Symptom**: OpenAI might hang if response IDs don't match request IDs
+**Cause**: Server returns wrong ID in JSON-RPC response
+**Solution**: Always echo the exact `id` from the request in your response:
+```python
+request_id = request_data.get("id")  # Could be number, string, or null
+# ... process request ...
+response = {
+    "jsonrpc": "2.0",
+    "id": request_id,  # Use exact same ID
+    "result": {...}
+}
+```
 
 ## Integration with OpenAI
 
