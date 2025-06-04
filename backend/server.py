@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+import json
 
 from responses import chat_loop_1
 from chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID
@@ -47,6 +48,8 @@ Current season: 2025-26 (season code: 2526)
 Previous season: 2024-25 (season code: 2425)
 
 Default to current season (2526) unless user specifies otherwise.
+
+Always respond in the structured format with your final response in the agent_final_response field.
 """,
     tools=["airtable_database_operation"],
     use_mcp=False  # Local function calling
@@ -73,6 +76,8 @@ Current season: 2025-26 (season code: 2526)
 Previous season: 2024-25 (season code: 2425)
 
 Default to current season (2526) unless user specifies otherwise.
+
+Always respond in the structured format with your final response in the agent_final_response field.
 """
 )
 
@@ -112,19 +117,32 @@ async def chat_endpoint(payload: UserPayload):
     
     print(f"--- Session [{current_session_id}] Full AI Response Object: ---")
     print(ai_full_response_object)
-    print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\\n")
+    print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\n")
 
-    print(f"--- Session [{current_session_id}] Attempting to parse the above AI response object ---") # Added log line
+    print(f"--- Session [{current_session_id}] Attempting to parse structured response ---")
 
     assistant_role_to_store = "assistant" 
     assistant_content_to_send = "Error: Could not parse AI response for frontend."
     
     try:
-        # Handle Responses API format first (new format)
+        # Handle structured output from Responses API
         if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
-            assistant_content_to_send = ai_full_response_object.output_text
+            try:
+                # Parse the structured JSON response
+                structured_response = json.loads(ai_full_response_object.output_text)
+                if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                    assistant_content_to_send = structured_response['agent_final_response']
+                    print(f"--- Session [{current_session_id}] Extracted from structured output: {assistant_content_to_send} ---")
+                else:
+                    # Fallback to raw output_text if not properly structured
+                    assistant_content_to_send = ai_full_response_object.output_text
+                    print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
+            except json.JSONDecodeError as e:
+                print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
+                assistant_content_to_send = ai_full_response_object.output_text
+                
+        # Fallback to detailed parsing for Responses API (if output_text not available)
         elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-            # Fallback to detailed parsing for Responses API
             if (len(ai_full_response_object.output) > 0 and 
                 hasattr(ai_full_response_object.output[0], 'type') and 
                 ai_full_response_object.output[0].type == 'message' and
@@ -132,16 +150,21 @@ async def chat_endpoint(payload: UserPayload):
                 ai_full_response_object.output[0].content and 
                 len(ai_full_response_object.output[0].content) > 0 and
                 hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                assistant_content_to_send = ai_full_response_object.output[0].content[0].text
+                
+                try:
+                    # Try to parse structured output from detailed format
+                    text_content = ai_full_response_object.output[0].content[0].text
+                    structured_response = json.loads(text_content)
+                    if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                        assistant_content_to_send = structured_response['agent_final_response']
+                    else:
+                        assistant_content_to_send = text_content
+                except json.JSONDecodeError:
+                    assistant_content_to_send = ai_full_response_object.output[0].content[0].text
             else:
                 assistant_content_to_send = "Assistant is processing your request..."
-        # Handle legacy Chat Completions API format (fallback)
-        elif hasattr(ai_full_response_object, 'choices') and ai_full_response_object.choices:
-            message = ai_full_response_object.choices[0].message
-            if hasattr(message, 'content') and message.content:
-                assistant_content_to_send = message.content
-            else:
-                assistant_content_to_send = "Assistant is processing your request..."
+                
+        # Handle error responses
         elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
             assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
         else:

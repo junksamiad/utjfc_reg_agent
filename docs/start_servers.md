@@ -1,3 +1,24 @@
+*** frontend / backend start ***
+
+*** backend ***
+
+cd /Users/leehayton/Cursor\ Projects/utjfc_reg_agent && cd backend && source .venv/bin/activate && uvicorn server:app --reload --port 8000
+
+|||||
+
+cd backend
+
+source .venv/bin/activate
+
+uvicorn server:app --reload --port 8000
+
+*** frontend ***
+
+cd frontend/web
+
+pnpm dev
+
+-----
 
 *** docker ***
 
@@ -20,15 +41,6 @@ docker compose down
 docker compose down -v
 
 
-*** backend ***
-
-cd backend
-
-source .venv/bin/activate
-
-uvicorn server:app --reload --port 8000
-
-
 *** mcp server ***
 
 cd mcp_server
@@ -37,17 +49,9 @@ source .venv/bin/activate
 
 python server.py
 
------
-
 now deployed on Replit @ https://utjfc-mcp-server.replit.app/mcp
 
-
-*** frontend ***
-
-cd frontend/web
-
-pnpm dev
-
+-----
 
 *** initialise ***
 
