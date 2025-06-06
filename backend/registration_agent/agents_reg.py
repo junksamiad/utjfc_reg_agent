@@ -1,5 +1,10 @@
 from pydantic import BaseModel
 from .tools.airtable.airtable_tool_definition import AIRTABLE_DATABASE_OPERATION_TOOL
+from .tools.registration_tools.person_name_validation_tool import PERSON_NAME_VALIDATION_TOOL
+from .tools.registration_tools.child_dob_validation_tool import CHILD_DOB_VALIDATION_TOOL
+from .tools.registration_tools.medical_issues_validation_tool import MEDICAL_ISSUES_VALIDATION_TOOL
+from .tools.registration_tools.address_validation_tool import ADDRESS_VALIDATION_TOOL
+from .tools.registration_tools.address_lookup_tool import ADDRESS_LOOKUP_TOOL
 import os
 from dotenv import load_dotenv
 
@@ -30,7 +35,12 @@ class Agent(BaseModel):
         else:
             # Return local function definitions (existing behavior)
             available_tools = {
-                "airtable_database_operation": AIRTABLE_DATABASE_OPERATION_TOOL
+                "airtable_database_operation": AIRTABLE_DATABASE_OPERATION_TOOL,
+                "person_name_validation": PERSON_NAME_VALIDATION_TOOL,
+                "child_dob_validation": CHILD_DOB_VALIDATION_TOOL,
+                "medical_issues_validation": MEDICAL_ISSUES_VALIDATION_TOOL,
+                "address_validation": ADDRESS_VALIDATION_TOOL,
+                "address_lookup": ADDRESS_LOOKUP_TOOL
             }
             
             # Return the tool definitions for the tools specified in self.tools
@@ -52,10 +62,27 @@ class Agent(BaseModel):
             return {}
             
         from .tools.airtable.airtable_tool_definition import handle_airtable_tool_call
+        from .tools.registration_tools.person_name_validation_tool import handle_person_name_validation
+        from .tools.registration_tools.child_dob_validation_tool import handle_child_dob_validation
+        from .tools.registration_tools.medical_issues_validation_tool import handle_medical_issues_validation
+        from .tools.registration_tools.address_validation_tool import handle_address_validation
+        from .tools.registration_tools.address_lookup_tool import handle_address_lookup
         
         return {
-            "airtable_database_operation": handle_airtable_tool_call
+            "airtable_database_operation": handle_airtable_tool_call,
+            "person_name_validation": handle_person_name_validation,
+            "child_dob_validation": handle_child_dob_validation,
+            "medical_issues_validation": handle_medical_issues_validation,
+            "address_validation": handle_address_validation,
+            "address_lookup": handle_address_lookup
         }
+    
+    def get_instructions_with_routine(self, routine_message: str = ""):
+        """
+        Get instructions with a routine message injected into the {routine_instructions} placeholder.
+        Used for dynamic instruction injection in registration flows.
+        """
+        return self.instructions.format(routine_instructions=routine_message)
     
     @classmethod
     def create_mcp_agent(cls, name: str = "MCP Agent", instructions: str = "You are a helpful agent with access to UTJFC registration tools.", mcp_server_url: str = None):

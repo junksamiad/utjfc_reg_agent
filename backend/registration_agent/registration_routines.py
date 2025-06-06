@@ -1,0 +1,98 @@
+class RegistrationRoutines:
+    """
+    Manages the step-by-step routine messages for new player registration flow.
+    These messages get dynamically injected into the agent's system prompt based on routine_number.
+    """
+    
+    ROUTINES = {
+        1: """Task: Your current task is to: 1) take the parent's first and last name which should result in at least 2 parts (first name + last name) 2) validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (') 3) ensure it's at least 2 words long and not just single letters 4) if invalid format or too short, set routine_number = 1 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 2 and ask for their child's first and last name.""",
+        
+        2: """Task: Your current task is to: 1) take the child's first and last name which should result in at least 2 parts (first name + last name) 2) validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (') 3) ensure it's at least 2 words long and not just single letters 4) if invalid format or too short, set routine_number = 2 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 3 and ask for their child's date of birth.""",
+        
+        3: """Task: Your current task is to: 1) take the child's date of birth 2) accept any date format (DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY, etc.) and convert to DD-MM-YYYY format 3) validate that birth year is 2007 or later (club rule), not in the future, and is a real date 4) if invalid date or before 2007, set routine_number = 3 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 4 and ask for their child's gender.""",
+        
+        4: """Task: Your current task is to: 1) take the child's gender response 2) ensure the response is one of: 'Male', 'Female', or 'Not disclosed' (accept variations like 'boy/girl', 'man/woman', 'prefer not to say', etc. and normalize them) 3) If the response cannot be understood or normalized, set routine_number = 4 and ask for clarification 4) If a valid gender is provided, set routine_number = 5 and ask whether their child has any known medical issues that the club should be aware of.""",
+        
+        5: """Task: Your current task is to: 1) take the response about whether the child has any known medical issues 2) accept Yes/No response (normalize 'y', 'yeah', 'nope', etc.) 3) if Yes, ask for details and structure into a clean list separated by commas - remove prefixes like 'has', 'suffers from' and capitalize properly 4) **IMPORTANT**: if any serious medical conditions are mentioned (allergies requiring EpiPen/medication, asthma inhaler, diabetes, epilepsy, heart conditions, etc.), ask specific follow-up questions: 'Where is the [medication/inhaler/EpiPen] kept?', 'What should we do in an emergency?', 'Are there any specific triggers to avoid?' - capture these emergency details clearly 5) if unclear yes/no or missing details when Yes, set routine_number = 5 and ask for clarification 6) if valid (including emergency details for serious conditions), set routine_number = 6 and ask whether the child played for another football team last season.""",
+        
+        6: """Task: Your current task is to: 1) take the response about whether the child played for another football team last season 2) accept a Yes/No response 3) if Yes, ask for the name of the previous team and capture it as provided (no validation needed) 4) set routine_number = 7 and ask for the parent's relationship to {child_name}.""",
+        
+        7: """Task: Your current task is to: 1) take the parent's relationship to {child_name} 2) accept variations and normalize to one of these exact values: 'Mother', 'Father', 'Guardian', 'Other' - convert common variations like 'mum/mam/mom' to 'Mother', 'dad/daddy' to 'Father', 'gran/grandma/granny/grandfather/grandad' to 'Other', etc. 3) if the relationship cannot be normalized to one of the four values, set routine_number = 7 and ask for clarification 4) if a valid relationship is provided, set routine_number = 8 and ask for their telephone number.""",
+        
+        8: """Task: Your current task is to: 1) take the parent's telephone number 2) validate it follows UK format: either mobile (starts with 07, exactly 11 digits) or Manchester landline (starts with 0161, exactly 11 digits) 3) remove any spaces, dashes, or brackets and check the format 4) if invalid format, set routine_number = 8 and ask them to provide a valid UK mobile (07...) or Manchester landline (0161...) number 5) if valid, set routine_number = 9 and ask for their email address.""",
+        
+        9: """Task: Your current task is to: 1) take the parent's email address 2) validate it contains exactly one @ symbol and at least one dot after the @ (format: something@something.something) 3) convert the entire email to lowercase 4) if invalid format, set routine_number = 9 and ask for a valid email address 5) if valid, set routine_number = 10 and ask for their consent to contact them by email and SMS with club comms throughout the season.""",
+        
+        10: """Task: Your current task is to: 1) take the parent's response about consent to contact them by email and SMS with club comms 2) accept Yes/No response (normalize 'yes', 'yeah', 'ok', 'sure', 'no problem' to 'Yes' and 'no', 'nope', 'don't want to' to 'No') 3) explain this covers general club communications 4) if unclear response, set routine_number = 10 and ask for clarification 5) if consent given (Yes or No), set routine_number = 11 and ask for their date of birth.""",
+        
+        11: """Task: Your current task is to: 1) take the parent's date of birth 2) accept any date format but convert to DD-MM-YYYY format 3) validate the date is reasonable (not in future, not before 1900) 4) if invalid or unclear date, set routine_number = 11 and ask for clarification 5) if valid, set routine_number = 12 and ask for their postcode.""",
+        
+        12: """Task: Your current task is to: 1) take the parent's postcode 2) clean it (remove spaces, convert to uppercase) and validate it's UK format 3) if postcode looks invalid (not UK format), set routine_number = 12 and ask for clarification 4) if valid postcode provided, set routine_number = 13 and ask for their house number.""",
+        
+        13: """Task: Your current task is to: 1) take the parent's house number 2) accept any format (numbers, letters, flat numbers like '12a', '5B', 'Flat 2', etc.) 3) if house number seems unclear, set routine_number = 13 and ask for clarification 4) if house number provided and seems ok, use the function 'address_lookup' with the postcode and house number to find their full address 5) if no address returned or lookup failed, then set routine_number = 14 and ask them to enter their full address manually 6) if address returned successfully, set routine_number = 15 and show them the formatted address asking for confirmation that it's correct.""",
+        
+        14: """Task: Your current task is to: 1) take the parent's manually entered full address 2) do a visual check to ensure it looks like a valid UK address format: has house number/name, street name, area/town, and UK postcode (2 letters, 1-2 numbers, space, 1 number, 2 letters like M32 8JL) 3) check it includes Manchester/Stretford/Urmston area or other recognizable UK location 4) if the address looks incomplete, badly formatted, or not UK, set routine_number = 14 and ask for a more complete address 5) if the address looks reasonable and complete, set routine_number = 15 and show them the address asking for confirmation that it's correct.""",
+        
+        15: """Task: Your current task is to: 1) take the response about whether the shown address is correct 2) accept Yes/No response (normalize 'yes', 'correct', 'right', 'that's it' to 'Yes' and 'no', 'wrong', 'not right', 'incorrect' to 'No') 3) if they say No or the address is wrong, set routine_number = 14 and ask them to provide their correct full address manually 4) if they confirm Yes or the address is correct, set routine_number = 16 and ask if {child_name} lives at the same address.""",
+        
+        16: """Task: Your current task is to: 1) take the response about whether {child_name} lives at the same address as the parent 2) accept Yes/No response (normalize 'yes', 'yeah', 'same address', 'lives with me' to 'Yes' and 'no', 'nope', 'different address', 'lives elsewhere' to 'No') 3) if unclear response or can't determine Yes/No, set routine_number = 16 and ask for clarification 4) if Yes, set routine_number = 22 (DO NOT ask a question - server will handle routing) 5) if No, set routine_number = 18 and ask for {child_name}'s address.""",
+        
+        17: """UNUSED - This routine is not used in the current flow.""",
+        
+        18: """Task: Your current task is to: 1) take {child_name}'s postcode (since they live at a different address from the parent) 2) clean it (remove spaces, convert to uppercase) and validate it's UK format 3) if postcode looks invalid (not UK format), set routine_number = 18 and ask for clarification 4) if valid postcode provided, set routine_number = 19 and ask for {child_name}'s house number.""",
+        
+        19: """Task: Your current task is to: 1) take {child_name}'s house number 2) accept any format (numbers, letters, flat numbers like '12a', '5B', 'Flat 2', etc.) 3) if house number seems unclear, set routine_number = 19 and ask for clarification 4) if house number provided and seems ok, use the function 'address_lookup' with the postcode and house number to find {child_name}'s full address 5) if no address returned or lookup failed, then set routine_number = 20 and ask them to enter {child_name}'s full address manually 6) if address returned successfully, set routine_number = 21 and show them the formatted address asking for confirmation that it's {child_name}'s correct address.""",
+        
+        20: """Task: Your current task is to: 1) take {child_name}'s manually entered full address 2) do a visual check to ensure it looks like a valid UK address format: has house number/name, street name, area/town, and UK postcode (2 letters, 1-2 numbers, space, 1 number, 2 letters like M32 8JL) 3) check it includes Manchester/Stretford/Urmston area or other recognizable UK location 4) if the address looks incomplete, badly formatted, or not UK, set routine_number = 20 and ask for a more complete address for {child_name} 5) if the address looks reasonable and complete, set routine_number = 21 and show them the address asking for confirmation that it's {child_name}'s correct address.""",
+        
+        21: """Task: Your current task is to: 1) take the response about whether the shown child address is correct 2) accept Yes/No response (normalize 'yes', 'correct', 'right', 'that's it' to 'Yes' and 'no', 'wrong', 'not right', 'incorrect' to 'No') 3) if they say No or the address is wrong, set routine_number = 20 and ask them to provide {child_name}'s correct full address manually 4) if they confirm Yes or the address is correct, set routine_number = 22 and inform them you have collected all the basic registration information.""",
+        
+        22: """Task: Your current task is to: 1) look through the conversation history for age group information (look for 'Age group: U##' in system messages) 2) if age group is U16 or above, set routine_number = 23 and explain that since {child_name} is 16+, you need to take a telepone number and email for them which is different from their parents telephone number and email, then ask if you can start by taking {child_name}'s mobile phone number 3) if age group is under U16, set routine_number = 28 thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct.""",
+        
+        # Age-based routing will intervene after routine 22 
+        # These routines are for U16-U18 age groups (child's separate contact details)
+        23: """Task: Your current task is to: 1) take {child_name}'s mobile phone number 2) validate it's a UK mobile number format (starts with 07 and has 11 digits) 3) if invalid format, set routine_number = 23 and ask for clarification 4) if valid, set routine_number = 24 and ask for {child_name}'s email address.""",
+        
+        24: """Task: Your current task is to: 1) take {child_name}'s email address 2) validate it has proper email format (contains @ and domain) 3) if invalid email format, set routine_number = 24 and ask for a valid email address for {child_name} 4) if valid email, set routine_number = 28 and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct.""",
+        
+        25: """UNUSED - This routine is not used in the current flow.""",
+        
+        26: """UNUSED - This routine is not used in the current flow.""",
+        
+        27: """UNUSED - This routine is not used in the current flow.""",
+        
+        # Universal validation routine (both age groups converge here)
+        28: """Task: Your current task is to: 1) take their response about whether all the information is correct 2) if they say No or want to make changes, ask what needs to be corrected and note we'll need to go back to update specific information 3) if they confirm all information is correct, set routine_number = 29 and explain that you now need a recent photo of {child_name} for their player registration card with requirements (clear, recent, head and shoulders, good lighting), then ask them to confirm they have a suitable photo ready.""",
+        
+        29: """Task: Your current task is to: 1) take confirmation that they have a photo ready for {child_name} 2) if they don't have one ready, set routine_number = 29 and ask them to prepare a suitable photo first 3) if they confirm they have a photo, set routine_number = 30 and provide instructions for uploading {child_name}'s photo (explain they can email it or use upload feature if available), then confirm all registration information is complete.""",
+        
+        30: """Task: Your current task is to: 1) confirm all registration information is complete including the photo 2) inform them about next steps for payment and medical forms 3) thank them for completing the registration process 4) set routine_number = 999 to indicate completion.""",
+        
+        # Future routines will be added here:
+        # 19: "Your current task is to collect emergency contact information...",
+        # 20: "Your current task is to arrange payment...",
+        # etc.
+    }
+    
+    @classmethod
+    def get_routine_message(cls, routine_number: int) -> str:
+        """
+        Get the routine message for a specific routine number.
+        
+        Args:
+            routine_number: The routine step number
+            
+        Returns:
+            The routine message string, or empty string if routine_number not found
+        """
+        return cls.ROUTINES.get(routine_number, "")
+    
+    @classmethod
+    def get_available_routines(cls) -> list:
+        """Get list of all available routine numbers."""
+        return list(cls.ROUTINES.keys())
+    
+    @classmethod
+    def is_valid_routine(cls, routine_number: int) -> bool:
+        """Check if a routine number is valid."""
+        return routine_number in cls.ROUTINES 

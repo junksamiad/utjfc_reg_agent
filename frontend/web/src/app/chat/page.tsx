@@ -7,6 +7,53 @@ import ChatInput from './_components/chat-input';
 import { ChevronDown, Home, RotateCcw } from 'lucide-react'; // Added RotateCcw Icon for scroll button and Home icon
 // import { useTypingEffect } from '@/hooks/useTypingEffect'; // Remove hook import
 
+// --- Helper function to generate and manage session ID ---
+function generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function getOrCreateSessionId(): string {
+    let sessionId = sessionStorage.getItem('chat_session_id');
+    if (!sessionId) {
+        sessionId = generateSessionId();
+        sessionStorage.setItem('chat_session_id', sessionId);
+        console.log('Generated new session ID:', sessionId);
+    } else {
+        console.log('Using existing session ID:', sessionId);
+    }
+    return sessionId;
+}
+
+// --- Helper functions for agent state management ---
+function storeAgentState(lastAgent: string | null, routineNumber: number | null): void {
+    if (lastAgent !== null) {
+        sessionStorage.setItem('last_agent', lastAgent);
+        console.log('Stored last_agent:', lastAgent);
+    }
+    if (routineNumber !== null) {
+        sessionStorage.setItem('routine_number', routineNumber.toString());
+        console.log('Stored routine_number:', routineNumber);
+    }
+}
+
+function getAgentState(): { last_agent: string | null; routine_number: number | null } {
+    const lastAgent = sessionStorage.getItem('last_agent');
+    const routineNumberStr = sessionStorage.getItem('routine_number');
+    const routineNumber = routineNumberStr ? parseInt(routineNumberStr, 10) : null;
+    
+    console.log('Retrieved agent state:', { last_agent: lastAgent, routine_number: routineNumber });
+    return {
+        last_agent: lastAgent,
+        routine_number: routineNumber
+    };
+}
+
+function clearAgentState(): void {
+    sessionStorage.removeItem('last_agent');
+    sessionStorage.removeItem('routine_number');
+    console.log('Cleared agent state');
+}
+
 // --- Interfaces (Revert Message interface) --- 
 interface Message {
   id: string;
@@ -253,6 +300,11 @@ export default function ChatPage() {
     // Add handler for resetting chat
     const handleReset = useCallback(() => {
         dispatch({ type: 'RESET_CHAT' });
+        // Clear session storage to generate new session ID
+        sessionStorage.removeItem('chat_session_id');
+        // Clear agent state
+        clearAgentState();
+        console.log('Chat reset - session ID and agent state cleared');
     }, [dispatch]);
 
     const handleSendMessage = useCallback(async (currentInput: string) => {
@@ -278,12 +330,31 @@ export default function ChatPage() {
         });
 
         try {
+            const sessionId = getOrCreateSessionId();
+            const agentState = getAgentState();
+            
+            // Build request payload with agent state
+            const requestPayload: any = { 
+                user_message: currentInput, 
+                session_id: sessionId 
+            };
+            
+            // Add agent state if available
+            if (agentState.last_agent) {
+                requestPayload.last_agent = agentState.last_agent;
+            }
+            if (agentState.routine_number !== null) {
+                requestPayload.routine_number = agentState.routine_number;
+            }
+            
+            console.log('Sending request with payload:', requestPayload);
+            
             const response = await fetch('http://localhost:8000/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ user_message: currentInput }), 
+                body: JSON.stringify(requestPayload), 
             });
 
             if (!response.ok) {
@@ -292,6 +363,14 @@ export default function ChatPage() {
             }
 
             const data = await response.json();
+            console.log('Received response data:', data);
+            
+            // Store agent state from response
+            storeAgentState(
+                data.last_agent || null,
+                data.routine_number || null
+            );
+            
             simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
 
         } catch (error) {

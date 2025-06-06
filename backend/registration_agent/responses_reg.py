@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import json
 from .agents_reg import Agent
 from .agent_response_schema_reg import AgentResponse
+from .agent_response_schema_rereg import ReRegistrationAgentResponse
 
 load_dotenv(override=True)  # Load environment variables from .env file, forcing override of existing vars
 
@@ -151,8 +152,8 @@ def chat_loop_renew_registration_1(agent: Agent, input_messages: list):
             "text": {
                 "format": {
                     "type": "json_schema",
-                    "name": "agent_response",
-                    "schema": AgentResponse.model_json_schema(),
+                    "name": "re_registration_response",
+                    "schema": ReRegistrationAgentResponse.model_json_schema(),
                     "strict": True
                 }
             }
@@ -237,8 +238,8 @@ def chat_loop_renew_registration_1(agent: Agent, input_messages: list):
                     text={
                         "format": {
                             "type": "json_schema",
-                            "name": "agent_response",
-                            "schema": AgentResponse.model_json_schema(),
+                            "name": "re_registration_response",
+                            "schema": ReRegistrationAgentResponse.model_json_schema(),
                             "strict": True
                         }
                     }

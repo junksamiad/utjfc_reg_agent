@@ -1,22 +1,16 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 
-class AgentResponse(BaseModel):
+class ReRegistrationAgentResponse(BaseModel):
     """
-    Structured response schema for agents using OpenAI Responses API.
+    Structured response schema for re-registration agents using OpenAI Responses API.
     
-    This ensures consistent output format while allowing for future extension
-    with additional metadata fields for agent routing and workflow control.
+    Re-registration flow is simpler and doesn't use the routine system,
+    so this schema only includes the basic response field.
     """
     
     agent_final_response: str = Field(
         description="The final response text that should be displayed to the user. This is what gets sent to the frontend.",
         min_length=1
-    )
-    
-    routine_number: int = Field(
-        description="The next routine step number in the registration flow. Set this to control progression through registration steps.",
-        ge=1  # Must be >= 1
     )
     
     class Config:

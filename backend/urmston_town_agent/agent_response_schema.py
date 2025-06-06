@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class AgentResponse(BaseModel):
     """
@@ -12,6 +13,17 @@ class AgentResponse(BaseModel):
         description="The final response text that should be displayed to the user. This is what gets sent to the frontend.",
         min_length=1
     )
+    
+    # Future agent handoff fields - commented out for now
+    # These will be used when implementing agent-controlled routing decisions
+    # last_agent: Optional[str] = Field(
+    #     description="The name of the current agent handling this response (e.g., 'universal', 're_registration', 'new_registration')",
+    #     default=None
+    # )
+    # next_agent: Optional[str] = Field(
+    #     description="The name of the next agent that should handle the conversation flow (agent-controlled handoff)",
+    #     default=None
+    # )
     
     class Config:
         """Pydantic configuration for the schema."""

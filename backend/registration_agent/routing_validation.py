@@ -13,7 +13,8 @@ AIRTABLE_API_KEY = os.getenv('AIRTABLE_API_KEY')
 def parse_registration_code(message: str):
     """
     Parse and validate registration code format.
-    Returns None if not a valid registration code.
+    Returns None if not a registration code attempt.
+    Returns "INVALID_CODE_ATTEMPT" if looks like a code but validation fails.
     
     Expected format: [PREFIX]-[TEAM]-[AGE_GROUP]-[SEASON][-PLAYER_NAME (only for re-registration)]
     - PREFIX: 100 (existing player) or 200 (new player)
@@ -27,7 +28,7 @@ def parse_registration_code(message: str):
     
     match = re.match(pattern, message.strip(), re.IGNORECASE)
     if not match:
-        return None
+        return None  # No regex match = not a code attempt
     
     prefix = match.group(1)
     team = match.group(2).lower()  # Normalize to lowercase
@@ -38,13 +39,13 @@ def parse_registration_code(message: str):
     
     # Validation: 100 codes must have player name, 200 codes must not
     if prefix == "100" and (not first_name or not surname):
-        return None
+        return "INVALID_CODE_ATTEMPT"  # Regex matched but missing player name
     if prefix == "200" and (first_name or surname):
-        return None
+        return "INVALID_CODE_ATTEMPT"  # Regex matched but has unexpected player name
     
     # Season validation - only current season allowed
     if season != "2526":
-        return None
+        return "INVALID_CODE_ATTEMPT"  # Regex matched but wrong season
     
     return {
         "prefix": prefix,
@@ -144,10 +145,18 @@ def validate_and_route_registration(message: str) -> dict:
     """
     # Step 1: Parse the registration code
     registration_code = parse_registration_code(message)
-    if not registration_code:
+    if registration_code is None:
+        # No regex match - not a registration code attempt, let universal bot handle
         return {
             "valid": False,
-            "error": "Invalid registration code format",
+            "error": None,  # No error = continue to universal bot
+            "route": None
+        }
+    if registration_code == "INVALID_CODE_ATTEMPT":
+        # Regex matched but validation failed - user tried to enter a code
+        return {
+            "valid": False,
+            "error": "The code you have entered is not a valid registration code. Please check the code or speak to the manager / coach who provided the code and ask them to verify that the code is correct.",
             "route": None
         }
     
@@ -162,7 +171,7 @@ def validate_and_route_registration(message: str) -> dict:
     if not is_valid_team:
         return {
             "valid": False,
-            "error": "Invalid team/age group combination",
+            "error": "The code you have entered is not a valid registration code. Please check the code or speak to the manager / coach who provided the code and ask them to verify that the code is correct.",
             "route": None
         }
     
@@ -210,4 +219,80 @@ def route_registration_request(registration_code: dict) -> str:
     elif registration_code["prefix"] == "200":
         return "new_registration"
     else:
-        raise ValueError(f"Invalid registration prefix: {registration_code['prefix']}") 
+        raise ValueError(f"Invalid registration prefix: {registration_code['prefix']}")
+
+def parse_age_from_registration_code(registration_code: str) -> dict:
+    """
+    Parse age group from registration code and determine if child is under or over 16.
+    
+    Args:
+        registration_code: Raw registration code string
+        
+    Returns:
+        dict: Age group information with routing logic
+    """
+    # Extract age group from code (e.g., u9, u12, u16, etc.)
+    age_match = re.search(r'[Uu](\d+)', registration_code)
+    if not age_match:
+        return None
+    
+    age_number = int(age_match.group(1))
+    age_group = f"U{age_number}"
+    
+    # Determine routing based on age
+    if age_number < 16:
+        route_type = "under_16"  # Photo request flow
+        next_routine = 28
+    else:
+        route_type = "over_16"   # Contact details flow
+        next_routine = 23
+    
+    return {
+        "age_number": age_number,
+        "age_group": age_group,
+        "route_type": route_type,
+        "next_routine": next_routine,
+        "raw_code": registration_code
+    }
+
+def inject_structured_registration_data(session_id: str, registration_code: str) -> None:
+    """
+    Parse registration code and inject structured data into conversation history 
+    for the age-based routing system to use later.
+    
+    Args:
+        session_id: Session ID to inject data into
+        registration_code: Raw registration code to parse
+    """
+    try:
+        from urmston_town_agent.chat_history import add_message_to_session_history
+        
+        # Parse the registration code components  
+        parsed = parse_registration_code(registration_code)
+        if not parsed or parsed == "INVALID_CODE_ATTEMPT":
+            return
+        
+        # Create structured injection message
+        reg_type = "New Player Registration" if parsed["prefix"] == "200" else "Returning Player Re-Registration" 
+        team_name = parsed["team"].capitalize()
+        age_group = parsed["age_group"].upper()
+        season = f"20{parsed['season'][:2]}-{parsed['season'][2:]}"
+        
+        structured_message = f"""[SYSTEM INJECTION - Registration Code Analysis]
+Registration type: {reg_type} ({parsed["prefix"]})
+Team: {team_name}
+Age group: {age_group}
+Season: {season}
+Original code: {registration_code}"""
+        
+        if parsed.get("player_name"):
+            structured_message += f"\nPlayer name: {parsed['player_name']}"
+            
+        # Add to conversation history as system message
+        add_message_to_session_history(session_id, "system", structured_message)
+        
+        print(f"--- Session [{session_id}] Injected structured registration data ---")
+        
+    except Exception as e:
+        print(f"Error injecting structured registration data: {e}")
+        # Don't fail the whole process if injection fails 
