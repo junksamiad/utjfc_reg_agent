@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from tools.airtable.airtable_tool_definition import AIRTABLE_DATABASE_OPERATION_TOOL
+from .tools.airtable.airtable_tool_definition import AIRTABLE_DATABASE_OPERATION_TOOL
 import os
 from dotenv import load_dotenv
 
@@ -51,7 +51,7 @@ class Agent(BaseModel):
             # MCP mode doesn't use local functions
             return {}
             
-        from tools.airtable.airtable_tool_definition import handle_airtable_tool_call
+        from .tools.airtable.airtable_tool_definition import handle_airtable_tool_call
         
         return {
             "airtable_database_operation": handle_airtable_tool_call

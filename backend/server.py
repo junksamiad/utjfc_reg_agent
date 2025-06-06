@@ -7,9 +7,14 @@ from pydantic import BaseModel
 import uvicorn
 import json
 
-from responses import chat_loop_1
-from chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID
-from agents import Agent # Import the Agent class
+from urmston_town_agent.responses import chat_loop_1
+from urmston_town_agent.chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID
+from urmston_town_agent.agents import Agent # Import the Agent class
+
+# Import registration agent components
+from registration_agent.routing_validation import validate_and_route_registration
+from registration_agent.registration_agents import re_registration_agent, new_registration_agent
+from registration_agent.responses_reg import chat_loop_new_registration_1, chat_loop_renew_registration_1
 
 app = FastAPI()
 
@@ -104,6 +109,176 @@ async def chat_endpoint(payload: UserPayload):
     
     print(f"--- Session [{current_session_id}] Received user message: {payload.user_message} ---")
     
+    # Check for registration code and validate FIRST (before adding to history)
+    validation_result = validate_and_route_registration(payload.user_message)
+    
+    if validation_result["valid"]:
+        print(f"--- Session [{current_session_id}] Valid registration code detected ---")
+        print(f"--- Validation result: {validation_result} ---")
+        
+        registration_code = validation_result["registration_code"]
+        route_type = validation_result["route"]
+        player_details = validation_result.get("player_details")
+        
+        if route_type == "re_registration":
+            print(f"--- Routing to re-registration agent for {registration_code.get('player_name', 'player')} ---")
+            if player_details:
+                print(f"--- Player found in database: {player_details} ---")
+            
+            # Add the registration code to session history
+            add_message_to_session_history(current_session_id, "user", payload.user_message)
+            session_history = get_session_history(current_session_id)
+            
+            # Use re-registration flow
+            ai_full_response_object = chat_loop_renew_registration_1(re_registration_agent, session_history)
+            
+            # Process the re-registration agent response
+            print(f"--- Session [{current_session_id}] Re-registration AI Response Object: ---")
+            print(ai_full_response_object)
+            print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\n")
+
+            print(f"--- Session [{current_session_id}] Attempting to parse re-registration structured response ---")
+
+            assistant_role_to_store = "assistant" 
+            assistant_content_to_send = "Error: Could not parse re-registration AI response for frontend."
+            
+            try:
+                # Handle structured output from Responses API (same logic as universal bot)
+                if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
+                    try:
+                        # Parse the structured JSON response
+                        structured_response = json.loads(ai_full_response_object.output_text)
+                        if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                            assistant_content_to_send = structured_response['agent_final_response']
+                            print(f"--- Session [{current_session_id}] Extracted from re-registration structured output: {assistant_content_to_send} ---")
+                        else:
+                            # Fallback to raw output_text if not properly structured
+                            assistant_content_to_send = ai_full_response_object.output_text
+                            print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
+                    except json.JSONDecodeError as e:
+                        print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
+                        assistant_content_to_send = ai_full_response_object.output_text
+                        
+                # Fallback to detailed parsing for Responses API (if output_text not available)
+                elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                    if (len(ai_full_response_object.output) > 0 and 
+                        hasattr(ai_full_response_object.output[0], 'type') and 
+                        ai_full_response_object.output[0].type == 'message' and
+                        hasattr(ai_full_response_object.output[0], 'content') and 
+                        ai_full_response_object.output[0].content and 
+                        len(ai_full_response_object.output[0].content) > 0 and
+                        hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                        
+                        try:
+                            # Try to parse structured output from detailed format
+                            text_content = ai_full_response_object.output[0].content[0].text
+                            structured_response = json.loads(text_content)
+                            if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                                assistant_content_to_send = structured_response['agent_final_response']
+                            else:
+                                assistant_content_to_send = text_content
+                        except json.JSONDecodeError:
+                            assistant_content_to_send = ai_full_response_object.output[0].content[0].text
+                    else:
+                        assistant_content_to_send = "Re-registration assistant is processing your request..."
+                        
+                # Handle error responses
+                elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
+                    assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
+                else:
+                    print(f"--- Session [{current_session_id}] Unexpected re-registration response format ---")
+                    assistant_content_to_send = "Error: Unexpected response format from re-registration AI."
+                    
+            except Exception as e:
+                print(f"--- Session [{current_session_id}] Error parsing re-registration AI response: {e} ---")
+                assistant_content_to_send = f"Error parsing re-registration AI response: {str(e)}"
+            
+            print(f"--- Session [{current_session_id}] Final re-registration assistant content to send: {assistant_content_to_send} ---")
+            
+            # Add assistant response to session history
+            add_message_to_session_history(current_session_id, assistant_role_to_store, assistant_content_to_send)
+            
+            return {"response": assistant_content_to_send}
+            
+        elif route_type == "new_registration":
+            print(f"--- Routing to new registration agent for team {registration_code['team']} {registration_code['age_group']} ---")
+            
+            # Add the registration code to session history
+            add_message_to_session_history(current_session_id, "user", payload.user_message)
+            session_history = get_session_history(current_session_id)
+            
+            # Use new registration flow
+            ai_full_response_object = chat_loop_new_registration_1(new_registration_agent, session_history)
+            
+            # Process the registration agent response
+            print(f"--- Session [{current_session_id}] Registration AI Response Object: ---")
+            print(ai_full_response_object)
+            print(f"--- Type of Response Object: {type(ai_full_response_object)} ---\n")
+
+            print(f"--- Session [{current_session_id}] Attempting to parse registration structured response ---")
+
+            assistant_role_to_store = "assistant" 
+            assistant_content_to_send = "Error: Could not parse registration AI response for frontend."
+            
+            try:
+                # Handle structured output from Responses API (same logic as universal bot)
+                if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
+                    try:
+                        # Parse the structured JSON response
+                        structured_response = json.loads(ai_full_response_object.output_text)
+                        if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                            assistant_content_to_send = structured_response['agent_final_response']
+                            print(f"--- Session [{current_session_id}] Extracted from registration structured output: {assistant_content_to_send} ---")
+                        else:
+                            # Fallback to raw output_text if not properly structured
+                            assistant_content_to_send = ai_full_response_object.output_text
+                            print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
+                    except json.JSONDecodeError as e:
+                        print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
+                        assistant_content_to_send = ai_full_response_object.output_text
+                        
+                # Fallback to detailed parsing for Responses API (if output_text not available)
+                elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                    if (len(ai_full_response_object.output) > 0 and 
+                        hasattr(ai_full_response_object.output[0], 'type') and 
+                        ai_full_response_object.output[0].type == 'message' and
+                        hasattr(ai_full_response_object.output[0], 'content') and 
+                        ai_full_response_object.output[0].content and 
+                        len(ai_full_response_object.output[0].content) > 0 and
+                        hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                        
+                        try:
+                            # Try to parse structured output from detailed format
+                            text_content = ai_full_response_object.output[0].content[0].text
+                            structured_response = json.loads(text_content)
+                            if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                                assistant_content_to_send = structured_response['agent_final_response']
+                            else:
+                                assistant_content_to_send = text_content
+                        except json.JSONDecodeError:
+                            assistant_content_to_send = ai_full_response_object.output[0].content[0].text
+                    else:
+                        assistant_content_to_send = "Registration assistant is processing your request..."
+                        
+                # Handle error responses
+                elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
+                    assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
+                else:
+                    print(f"--- Session [{current_session_id}] Unexpected registration response format ---")
+                    assistant_content_to_send = "Error: Unexpected response format from registration AI."
+                    
+            except Exception as e:
+                print(f"--- Session [{current_session_id}] Error parsing registration AI response: {e} ---")
+                assistant_content_to_send = f"Error parsing registration AI response: {str(e)}"
+            
+            print(f"--- Session [{current_session_id}] Final registration assistant content to send: {assistant_content_to_send} ---")
+            
+            # Add assistant response to session history
+            add_message_to_session_history(current_session_id, assistant_role_to_store, assistant_content_to_send)
+            
+            return {"response": assistant_content_to_send}
+    
+    # If not a registration code (or validation failed), continue with universal bot
     # Add user message to session history
     add_message_to_session_history(current_session_id, "user", payload.user_message)
     
@@ -111,6 +286,7 @@ async def chat_endpoint(payload: UserPayload):
     session_history = get_session_history(current_session_id)
     
     print(f"--- Session [{current_session_id}] Current session history length: {len(session_history)} ---")
+    print(f"--- Session [{current_session_id}] Continuing with universal bot ---")
     
     # Get AI response using the agent
     ai_full_response_object = chat_loop_1(default_agent, session_history)

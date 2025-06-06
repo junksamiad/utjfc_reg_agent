@@ -3,7 +3,7 @@
 _global_chat_histories = {}  # Underscore indicates it's intended for internal use by this module
 
 DEFAULT_SESSION_ID = "global_session" # Simple default for now, good for single-user testing
-MAX_HISTORY_LENGTH = 20 # Optional: Limit the number of turns to keep in history (total messages / 2)
+MAX_HISTORY_LENGTH = 40 # Optional: Limit the number of turns to keep in history (total messages / 2)
 
 def get_session_history(session_id: str = None) -> list:
     """

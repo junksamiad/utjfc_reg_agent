@@ -305,7 +305,7 @@ export default function ChatPage() {
     useEffect(() => {
         if (state.messageOrder.length === 0) {
             const welcomeMessageId = `assistant-welcome-${Date.now()}`;
-            const welcomeText = "Hello! I'm your AI Assistant, powered by a JSON API. How can I help you today?";
+            const welcomeText = "Welcome to Urmston Town Juniors Football Club. What can I help you with today?";
             
             dispatch({ 
                 type: 'START_ASSISTANT_MESSAGE', 
