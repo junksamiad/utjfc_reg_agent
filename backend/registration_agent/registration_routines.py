@@ -5,7 +5,7 @@ class RegistrationRoutines:
     """
     
     ROUTINES = {
-        1: """Task: Your current task is to: 1) take the parent's first and last name which should result in at least 2 parts (first name + last name) 2) validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (') 3) ensure it's at least 2 words long and not just single letters 4) if invalid format or too short, set routine_number = 1 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 2 and ask for their child's first and last name.""",
+        1: """Task: Your current task is to: 1) take the parent's first and last name which should result in at least 2 parts (first name + last name) 2) validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (') 3) ensure it's at least 2 words long and not just single letters 4) if invalid format or too short, set routine_number = 1 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 2 and referring to the parent by FIRST NAME only, ask for their child's first and last name.""",
         
         2: """Task: Your current task is to: 1) take the child's first and last name which should result in at least 2 parts (first name + last name) 2) validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (') 3) ensure it's at least 2 words long and not just single letters 4) if invalid format or too short, set routine_number = 2 and ask for clarification but do not mention validation checks 5) if valid, set routine_number = 3 and ask for their child's date of birth.""",
         
@@ -51,9 +51,9 @@ class RegistrationRoutines:
         
         # Age-based routing will intervene after routine 22 
         # These routines are for U16-U18 age groups (child's separate contact details)
-        23: """Task: Your current task is to: 1) take {child_name}'s mobile phone number 2) validate it's a UK mobile number format (starts with 07 and has 11 digits) 3) if invalid format, set routine_number = 23 and ask for clarification 4) if valid, set routine_number = 24 and ask for {child_name}'s email address.""",
+        23: """Task: Your current task is to: 1) take {child_name}'s mobile phone number 2) validate it's a UK mobile number format (starts with 07 and has 11 digits) and is not the same as the parent's telephone number 3) if invalid format, set routine_number = 23 and ask for clarification 4) if valid, set routine_number = 24 and ask for {child_name}'s email address.""",
         
-        24: """Task: Your current task is to: 1) take {child_name}'s email address 2) validate it has proper email format (contains @ and domain) 3) if invalid email format, set routine_number = 24 and ask for a valid email address for {child_name} 4) if valid email, set routine_number = 28 and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct.""",
+        24: """Task: Your current task is to: 1) take {child_name}'s email address 2) validate it has proper email format (contains @ and domain) and is not the same as the parent's email address 3) if invalid email format, set routine_number = 24 and ask for a valid email address for {child_name} 4) if valid email, set routine_number = 28 and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct.""",
         
         25: """UNUSED - This routine is not used in the current flow.""",
         

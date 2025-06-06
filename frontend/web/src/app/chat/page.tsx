@@ -197,7 +197,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     }
 }
 
-const TYPING_SPEED_MS = 5; // Milliseconds per chunk for simulated typing
+const TYPING_SPEED_MS = 2; // Milliseconds per chunk for simulated typing
 
 const simulateTyping = (
     dispatch: React.Dispatch<ChatAction>,

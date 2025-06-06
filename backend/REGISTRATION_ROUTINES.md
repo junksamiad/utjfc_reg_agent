@@ -258,8 +258,10 @@
 **Task**: Your current task is to: 
 1. Take {child_name}'s mobile phone number
 2. Validate it's a UK mobile number format (starts with 07 and has 11 digits)
-3. If invalid format, set `routine_number = 23` and ask for clarification
-4. If valid, set `routine_number = 24` and ask for {child_name}'s email address
+3. **Check through conversation history that this phone number is different from the parent's phone number** (look for previously collected parent contact details)
+4. If invalid format, set `routine_number = 23` and ask for clarification
+5. If it's the same as the parent's phone number, set `routine_number = 23` and explain that you need {child_name}'s own mobile number which must be different from their parent's number
+6. If valid and different from parent's phone, set `routine_number = 24` and ask for {child_name}'s email address
 
 ---
 
