@@ -255,11 +255,25 @@ export default function ChatPage() {
     const userJustSentRef = useRef(false); 
     const lastUserSend = useRef<number>(0);
 
-    // Helper to scroll a specific message to the top of the viewport
+    // Helper to scroll a specific message to the top of the viewport, accounting for input area
     const scrollToMessageTop = useCallback((messageId: string) => {
         const messageElement = scrollRef.current?.querySelector(`[data-msg-id="${messageId}"]`);
-        if (messageElement) {
-            messageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (messageElement && scrollRef.current) {
+            const container = scrollRef.current;
+            const messageRect = messageElement.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            // Calculate how much space the input area takes up (approximately 200px including padding)
+            const inputAreaHeight = 200;
+            const availableHeight = containerRect.height - inputAreaHeight;
+            
+            // Position the message in the upper portion of available space
+            const targetPosition = container.scrollTop + messageRect.top - containerRect.top - 40; // 40px from top
+            
+            container.scrollTo({
+                top: Math.max(0, targetPosition),
+                behavior: 'smooth'
+            });
         }
     }, []); // scrollRef is stable
 
@@ -317,9 +331,6 @@ export default function ChatPage() {
         };
         dispatch({ type: 'ADD_USER_MESSAGE', payload: userInput });
         
-        // Scroll the new user message to the top after a brief delay for DOM update
-        setTimeout(() => scrollToMessageTop(userInput.id), 0);
-
         userJustSentRef.current = true;
         lastUserSend.current = Date.now();
 
@@ -328,6 +339,11 @@ export default function ChatPage() {
             type: 'START_ASSISTANT_MESSAGE', 
             payload: { id: assistantMessageId, agentName: 'Assistant' } 
         });
+
+        // Scroll to bottom to show the new conversation
+        setTimeout(() => {
+            scrollToVeryBottom();
+        }, 0);
 
         try {
             const sessionId = getOrCreateSessionId();
@@ -392,10 +408,10 @@ export default function ChatPage() {
             });
             
             simulateTyping(dispatch, welcomeMessageId, welcomeText, 'AI Assistant');
-            // Scroll the welcome message to the top
-            setTimeout(() => scrollToMessageTop(welcomeMessageId), 0);
+            // Scroll to bottom to show the welcome message
+            setTimeout(() => scrollToVeryBottom(), 0);
         }
-    }, [dispatch, scrollToMessageTop, state.messageOrder.length]);
+    }, [dispatch, scrollToVeryBottom, state.messageOrder.length]);
 
     return (
         <div className="flex flex-col h-[calc(100dvh-0px)] bg-white dark:bg-gray-900">
@@ -429,7 +445,7 @@ export default function ChatPage() {
                 className="flex-1 overflow-y-auto py-4 bg-gray-50 dark:bg-gray-850 scroll-smooth" 
                 onScroll={handleScroll}
             >
-                <div className="mx-auto max-w-3xl px-4"> {/* Centered, max-width container for messages */}
+                <div className="mx-auto max-w-3xl px-4 pb-80"> {/* Added pb-80 (320px) for maximum bottom padding to push content higher up the page */}
                     <ChatMessages messages={orderedMessages} loadingMessageId={loadingMessageId} />
                 </div>
             </div>
@@ -446,7 +462,7 @@ export default function ChatPage() {
             )}
 
             {/* Input Area - This outer div will be sticky */}
-            <div className="sticky bottom-0 z-10 p-8 bg-gray-50 dark:bg-gray-850">
+            <div className="sticky bottom-0 z-10 p-8 bg-gray-50 dark:bg-gray-850" data-sticky-input>
                  <ChatInput
                     onSendMessage={handleSendMessage}
                     onReset={handleReset}
