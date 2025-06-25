@@ -4,16 +4,18 @@ import json
 from .agents_reg import Agent
 from .agent_response_schema_reg import AgentResponse
 from .agent_response_schema_rereg import ReRegistrationAgentResponse
+from urmston_town_agent.chat_history import add_message_to_session_history
 
 load_dotenv(override=True)  # Load environment variables from .env file, forcing override of existing vars
 
 client = OpenAI()
 
-def chat_loop_new_registration_1(agent: Agent, input_messages: list):
+def chat_loop_new_registration_1(agent: Agent, input_messages: list, session_id: str = "global_session"):
     """
     Gets a response from OpenAI's Responses API for NEW PLAYER registrations (200 codes).
     Based on the provided message history and agent configuration. 
     Uses structured outputs and supports both MCP and local function calling.
+    Saves all tool call results to session history for future reference.
     Returns the full response object for inspection.
     """
     if not input_messages:
@@ -89,6 +91,11 @@ def chat_loop_new_registration_1(agent: Agent, input_messages: list):
                             print(f"Result: {function_result}")
                             print(f"--- END TOOL CALL RESPONSE ---")
                             
+                            # Save tool result to session history for future reference
+                            tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                            add_message_to_session_history(session_id, "system", tool_result_message)
+                            print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                            
                             # Add the tool call to conversation (Responses API format)
                             conversation_with_tools.append({
                                 "type": "function_call",
@@ -105,24 +112,89 @@ def chat_loop_new_registration_1(agent: Agent, input_messages: list):
                                 "output": str(function_result)
                             })
                 
-                # Make another API call to get the final response
-                print("Making second API call for final response after tool execution")
-                final_response = client.responses.create(
-                    model=agent.model,
-                    instructions=agent.instructions,
-                    input=conversation_with_tools,
-                    tools=openai_tools if openai_tools else None,
-                    text={
-                        "format": {
-                            "type": "json_schema",
-                            "name": "agent_response",
-                            "schema": AgentResponse.model_json_schema(),
-                            "strict": True
-                        }
-                    }
-                )
+                # Continue making API calls until no more tool calls are needed
+                # This handles sequential tool calls like create_payment_token → update_reg_details_to_db
+                max_iterations = 5  # Prevent infinite loops
+                iteration = 0
                 
-                return final_response
+                while iteration < max_iterations:
+                    iteration += 1
+                    print(f"Making API call #{iteration + 1} for response (iteration {iteration})")
+                    
+                    current_response = client.responses.create(
+                        model=agent.model,
+                        instructions=agent.instructions,
+                        input=conversation_with_tools,
+                        tools=openai_tools if openai_tools else None,
+                        text={
+                            "format": {
+                                "type": "json_schema",
+                                "name": "agent_response",
+                                "schema": AgentResponse.model_json_schema(),
+                                "strict": True
+                            }
+                        }
+                    )
+                    
+                    # Check if this response has more function calls
+                    has_more_function_calls = False
+                    if hasattr(current_response, 'output') and current_response.output:
+                        for output_item in current_response.output:
+                            if hasattr(output_item, 'type') and output_item.type == 'function_call':
+                                has_more_function_calls = True
+                                break
+                    
+                    if has_more_function_calls:
+                        print(f"Found more function calls in iteration {iteration}, processing...")
+                        
+                        # Process the additional tool calls
+                        for tool_call in current_response.output:
+                            if hasattr(tool_call, 'type') and tool_call.type == 'function_call':
+                                function_name = tool_call.name
+                                function_args = json.loads(tool_call.arguments)
+                                
+                                if function_name in tool_functions:
+                                    # Execute the function
+                                    function_result = tool_functions[function_name](**function_args)
+                                    
+                                    # Log the detailed tool response for debugging
+                                    print(f"--- SEQUENTIAL TOOL CALL RESPONSE (Iteration {iteration}) ---")
+                                    print(f"Function: {function_name}")
+                                    print(f"Arguments: {function_args}")
+                                    print(f"Result: {function_result}")
+                                    print(f"--- END SEQUENTIAL TOOL CALL RESPONSE ---")
+                                    
+                                    # Save tool result to session history for future reference
+                                    tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                                    add_message_to_session_history(session_id, "system", tool_result_message)
+                                    print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                                    
+                                    # Add the tool call to conversation (Responses API format)
+                                    conversation_with_tools.append({
+                                        "type": "function_call",
+                                        "id": tool_call.id,
+                                        "call_id": tool_call.call_id,
+                                        "name": function_name,
+                                        "arguments": tool_call.arguments
+                                    })
+                                    
+                                    # Add the tool result to the conversation (Responses API format)
+                                    conversation_with_tools.append({
+                                        "type": "function_call_output",
+                                        "call_id": tool_call.call_id,
+                                        "output": str(function_result)
+                                    })
+                        
+                        # Continue the loop to make another API call
+                        continue
+                    else:
+                        # No more function calls - we have the final response
+                        print(f"No more function calls found after iteration {iteration}. Final response achieved.")
+                        return current_response
+                
+                # If we hit max iterations, return the last response
+                print(f"Reached max iterations ({max_iterations}). Returning final response.")
+                return current_response
             else:
                 print("Local mode: No function calls detected")
         
@@ -132,7 +204,7 @@ def chat_loop_new_registration_1(agent: Agent, input_messages: list):
         print(f"Error in chat_loop_1: {e}")
         return {"error": f"API call failed: {str(e)}"}
 
-def chat_loop_renew_registration_1(agent: Agent, input_messages: list):
+def chat_loop_renew_registration_1(agent: Agent, input_messages: list, session_id: str = "global_session"):
     """
     Gets a response from OpenAI's Responses API for EXISTING PLAYER re-registrations (100 codes).
     Based on the provided message history and agent configuration. 
@@ -212,6 +284,11 @@ def chat_loop_renew_registration_1(agent: Agent, input_messages: list):
                             print(f"Result: {function_result}")
                             print(f"--- END TOOL CALL RESPONSE ---")
                             
+                            # Save tool result to session history for future reference
+                            tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                            add_message_to_session_history(session_id, "system", tool_result_message)
+                            print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                            
                             # Add the tool call to conversation (Responses API format)
                             conversation_with_tools.append({
                                 "type": "function_call",
@@ -228,24 +305,89 @@ def chat_loop_renew_registration_1(agent: Agent, input_messages: list):
                                 "output": str(function_result)
                             })
                 
-                # Make another API call to get the final response
-                print("Making second API call for final response after tool execution")
-                final_response = client.responses.create(
-                    model=agent.model,
-                    instructions=agent.instructions,
-                    input=conversation_with_tools,
-                    tools=openai_tools if openai_tools else None,
-                    text={
-                        "format": {
-                            "type": "json_schema",
-                            "name": "re_registration_response",
-                            "schema": ReRegistrationAgentResponse.model_json_schema(),
-                            "strict": True
-                        }
-                    }
-                )
+                # Continue making API calls until no more tool calls are needed
+                # This handles sequential tool calls like create_payment_token → update_reg_details_to_db
+                max_iterations = 5  # Prevent infinite loops
+                iteration = 0
                 
-                return final_response
+                while iteration < max_iterations:
+                    iteration += 1
+                    print(f"Making API call #{iteration + 1} for response (iteration {iteration})")
+                    
+                    current_response = client.responses.create(
+                        model=agent.model,
+                        instructions=agent.instructions,
+                        input=conversation_with_tools,
+                        tools=openai_tools if openai_tools else None,
+                        text={
+                            "format": {
+                                "type": "json_schema",
+                                "name": "re_registration_response",
+                                "schema": ReRegistrationAgentResponse.model_json_schema(),
+                                "strict": True
+                            }
+                        }
+                    )
+                    
+                    # Check if this response has more function calls
+                    has_more_function_calls = False
+                    if hasattr(current_response, 'output') and current_response.output:
+                        for output_item in current_response.output:
+                            if hasattr(output_item, 'type') and output_item.type == 'function_call':
+                                has_more_function_calls = True
+                                break
+                    
+                    if has_more_function_calls:
+                        print(f"Found more function calls in iteration {iteration}, processing...")
+                        
+                        # Process the additional tool calls
+                        for tool_call in current_response.output:
+                            if hasattr(tool_call, 'type') and tool_call.type == 'function_call':
+                                function_name = tool_call.name
+                                function_args = json.loads(tool_call.arguments)
+                                
+                                if function_name in tool_functions:
+                                    # Execute the function
+                                    function_result = tool_functions[function_name](**function_args)
+                                    
+                                    # Log the detailed tool response for debugging
+                                    print(f"--- SEQUENTIAL TOOL CALL RESPONSE (Iteration {iteration}) ---")
+                                    print(f"Function: {function_name}")
+                                    print(f"Arguments: {function_args}")
+                                    print(f"Result: {function_result}")
+                                    print(f"--- END SEQUENTIAL TOOL CALL RESPONSE ---")
+                                    
+                                    # Save tool result to session history for future reference
+                                    tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                                    add_message_to_session_history(session_id, "system", tool_result_message)
+                                    print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                                    
+                                    # Add the tool call to conversation (Responses API format)
+                                    conversation_with_tools.append({
+                                        "type": "function_call",
+                                        "id": tool_call.id,
+                                        "call_id": tool_call.call_id,
+                                        "name": function_name,
+                                        "arguments": tool_call.arguments
+                                    })
+                                    
+                                    # Add the tool result to the conversation (Responses API format)
+                                    conversation_with_tools.append({
+                                        "type": "function_call_output",
+                                        "call_id": tool_call.call_id,
+                                        "output": str(function_result)
+                                    })
+                        
+                        # Continue the loop to make another API call
+                        continue
+                    else:
+                        # No more function calls - we have the final response
+                        print(f"No more function calls found after iteration {iteration}. Final response achieved.")
+                        return current_response
+                
+                # If we hit max iterations, return the last response
+                print(f"Reached max iterations ({max_iterations}). Returning final response.")
+                return current_response
             else:
                 print("Local mode: No function calls detected")
         

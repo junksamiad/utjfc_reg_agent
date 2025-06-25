@@ -5,6 +5,11 @@ from .tools.registration_tools.child_dob_validation_tool import CHILD_DOB_VALIDA
 from .tools.registration_tools.medical_issues_validation_tool import MEDICAL_ISSUES_VALIDATION_TOOL
 from .tools.registration_tools.address_validation_tool import ADDRESS_VALIDATION_TOOL
 from .tools.registration_tools.address_lookup_tool import ADDRESS_LOOKUP_TOOL
+from .tools.registration_tools.gocardless_payment_tool import CREATE_SIGNUP_PAYMENT_LINK_TOOL
+from .tools.registration_tools.create_payment_token_tool import CREATE_PAYMENT_TOKEN_TOOL
+from .tools.registration_tools.update_reg_details_to_db_tool_ai_friendly import UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL
+from .tools.registration_tools.check_shirt_number_availability_tool import CHECK_SHIRT_NUMBER_AVAILABILITY_TOOL
+from .tools.registration_tools.update_kit_details_to_db_tool import UPDATE_KIT_DETAILS_TO_DB_TOOL
 import os
 from dotenv import load_dotenv
 
@@ -40,7 +45,12 @@ class Agent(BaseModel):
                 "child_dob_validation": CHILD_DOB_VALIDATION_TOOL,
                 "medical_issues_validation": MEDICAL_ISSUES_VALIDATION_TOOL,
                 "address_validation": ADDRESS_VALIDATION_TOOL,
-                "address_lookup": ADDRESS_LOOKUP_TOOL
+                "address_lookup": ADDRESS_LOOKUP_TOOL,
+                "create_signup_payment_link": CREATE_SIGNUP_PAYMENT_LINK_TOOL,
+                "create_payment_token": CREATE_PAYMENT_TOKEN_TOOL,
+                "update_reg_details_to_db": UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL,
+                "check_shirt_number_availability": CHECK_SHIRT_NUMBER_AVAILABILITY_TOOL,
+                "update_kit_details_to_db": UPDATE_KIT_DETAILS_TO_DB_TOOL
             }
             
             # Return the tool definitions for the tools specified in self.tools
@@ -67,6 +77,11 @@ class Agent(BaseModel):
         from .tools.registration_tools.medical_issues_validation_tool import handle_medical_issues_validation
         from .tools.registration_tools.address_validation_tool import handle_address_validation
         from .tools.registration_tools.address_lookup_tool import handle_address_lookup
+        from .tools.registration_tools.gocardless_payment_tool import handle_create_signup_payment_link
+        from .tools.registration_tools.create_payment_token_tool import handle_create_payment_token
+        from .tools.registration_tools.update_reg_details_to_db_tool_ai_friendly import update_reg_details_to_db_ai_friendly
+        from .tools.registration_tools.check_shirt_number_availability_tool import check_shirt_number_availability
+        from .tools.registration_tools.update_kit_details_to_db_tool import update_kit_details_to_db
         
         return {
             "airtable_database_operation": handle_airtable_tool_call,
@@ -74,7 +89,12 @@ class Agent(BaseModel):
             "child_dob_validation": handle_child_dob_validation,
             "medical_issues_validation": handle_medical_issues_validation,
             "address_validation": handle_address_validation,
-            "address_lookup": handle_address_lookup
+            "address_lookup": handle_address_lookup,
+            "create_signup_payment_link": handle_create_signup_payment_link,
+            "create_payment_token": handle_create_payment_token,
+            "update_reg_details_to_db": update_reg_details_to_db_ai_friendly,
+            "check_shirt_number_availability": check_shirt_number_availability,
+            "update_kit_details_to_db": update_kit_details_to_db
         }
     
     def get_instructions_with_routine(self, routine_message: str = ""):

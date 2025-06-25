@@ -156,7 +156,7 @@ async def chat_endpoint(payload: UserPayload):
         )
         
         # Use new registration flow with dynamic agent
-        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history)
+        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history, current_session_id)
         
         # Process the response (same logic as other registration agents)
         print(f"--- Session [{current_session_id}] Routine-based Registration AI Response Object: ---")
@@ -223,7 +223,7 @@ async def chat_endpoint(payload: UserPayload):
             )
             
             # Process routine 22 (age-based routing)
-            ai_full_response_object = chat_loop_new_registration_1(routine_22_agent, session_history)
+            ai_full_response_object = chat_loop_new_registration_1(routine_22_agent, session_history, current_session_id)
             
             # Parse routine 22 response
             routine_22_assistant_content = "Error: Could not parse routine 22 response."
@@ -311,7 +311,7 @@ async def chat_endpoint(payload: UserPayload):
         )
         
         # Use new registration flow with dynamic agent
-        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history)
+        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history, current_session_id)
         
         # Process the response (same logic as routine flow)
         print(f"--- Session [{current_session_id}] Registration continuation AI Response Object: ---")
@@ -446,22 +446,102 @@ async def chat_endpoint(payload: UserPayload):
     
     # Check for testing cheat code FIRST (before any other validation)
     if payload.user_message.strip().lower() == "lah":
-        print(f"--- Session [{current_session_id}] Testing cheat code 'lah' detected - jumping to routine 12 ---")
+        print(f"--- Session [{current_session_id}] Testing cheat code 'lah' detected - jumping to routine 29 with full conversation history ---")
         
         # Add the cheat code to session history
         add_message_to_session_history(current_session_id, "user", payload.user_message)
         
-        # Generate message for routine 12 (postcode collection)
-        cheat_message = "Thanks! I'll skip ahead to collect your address details.\n\nCould you please provide your postcode?"
+        # Inject structured registration data for age-based routing
+        from registration_agent.routing_validation import inject_structured_registration_data
+        inject_structured_registration_data(current_session_id, "200-leopards-u9-2526")
+        
+        # Pre-populate complete conversation history (routines 1-28)
+        conversation_history = [
+            # Routine 1 - Parent name
+            ("assistant", "Can I take your first and last name so I know how to refer to you?"),
+            ("user", "Lee Hayton"),
+            ("assistant", "Perfect, thanks Lee! Now could you please tell me your child's first and last name?"),
+            
+            # Routine 2 - Child name  
+            ("user", "Seb Hayton"),
+            ("assistant", "Great! Could you please tell me Seb's date of birth?"),
+            
+            # Routine 3 - Child DOB
+            ("user", "18th July 2014"),
+            ("assistant", "Perfect! Could you tell me what gender Seb is?"),
+            
+            # Routine 4 - Child gender
+            ("user", "He's a boy"),
+            ("assistant", "Thanks! Does Seb have any known medical issues that the club should be aware of?"),
+            
+            # Routine 5 - Medical issues
+            ("user", "Yes, he has asthma"),
+            ("assistant", "Is there anything important we need to know about this condition, such as where inhalers are kept?"),
+            ("user", "He keeps his inhaler in his bag"),
+            ("assistant", "Thanks for that information. Did Seb play for another football team last season?"),
+            
+            # Routine 6 - Previous team
+            ("user", "Yes, he played for Urmston Meds"),
+            ("assistant", "What's your relationship to Seb?"),
+            
+            # Routine 7 - Parent relationship
+            ("user", "I'm his dad"),
+            ("assistant", "Could you provide your telephone number?"),
+            
+            # Routine 8 - Parent phone
+            ("user", "07835 065 013"),
+            ("assistant", "What's your email address?"),
+            
+            # Routine 9 - Parent email
+            ("user", "junksamiad@gmail.com"),
+            ("assistant", "Do you consent to receive club communications by email and SMS throughout the season?"),
+            
+            # Routine 10 - Communication consent
+            ("user", "Yes, that's fine"),
+            ("assistant", "Could you please provide your date of birth?"),
+            
+            # Routine 11 - Parent DOB
+            ("user", "2nd June 1981"),
+            ("assistant", "What's your postcode?"),
+            
+            # Routine 12 - Parent postcode
+            ("user", "M32 8JL"),
+            ("assistant", "What's your house number?"),
+            
+            # Routine 13 - Parent house number  
+            ("user", "11"),
+            ("assistant", "I found this address: 11 Granby Rd, Stretford, Manchester M32 8JL. Is this correct?"),
+            
+            # Routine 15 - Address confirmation
+            ("user", "Yes, that's correct"),
+            ("assistant", "Does Seb live at the same address?"),
+            
+            # Routine 16 - Child address same
+            ("user", "Yes, same address"),
+            
+            # System would route to routine 22 for age check, then 28 for summary
+            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Previous team: Urmston Meds\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
+            
+            # Routine 28 - Confirmation
+            ("user", "Yes, that's all correct"),
+            ("assistant", "Brilliant! Now we need to collect the £45 signing-on fee and set up your £27.50 monthly Direct Debit (September to May). What's your preferred day of the month for the monthly payments?"),
+        ]
+        
+        # Add all conversation history to session
+        for role, message in conversation_history:
+            add_message_to_session_history(current_session_id, role, message)
+        
+        # Generate message for routine 29 (payment day collection)
+        cheat_message = "What's your preferred day of the month for the monthly subscription payment to come out (from September onwards)? (For example: 1st, 15th, 25th, or 'end of the month')"
         
         # Add cheat message to session history
         add_message_to_session_history(current_session_id, "assistant", cheat_message)
         
-        # Return response that jumps to routine 12
+        # Return response that jumps to routine 29
         response_json = {
             "response": cheat_message,
-            "last_agent": "new_registration",
-            "routine_number": 12  # Jump straight to postcode collection
+            "last_agent": "new_registration", 
+            "routine_number": 29  # Jump straight to payment day collection with full history
         }
         print(f"--- Session [{current_session_id}] RETURNING CHEAT CODE RESPONSE TO CLIENT: {response_json} ---")
         return response_json

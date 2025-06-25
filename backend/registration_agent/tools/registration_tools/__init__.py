@@ -10,6 +10,11 @@ from .medical_issues_validation import validate_medical_issues
 from .medical_issues_validation_tool import MEDICAL_ISSUES_VALIDATION_TOOL, handle_medical_issues_validation
 from .address_validation import validate_address
 from .address_validation_tool import ADDRESS_VALIDATION_TOOL, handle_address_validation
+from .gocardless_payment import create_billing_request, create_billing_request_flow
+from .gocardless_payment_tool import CREATE_SIGNUP_PAYMENT_LINK_TOOL, handle_create_signup_payment_link
+from .create_payment_token import create_payment_token
+from .create_payment_token_tool import CREATE_PAYMENT_TOKEN_TOOL, handle_create_payment_token
+from .update_reg_details_to_db_tool_ai_friendly import UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL, update_reg_details_to_db_ai_friendly
 
 __all__ = [
     'validate_person_name',
@@ -24,5 +29,14 @@ __all__ = [
     'handle_medical_issues_validation',
     'validate_address',
     'ADDRESS_VALIDATION_TOOL',
-    'handle_address_validation'
+    'handle_address_validation',
+    'create_billing_request',
+    'create_billing_request_flow',
+    'CREATE_SIGNUP_PAYMENT_LINK_TOOL',
+    'handle_create_signup_payment_link',
+    'create_payment_token',
+    'CREATE_PAYMENT_TOKEN_TOOL',
+    'handle_create_payment_token',
+    'UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL',
+    'update_reg_details_to_db_ai_friendly'
 ] 

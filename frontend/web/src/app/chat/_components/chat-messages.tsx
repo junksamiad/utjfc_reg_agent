@@ -67,7 +67,21 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                         <span className="animate-pulse text-gray-500 dark:text-gray-400">Assistant thinking...</span>
                                     ) : (
                                         <>
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            <ReactMarkdown 
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    a: ({ href, children, ...props }) => (
+                                                        <a 
+                                                            href={href} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            {...props}
+                                                        >
+                                                            {children}
+                                                        </a>
+                                                    )
+                                                }}
+                                            >
                                                 {msg.content}
                                             </ReactMarkdown>
                                             {/* Pulsing cursor only shown when loading and content exists */}
