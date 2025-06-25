@@ -1,6 +1,8 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+import base64
+import os
 from .agents_reg import Agent
 from .agent_response_schema_reg import AgentResponse
 from .agent_response_schema_rereg import ReRegistrationAgentResponse
@@ -9,6 +11,249 @@ from urmston_town_agent.chat_history import add_message_to_session_history
 load_dotenv(override=True)  # Load environment variables from .env file, forcing override of existing vars
 
 client = OpenAI()
+
+def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, session_id: str = "global_session"):
+    """
+    Special version of chat_loop for routine 34 (photo upload) that includes vision analysis.
+    Extracts uploaded photo from session history and sends it to the AI for validation.
+    """
+    if not input_messages:
+        print("Warning: chat_loop_new_registration_with_photo called with empty input_messages list.")
+        return {"error": "Input messages list cannot be empty"}
+
+    try:
+        # Find the uploaded file path from session history
+        uploaded_file_path = None
+        for message in reversed(input_messages):
+            if (message.get('role') == 'system' and 
+                message.get('content', '').startswith('UPLOADED_FILE_PATH:')):
+                uploaded_file_path = message['content'].replace('UPLOADED_FILE_PATH:', '').strip()
+                break
+        
+        if not uploaded_file_path or not os.path.exists(uploaded_file_path):
+            return {"error": "No uploaded file found or file doesn't exist"}
+        
+        # Read and encode the image as base64
+        with open(uploaded_file_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+        
+        # Determine the image MIME type
+        file_extension = os.path.splitext(uploaded_file_path)[1].lower()
+        mime_type_map = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg', 
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.heic': 'image/heic'
+        }
+        mime_type = mime_type_map.get(file_extension, 'image/jpeg')
+        
+        # Create a modified input that includes the image
+        # The last user message should be modified to include the image
+        modified_input = input_messages.copy()
+        
+        # Find the last user message and modify it to include the image
+        for i in range(len(modified_input) - 1, -1, -1):
+            if modified_input[i].get('role') == 'user':
+                # Convert the existing message content to an array format with image
+                original_content = modified_input[i].get('content', '')
+                modified_input[i] = {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": original_content},
+                        {
+                            "type": "input_image",
+                            "image_url": f"data:{mime_type};base64,{base64_image}",
+                            "detail": "high"
+                        }
+                    ]
+                }
+                break
+        
+        print(f"--- Modified input to include image for vision analysis ---")
+        
+        # Prepare parameters for the Responses API call with image input
+        api_params = {
+            "model": agent.model,
+            "instructions": agent.instructions,
+            "input": modified_input,
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "agent_response",
+                    "schema": AgentResponse.model_json_schema(),
+                    "strict": True
+                }
+            }
+        }
+        
+        # Add tools if the agent has any
+        if agent.tools:
+            openai_tools = agent.get_tools_for_openai()
+            if openai_tools:
+                api_params["tools"] = openai_tools
+
+        print(f"Making Responses API call with vision for photo validation")
+        print(f"Model: {agent.model}, MCP mode: {agent.use_mcp}")
+        
+        # Make the API call using Responses API
+        response = client.responses.create(**api_params)
+        
+        # Handle the response similar to the regular chat loop but with tool support
+        if agent.use_mcp:
+            print("MCP mode: Tool calls handled automatically by OpenAI")
+            return response
+        else:
+            # Local function calling mode: Handle function calls manually
+            return _handle_local_function_calls(agent, response, modified_input, session_id)
+        
+    except Exception as e:
+        print(f"Error in chat_loop_new_registration_with_photo: {e}")
+        return {"error": f"Photo validation failed: {str(e)}"}
+
+def _handle_local_function_calls(agent: Agent, initial_response, input_messages: list, session_id: str):
+    """Helper function to handle local function calls for photo upload workflow"""
+    
+    # Check if we need to handle function calls
+    has_function_calls = False
+    if hasattr(initial_response, 'output') and initial_response.output:
+        for output_item in initial_response.output:
+            if hasattr(output_item, 'type') and output_item.type == 'function_call':
+                has_function_calls = True
+                break
+    
+    if not has_function_calls:
+        print("Local mode: No function calls detected")
+        return initial_response
+    
+    print("Local mode: Processing function calls manually")
+    tool_functions = agent.get_tool_functions()
+    
+    # Start with the original conversation
+    conversation_with_tools = input_messages.copy()
+    
+    # Process each tool call in the response
+    for tool_call in initial_response.output:
+        if hasattr(tool_call, 'type') and tool_call.type == 'function_call':
+            function_name = tool_call.name
+            function_args = json.loads(tool_call.arguments)
+            
+            if function_name in tool_functions:
+                # Execute the function
+                function_result = tool_functions[function_name](**function_args)
+                
+                # Log the detailed tool response for debugging
+                print(f"--- PHOTO UPLOAD TOOL CALL RESPONSE ---")
+                print(f"Function: {function_name}")
+                print(f"Arguments: {function_args}")
+                print(f"Result: {function_result}")
+                print(f"--- END TOOL CALL RESPONSE ---")
+                
+                # Save tool result to session history for future reference
+                tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                add_message_to_session_history(session_id, "system", tool_result_message)
+                print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                
+                # Add the tool call to conversation (Responses API format)
+                conversation_with_tools.append({
+                    "type": "function_call",
+                    "id": tool_call.id,
+                    "call_id": tool_call.call_id,
+                    "name": function_name,
+                    "arguments": tool_call.arguments
+                })
+                
+                # Add the tool result to the conversation (Responses API format)
+                conversation_with_tools.append({
+                    "type": "function_call_output",
+                    "call_id": tool_call.call_id,
+                    "output": str(function_result)
+                })
+    
+    # Continue making API calls for sequential tool calls (upload_photo_to_s3 → update_photo_link_to_db)
+    max_iterations = 3  # Should only need 2 tool calls max for photo workflow
+    iteration = 0
+    
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"Making API call #{iteration + 1} for photo workflow (iteration {iteration})")
+        
+        openai_tools = agent.get_tools_for_openai()
+        
+        current_response = client.responses.create(
+            model=agent.model,
+            instructions=agent.instructions,
+            input=conversation_with_tools,
+            tools=openai_tools if openai_tools else None,
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "agent_response",
+                    "schema": AgentResponse.model_json_schema(),
+                    "strict": True
+                }
+            }
+        )
+        
+        # Check if this response has more function calls
+        has_more_function_calls = False
+        if hasattr(current_response, 'output') and current_response.output:
+            for output_item in current_response.output:
+                if hasattr(output_item, 'type') and output_item.type == 'function_call':
+                    has_more_function_calls = True
+                    break
+        
+        if has_more_function_calls:
+            print(f"Found more function calls in iteration {iteration}, processing...")
+            
+            # Process the additional tool calls
+            for tool_call in current_response.output:
+                if hasattr(tool_call, 'type') and tool_call.type == 'function_call':
+                    function_name = tool_call.name
+                    function_args = json.loads(tool_call.arguments)
+                    
+                    if function_name in tool_functions:
+                        # Execute the function
+                        function_result = tool_functions[function_name](**function_args)
+                        
+                        # Log the detailed tool response for debugging
+                        print(f"--- SEQUENTIAL PHOTO TOOL CALL RESPONSE (Iteration {iteration}) ---")
+                        print(f"Function: {function_name}")
+                        print(f"Arguments: {function_args}")
+                        print(f"Result: {function_result}")
+                        print(f"--- END SEQUENTIAL TOOL CALL RESPONSE ---")
+                        
+                        # Save tool result to session history for future reference
+                        tool_result_message = f"🔧 Tool Call: {function_name}\nResult: {json.dumps(function_result, indent=2)}"
+                        add_message_to_session_history(session_id, "system", tool_result_message)
+                        print(f"--- SAVED TOOL RESULT TO SESSION HISTORY [{session_id}] ---")
+                        
+                        # Add the tool call to conversation (Responses API format)
+                        conversation_with_tools.append({
+                            "type": "function_call",
+                            "id": tool_call.id,
+                            "call_id": tool_call.call_id,
+                            "name": function_name,
+                            "arguments": tool_call.arguments
+                        })
+                        
+                        # Add the tool result to the conversation (Responses API format)
+                        conversation_with_tools.append({
+                            "type": "function_call_output",
+                            "call_id": tool_call.call_id,
+                            "output": str(function_result)
+                        })
+            
+            # Continue the loop to make another API call
+            continue
+        else:
+            # No more function calls - we have the final response
+            print(f"No more function calls found after iteration {iteration}. Photo workflow complete.")
+            return current_response
+    
+    # If we hit max iterations, return the last response
+    print(f"Reached max iterations ({max_iterations}). Returning final photo workflow response.")
+    return current_response
 
 def chat_loop_new_registration_1(agent: Agent, input_messages: list, session_id: str = "global_session"):
     """

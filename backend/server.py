@@ -1,12 +1,14 @@
 # This file will be populated with the content of simple_test_backend/main.py
 # The old simple_test_backend/main.py will be deleted by a subsequent operation. 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 import json
+import os
+import tempfile
 
 from urmston_town_agent.responses import chat_loop_1
 from urmston_town_agent.chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID
@@ -455,6 +457,9 @@ async def chat_endpoint(payload: UserPayload):
         from registration_agent.routing_validation import inject_structured_registration_data
         inject_structured_registration_data(current_session_id, "200-leopards-u9-2526")
         
+        # Add explicit registration code for AI agent to extract
+        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u9-2526")
+        
         # Pre-populate complete conversation history (routines 1-28)
         conversation_history = [
             # Routine 1 - Parent name
@@ -780,6 +785,126 @@ Can I take your first and last name so I know how to refer to you?"""
     response_json = {"response": assistant_content_to_send}
     print(f"--- Session [{current_session_id}] RETURNING JSON TO CLIENT: {response_json} ---")
     return response_json
+
+@app.post("/upload")
+async def upload_file_endpoint(
+    file: UploadFile = File(...),
+    session_id: str = Form(...),
+    routine_number: Optional[int] = Form(None),
+    last_agent: Optional[str] = Form(None)
+):
+    """Handle file uploads for player registration photos"""
+    print(f"--- Session [{session_id}] File upload received: {file.filename} ({file.content_type}, {file.size if hasattr(file, 'size') else 'unknown'} bytes) ---")
+    
+    # Validate file type
+    allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic']
+    if file.content_type not in allowed_types:
+        return {"error": f"Invalid file type: {file.content_type}. Allowed types: {', '.join(allowed_types)}"}
+    
+    # Create temporary file
+    temp_file = None
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Create temporary file with correct extension
+        file_extension = os.path.splitext(file.filename)[1] if file.filename else '.jpg'
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+        temp_file.write(content)
+        temp_file.close()
+        
+        print(f"--- Session [{session_id}] File saved to temporary location: {temp_file.name} ---")
+        
+        # Add user message to session history
+        add_message_to_session_history(session_id, "user", f"📎 Uploaded photo: {file.filename}")
+        session_history = get_session_history(session_id)
+        
+        # Route to photo upload routine (assuming this is routine 34)
+        upload_routine_number = 34
+        routine_message = RegistrationRoutines.get_routine_message(upload_routine_number)
+        
+        if not routine_message:
+            return {"error": "Photo upload routine not configured"}
+        
+        print(f"--- Session [{session_id}] Using photo upload routine: {routine_message} ---")
+        
+        # Create dynamic agent for photo upload
+        dynamic_instructions = new_registration_agent.get_instructions_with_routine(routine_message)
+        
+        from registration_agent.agents_reg import Agent
+        dynamic_agent = Agent(
+            name=new_registration_agent.name,
+            model=new_registration_agent.model,
+            instructions=dynamic_instructions,
+            tools=new_registration_agent.tools,
+            use_mcp=new_registration_agent.use_mcp
+        )
+        
+        # Add the uploaded file path as a system message so the AI can access it
+        add_message_to_session_history(session_id, "system", f"UPLOADED_FILE_PATH: {temp_file.name}")
+        
+        # Set the current session ID in environment for the upload tool to access
+        os.environ['CURRENT_SESSION_ID'] = session_id
+        
+        # Get updated session history including the file path
+        session_history = get_session_history(session_id)
+        
+        # Route to AI agent for photo validation and processing
+        print(f"--- Session [{session_id}] Routing to AI agent for photo validation and upload ---")
+        
+        # Use the special photo validation chat function for routine 34
+        from registration_agent.responses_reg import chat_loop_new_registration_with_photo
+        ai_full_response_object = chat_loop_new_registration_with_photo(dynamic_agent, session_history, session_id)
+        
+        # Parse the AI response
+        assistant_content_to_send = "Error: Could not parse AI photo upload response."
+        routine_number_from_agent = None
+        
+        try:
+            if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                if (len(ai_full_response_object.output) > 0 and 
+                    hasattr(ai_full_response_object.output[0], 'content') and 
+                    ai_full_response_object.output[0].content and 
+                    len(ai_full_response_object.output[0].content) > 0 and
+                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                    
+                    try:
+                        text_content = ai_full_response_object.output[0].content[0].text
+                        structured_response = json.loads(text_content)
+                        if isinstance(structured_response, dict):
+                            if 'agent_final_response' in structured_response:
+                                assistant_content_to_send = structured_response['agent_final_response']
+                            if 'routine_number' in structured_response:
+                                routine_number_from_agent = structured_response['routine_number']
+                                print(f"--- Session [{session_id}] AI agent set routine_number to: {routine_number_from_agent} ---")
+                        else:
+                            assistant_content_to_send = text_content
+                    except json.JSONDecodeError:
+                        assistant_content_to_send = ai_full_response_object.output[0].content[0].text
+                        
+        except Exception as e:
+            print(f"--- Session [{session_id}] Error parsing AI photo upload response: {e} ---")
+            assistant_content_to_send = f"Error processing photo upload: {str(e)}"
+        
+        response_json = {
+            "response": assistant_content_to_send,
+            "last_agent": "new_registration",
+            "routine_number": routine_number_from_agent or 34
+        }
+        
+        # Add assistant response to session history
+        add_message_to_session_history(session_id, "assistant", response_json["response"])
+        
+        print(f"--- Session [{session_id}] RETURNING UPLOAD RESPONSE: {response_json} ---")
+        return response_json
+        
+    except Exception as e:
+        print(f"--- Session [{session_id}] Error processing file upload: {e} ---")
+        return {"error": f"File upload failed: {str(e)}"}
+    
+    finally:
+        # Note: Temporary file cleanup is handled by upload_photo_to_s3 tool after processing
+        pass
 
 @app.post("/clear")
 async def clear_chat_history():

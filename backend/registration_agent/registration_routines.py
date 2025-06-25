@@ -72,10 +72,12 @@ class RegistrationRoutines:
         
         33: """Task: Your current task is to: 1) take their response for the shirt number selection 2) validate that the response is a number between 1 and 20 (accept '1', 'one', 'number 7', etc. and convert to integer) 3) if the response is not a valid number between 1-20, set routine_number = 33 and ask them to choose a valid shirt number between 1 and 20 4) if a valid shirt number is provided, use the function 'check_shirt_number_availability' with the team name, age_group (extract both from conversation history), and requested_shirt_number to check if it's available 5) if the shirt number is already taken, set routine_number = 33 inform them that number is taken (whilst avoiding exposing the name of the player which has taken shirt number already), then ask them to choose a different number 6) if the shirt number is available, use the function update_kit_details_to_db to write kit details to db, set routine_number = 34, confirm kit details saved and explain that next they need to upload a passport-style photo for ID purposes by clicking the + symbol in the chat window and uploading a file.""",
         
+        34: """Task: Your current task is to: 1) take their uploaded photo 2) validate that they have indeed uploaded an image of a junior or youth and that the image is the correct format (.jpg, .png, .heic, .webp) and it meets our requirement of being a passport style photo. Do not be too strict about this though, as it's only used as a proof of ID in a grassroots football league. If the photo is not valid for any reason then set routine_number = 34 and ask them to upload a valid image providing a reason why you have determined it not to be valid 3) if a valid image is provided, use the function 'upload_photo_to_s3' (adhering to the function schemas by extracting any information you need from the conversation history). 4) if the 'upload_photo_to_s3' returns successfully then use the function 'update_photo_link_to_db' to write the link to the db 5) once the db write has returned successfully, then set routine_number = 35, advise that photo uploaded successfully and registration has been completed pending payment and Direct Debit setup via the GoCardless link they received""",
+        
+        35: """Task: Your current task is to respond to any query helpfully as the registration has now completed.""",
+        
         # Future routines will be added here:
-        # 19: "Your current task is to collect emergency contact information...",
-        # 20: "Your current task is to arrange payment...",
-        # etc.
+        # Additional routines can be added as needed
     }
     
     @classmethod

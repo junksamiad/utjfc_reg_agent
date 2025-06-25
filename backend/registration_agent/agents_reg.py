@@ -10,6 +10,8 @@ from .tools.registration_tools.create_payment_token_tool import CREATE_PAYMENT_T
 from .tools.registration_tools.update_reg_details_to_db_tool_ai_friendly import UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL
 from .tools.registration_tools.check_shirt_number_availability_tool import CHECK_SHIRT_NUMBER_AVAILABILITY_TOOL
 from .tools.registration_tools.update_kit_details_to_db_tool import UPDATE_KIT_DETAILS_TO_DB_TOOL
+from .tools.registration_tools.upload_photo_to_s3_tool import UPLOAD_PHOTO_TO_S3_TOOL
+from .tools.registration_tools.update_photo_link_to_db_tool import UPDATE_PHOTO_LINK_SCHEMA
 import os
 from dotenv import load_dotenv
 
@@ -50,7 +52,9 @@ class Agent(BaseModel):
                 "create_payment_token": CREATE_PAYMENT_TOKEN_TOOL,
                 "update_reg_details_to_db": UPDATE_REG_DETAILS_TO_DB_AI_FRIENDLY_TOOL,
                 "check_shirt_number_availability": CHECK_SHIRT_NUMBER_AVAILABILITY_TOOL,
-                "update_kit_details_to_db": UPDATE_KIT_DETAILS_TO_DB_TOOL
+                "update_kit_details_to_db": UPDATE_KIT_DETAILS_TO_DB_TOOL,
+                "upload_photo_to_s3": UPLOAD_PHOTO_TO_S3_TOOL,
+                "update_photo_link_to_db": UPDATE_PHOTO_LINK_SCHEMA
             }
             
             # Return the tool definitions for the tools specified in self.tools
@@ -82,6 +86,8 @@ class Agent(BaseModel):
         from .tools.registration_tools.update_reg_details_to_db_tool_ai_friendly import update_reg_details_to_db_ai_friendly
         from .tools.registration_tools.check_shirt_number_availability_tool import check_shirt_number_availability
         from .tools.registration_tools.update_kit_details_to_db_tool import update_kit_details_to_db
+        from .tools.registration_tools.upload_photo_to_s3_tool import upload_photo_to_s3
+        from .tools.registration_tools.update_photo_link_to_db_tool import update_photo_link_to_db
         
         return {
             "airtable_database_operation": handle_airtable_tool_call,
@@ -94,7 +100,9 @@ class Agent(BaseModel):
             "create_payment_token": handle_create_payment_token,
             "update_reg_details_to_db": update_reg_details_to_db_ai_friendly,
             "check_shirt_number_availability": check_shirt_number_availability,
-            "update_kit_details_to_db": update_kit_details_to_db
+            "update_kit_details_to_db": update_kit_details_to_db,
+            "upload_photo_to_s3": upload_photo_to_s3,
+            "update_photo_link_to_db": update_photo_link_to_db
         }
     
     def get_instructions_with_routine(self, routine_message: str = ""):

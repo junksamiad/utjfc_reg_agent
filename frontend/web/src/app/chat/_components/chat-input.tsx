@@ -5,13 +5,15 @@ import TextareaAutosize from 'react-textarea-autosize'; // Import the library
 
 interface ChatInputProps {
     onSendMessage: (message: string) => void;
+    onFileUpload: (file: File) => void; // Add file upload handler prop
     onReset: () => void; // Add reset handler prop
     isLoading: boolean;
     sticky: boolean; // Added sticky prop
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onReset, isLoading, sticky }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, onReset, isLoading, sticky }) => {
     const [input, setInput] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Keep a ref to the textarea so we can programmatically focus it
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -42,6 +44,33 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onReset, isLoading
             handleSend();
         }
     }, [handleSend]);
+
+    const handleFileSelect = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please select a valid image file (PNG, JPEG, WebP, or HEIC)');
+                return;
+            }
+            
+            // Validate file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+            
+            onFileUpload(file);
+        }
+        // Reset the input so the same file can be selected again if needed
+        event.target.value = '';
+    }, [onFileUpload]);
 
     return (
          // When sticky, use positioning instead of background/border on the outer div
@@ -83,16 +112,27 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onReset, isLoading
                  <div className="flex justify-between items-center h-8"> {/* Set height for alignment */}
                      {/* Left side buttons: Attach + Reset */}
                      <div className="flex items-center gap-1"> 
-                        {/* Add title attribute for tooltip and mr-1 for spacing */}
+                        {/* File upload button */}
                         <button
                             type="button"
-                            title="Attach file" // Tooltip
+                            onClick={handleFileSelect}
+                            title="Upload photo" // Tooltip
                             className="p-1 mr-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md disabled:opacity-50" // Added mr-1
-                            aria-label="Attach file"
+                            aria-label="Upload photo"
                             disabled={isLoading}
                         >
                             <Plus className="h-5 w-5" />
                         </button>
+                        
+                        {/* Hidden file input */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/webp,image/heic"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            aria-hidden="true"
+                        />
                          {/* Add title attribute for tooltip */} 
                          <button
                             type="button"

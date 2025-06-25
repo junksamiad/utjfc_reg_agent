@@ -321,6 +321,75 @@ export default function ChatPage() {
         console.log('Chat reset - session ID and agent state cleared');
     }, [dispatch]);
 
+    const handleFileUpload = useCallback(async (file: File) => {
+        console.log('File uploaded:', file.name, file.type, file.size);
+        
+        // Create a user message indicating file upload
+        const fileMessage: Message = {
+            id: `user-file-${Date.now()}`,
+            role: 'user',
+            content: `📎 Uploaded photo: ${file.name}`,
+        };
+        dispatch({ type: 'ADD_USER_MESSAGE', payload: fileMessage });
+
+        const assistantMessageId = `assistant-${Date.now()}`;
+        dispatch({ 
+            type: 'START_ASSISTANT_MESSAGE', 
+            payload: { id: assistantMessageId, agentName: 'Assistant' } 
+        });
+
+        // Scroll to bottom to show the new conversation
+        setTimeout(() => {
+            scrollToVeryBottom();
+        }, 0);
+
+        try {
+            const sessionId = getOrCreateSessionId();
+            const agentState = getAgentState();
+            
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('session_id', sessionId);
+            
+            // Add agent state if available
+            if (agentState.last_agent) {
+                formData.append('last_agent', agentState.last_agent);
+            }
+            if (agentState.routine_number !== null) {
+                formData.append('routine_number', agentState.routine_number.toString());
+            }
+            
+            console.log('Uploading file with session ID:', sessionId);
+            
+            const response = await fetch('http://localhost:8000/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(errorData || `File upload failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received upload response:', data);
+            
+            // Store agent state from response
+            storeAgentState(
+                data.last_agent || null,
+                data.routine_number || null
+            );
+            
+            simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
+
+        } catch (error) {
+            console.error("Failed to upload file:", error);
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during file upload";
+            dispatch({ type: 'SET_ERROR', payload: { errorContent: errorMessage } });
+        }
+    }, [dispatch, scrollToVeryBottom]);
+
     const handleSendMessage = useCallback(async (currentInput: string) => {
         if (!currentInput.trim()) return;
 
@@ -465,6 +534,7 @@ export default function ChatPage() {
             <div className="sticky bottom-0 z-10 p-8 bg-gray-50 dark:bg-gray-850" data-sticky-input>
                  <ChatInput
                     onSendMessage={handleSendMessage}
+                    onFileUpload={handleFileUpload}
                     onReset={handleReset}
                     isLoading={isLoading}
                     sticky={false} 
