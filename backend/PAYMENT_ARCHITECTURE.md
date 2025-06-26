@@ -9,13 +9,15 @@ Decoupled payment system that separates registration completion from payment pro
 ```
 Registration Complete (Routine 29)
 ↓
-Create GC Billing Request (persistent)
+Create GC Billing Request (persistent) → billing_request_id
 ↓
-Generate secure payment token
+Send SMS with master payment link (using billing_request_id)
 ↓
-Send SMS payment link
+User clicks SMS link when convenient
 ↓
-User pays when convenient
+Backend generates fresh GoCardless payment link (expires after time)
+↓
+User redirected to GoCardless for payment
 ↓
 Webhooks update payment status
 ↓
@@ -71,18 +73,15 @@ def complete_registration(registration_data, preferred_payment_day):
         }
     })
     
-    # 3. Generate secure payment token
-    payment_token = generate_uuid()
-    
-    # 4. Update registration record
+    # 3. Update registration record with billing request ID
     update_registration(registration_id, {
         'billing_request_id': billing_request.id,
-        'payment_token': payment_token,
+        'payment_token': billing_request.id,  # Use billing_request_id as payment token
         'payment_link_sent_at': datetime.now()
     })
     
-    # 5. Send SMS payment link
-    payment_link = f"https://utjfc.com/pay/{payment_token}"
+    # 4. Send SMS payment link (master link that never expires)
+    payment_link = f"https://utjfc.com/pay/{billing_request.id}"
     send_sms(registration_data['parent_phone'], 
         f"Registration complete for {registration_data['child_name']}! "
         f"Pay when convenient: {payment_link} "
@@ -91,27 +90,27 @@ def complete_registration(registration_data, preferred_payment_day):
     return {
         'success': True,
         'message': 'Payment link sent via SMS. Pay when convenient.',
-        'payment_token': payment_token
+        'payment_token': billing_request.id
     }
 ```
 
-### **Step 2: Payment Link Handler**
+### **Step 2: Payment Link Handler (Backend Endpoint)**
 ```python
-def handle_payment_link(payment_token):
-    # 1. Lookup registration by token
-    registration = get_registration_by_token(payment_token)
+def handle_payment_link(billing_request_id):
+    # 1. Lookup registration by billing request ID
+    registration = get_registration_by_billing_request_id(billing_request_id)
     if not registration:
-        return error_page("Invalid or expired payment link")
+        return error_page("Invalid payment link")
     
     # 2. Check if already paid
     if registration.signing_on_fee_paid and registration.mandate_authorised:
         return success_page("Payment already completed")
     
-    # 3. Create fresh GoCardless auth URL
-    auth_url = create_auth_url(registration.billing_request_id)
+    # 3. Create fresh GoCardless payment URL (expires after time)
+    payment_url = create_fresh_payment_url(billing_request_id)
     
-    # 4. Redirect to GoCardless
-    return redirect(auth_url)
+    # 4. Redirect to GoCardless payment page
+    return redirect(payment_url)
 ```
 
 ## Webhook Processing
@@ -254,6 +253,29 @@ def check_and_restore_suspended_registration(registration_id):
 "Great news! Registration for [CHILD_NAME] has been reactivated following payment. Welcome to UTJFC!"
 ```
 
+## **Current Implementation Status**
+
+### ✅ **Phase 1: Registration & Token Creation (COMPLETE)**
+- **Tool**: `create_payment_token` 
+- **Function**: Creates GoCardless billing request
+- **Output**: Returns `billing_request_id` (serves as persistent payment token)
+- **Storage**: `billing_request_id` stored in database `payment_token` field
+- **Integration**: Called from routine 29 after registration completion
+
+### 🔄 **Phase 2: SMS Notification (NEXT PRIORITY)**
+- **Gap**: No SMS sending functionality currently implemented
+- **Required**: SMS service integration to send master payment links
+- **Template**: "Complete your UTJFC registration payment: [MASTER_LINK]"
+- **Link Format**: `https://utjfc.com/pay/{billing_request_id}` (never expires)
+- **Benefit**: User can use same SMS link multiple times for payment attempts
+
+### ⏳ **Phase 3: Dynamic Payment Link Generation (FUTURE)**
+- **Tool**: `create_signup_payment_link` (exists but will be refactored)
+- **Function**: Backend endpoint that generates fresh GoCardless payment URLs
+- **Trigger**: When user clicks master SMS link
+- **Process**: `billing_request_id` → fresh GoCardless payment session → redirect
+- **Security**: Fresh payment URLs with expiration for each payment attempt
+
 ## Technical Implementation Notes
 
 ### **GoCardless SDK Integration**
@@ -262,9 +284,9 @@ def check_and_restore_suspended_registration(registration_id):
 - HTTP requests still fine for auth URL generation (if working)
 
 ### **Security Considerations**
-- Payment tokens should be UUIDs (unguessable)
+- Billing request IDs serve as secure tokens (GoCardless generated)
 - Webhook signature verification is critical
-- Payment links should have reasonable expiry (30 days?)
+- Fresh payment URLs expire after GoCardless timeout period
 
 ### **Error Handling**
 - Webhook delivery failures handled by GC retry logic
