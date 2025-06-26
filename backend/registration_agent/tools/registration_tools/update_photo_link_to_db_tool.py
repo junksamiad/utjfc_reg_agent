@@ -6,10 +6,11 @@ This tool updates the id_image_link field in Airtable after successful S3 upload
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from pyairtable import Api
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 
@@ -22,6 +23,7 @@ class PhotoLinkData(BaseModel):
     """Data model for updating photo link in database"""
     record_id: str = Field(..., description="The Airtable record ID to update")
     id_image_link: str = Field(..., description="The S3 URL of the uploaded photo")
+    conversation_history: Optional[List[Dict[str, Any]]] = Field(None, description="Complete conversation history with speaker identification")
 
 def update_photo_link_to_db(**kwargs) -> Dict[str, Any]:
     """
@@ -61,10 +63,16 @@ def update_photo_link_to_db(**kwargs) -> Dict[str, Any]:
                 "error": f"Invalid record ID {data.record_id}: {str(e)}"
             }
         
-        # Update the record with the photo link
+        # Update the record with the photo link and conversation history
         update_data = {
             "id_image_link": data.id_image_link
         }
+        
+        # Add conversation history if provided
+        if data.conversation_history:
+            # Convert conversation history to JSON string
+            conversation_json = json.dumps(data.conversation_history, indent=2)
+            update_data["conversation_history"] = conversation_json
         
         updated_record = table.update(data.record_id, update_data)
         
@@ -108,6 +116,17 @@ UPDATE_PHOTO_LINK_SCHEMA = {
             "id_image_link": {
                 "type": "string",
                 "description": "The complete S3 URL of the uploaded photo (e.g., https://s3.eu-north-1.amazonaws.com/utjfc-player-photos/filename.jpg)"
+            },
+            "conversation_history": {
+                "type": "array",
+                "description": "Complete conversation history with role and content for each message",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "role": {"type": "string"},
+                        "content": {"type": "string"}
+                    }
+                }
             }
         },
         "required": ["record_id", "id_image_link"]

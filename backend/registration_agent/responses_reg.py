@@ -139,6 +139,25 @@ def _handle_local_function_calls(agent: Agent, initial_response, input_messages:
             function_args = json.loads(tool_call.arguments)
             
             if function_name in tool_functions:
+                # Special handling for update_photo_link_to_db to include conversation history
+                if function_name == "update_photo_link_to_db":
+                    # Get complete conversation history from session
+                    from urmston_town_agent.chat_history import get_session_history
+                    complete_session_history = get_session_history(session_id)
+                    
+                    # Convert session history to format suitable for database storage
+                    conversation_history = []
+                    for msg in complete_session_history:
+                        # Session history is already in the right format (role, content)
+                        conversation_history.append({
+                            "role": msg.get("role", "unknown"),
+                            "content": msg.get("content", "")
+                        })
+                    
+                    # Add conversation history to function arguments
+                    function_args["conversation_history"] = conversation_history
+                    print(f"Added complete session conversation history with {len(conversation_history)} messages to {function_name}")
+                
                 # Execute the function
                 function_result = tool_functions[function_name](**function_args)
                 
@@ -213,6 +232,25 @@ def _handle_local_function_calls(agent: Agent, initial_response, input_messages:
                     function_args = json.loads(tool_call.arguments)
                     
                     if function_name in tool_functions:
+                        # Special handling for update_photo_link_to_db to include conversation history
+                        if function_name == "update_photo_link_to_db":
+                            # Get complete conversation history from session
+                            from urmston_town_agent.chat_history import get_session_history
+                            complete_session_history = get_session_history(session_id)
+                            
+                            # Convert session history to format suitable for database storage
+                            conversation_history = []
+                            for msg in complete_session_history:
+                                # Session history is already in the right format (role, content)
+                                conversation_history.append({
+                                    "role": msg.get("role", "unknown"),
+                                    "content": msg.get("content", "")
+                                })
+                            
+                            # Add conversation history to function arguments
+                            function_args["conversation_history"] = conversation_history
+                            print(f"Added complete session conversation history with {len(conversation_history)} messages to {function_name}")
+                        
                         # Execute the function
                         function_result = tool_functions[function_name](**function_args)
                         
