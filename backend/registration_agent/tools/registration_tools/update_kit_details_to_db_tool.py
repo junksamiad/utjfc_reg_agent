@@ -61,12 +61,27 @@ def update_kit_details_to_db(**kwargs) -> Dict[str, Any]:
         dict: Result with success status, record ID, and kit details summary
     """
     
+    print("🎽 Starting kit details update process...")
+    print(f"📋 Received kwargs: {kwargs}")
+    
     try:
         # Step 1: Validate all the AI-provided kit data using Pydantic
+        print("🔍 Step 1: Validating kit details...")
+        print(f"   Raw kit_size: '{kwargs.get('kit_size', 'NOT_PROVIDED')}'")
+        print(f"   Raw shirt_number: '{kwargs.get('shirt_number', 'NOT_PROVIDED')}'")
+        print(f"   Raw kit_type_required: '{kwargs.get('kit_type_required', 'NOT_PROVIDED')}'")
+        print(f"   Raw record_id: '{kwargs.get('record_id', 'NOT_PROVIDED')}'")
+        
         validated_data = KitDetailsData(**kwargs)
+        print(f"   ✅ Kit data validation successful")
+        print(f"   Validated kit_size: {validated_data.kit_size}")
+        print(f"   Validated shirt_number: {validated_data.shirt_number}")
+        print(f"   Validated kit_type_required: {validated_data.kit_type_required}")
         
         # Step 2: Check database connection
+        print("🔍 Step 2: Checking database connection...")
         if not AIRTABLE_API_KEY:
+            print("❌ Airtable API key not configured")
             return {
                 "success": False,
                 "message": "Airtable API key not configured",
@@ -75,19 +90,36 @@ def update_kit_details_to_db(**kwargs) -> Dict[str, Any]:
         
         api = Api(AIRTABLE_API_KEY)
         table = api.table(BASE_ID, TABLE_ID)
+        print(f"   ✅ Connected to Airtable: {BASE_ID}/{TABLE_ID}")
         
         # Step 3: Get the specific record using the provided record_id
+        print("🔍 Step 3: Retrieving record from database...")
+        print(f"   Looking for record ID: {validated_data.record_id}")
         try:
             record = table.get(validated_data.record_id)
             record_id = validated_data.record_id
+            print(f"   ✅ Record found: {record['id']}")
+            
+            # Log some key existing fields for context
+            existing_fields = record.get("fields", {})
+            player_name = existing_fields.get("player_full_name", "Unknown")
+            team = existing_fields.get("team", "Unknown")
+            print(f"   Player: {player_name}, Team: {team}")
+            
         except Exception as e:
+            print(f"❌ Record lookup failed: {e}")
             return {
                 "success": False,
                 "message": f"Record ID {validated_data.record_id} not found in database: {str(e)}",
-                "record_id": validated_data.record_id
+                "record_id": validated_data.record_id,
+                "debug_info": {
+                    "record_id": validated_data.record_id,
+                    "error_type": type(e).__name__
+                }
             }
         
         # Step 4: Update the record with kit details
+        print("🔍 Step 4: Updating kit details in database...")
         
         # Prepare kit data for update
         kit_update_data = {
@@ -96,14 +128,29 @@ def update_kit_details_to_db(**kwargs) -> Dict[str, Any]:
             "kit_size": validated_data.kit_size,
             "shirt_number": str(validated_data.shirt_number)  # Convert to string for Airtable
         }
+        print(f"   Update data: {kit_update_data}")
         
         # Update the record
-        updated_record = table.update(record_id, kit_update_data)
+        try:
+            updated_record = table.update(record_id, kit_update_data)
+            print(f"   ✅ Kit details updated successfully")
+        except Exception as e:
+            print(f"❌ Database update failed: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to update kit details: {str(e)}",
+                "record_id": record_id,
+                "debug_info": {
+                    "update_data": kit_update_data,
+                    "error_type": type(e).__name__
+                }
+            }
         
         # Get player info from the updated record for response
         updated_fields = updated_record.get("fields", {})
         player_name = updated_fields.get("player_full_name", "Player")
         
+        print(f"🎉 Kit details update completed for {player_name}!")
         return {
             "success": True,
             "message": f"Kit details saved successfully for {player_name}",
@@ -117,6 +164,7 @@ def update_kit_details_to_db(**kwargs) -> Dict[str, Any]:
         }
         
     except ValidationError as e:
+        print(f"❌ Kit data validation failed: {e}")
         return {
             "success": False,
             "message": f"Kit details validation failed: {str(e)}",
@@ -124,10 +172,17 @@ def update_kit_details_to_db(**kwargs) -> Dict[str, Any]:
             "validation_errors": e.errors()
         }
     except Exception as e:
+        print(f"❌ Kit details update failed with exception: {e}")
+        import traceback
+        print(f"   Full traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "message": f"Failed to update kit details: {str(e)}",
-            "record_id": None
+            "record_id": None,
+            "debug_info": {
+                "exception_type": type(e).__name__,
+                "exception_message": str(e)
+            }
         }
 
 

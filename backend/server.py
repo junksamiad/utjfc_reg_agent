@@ -403,7 +403,7 @@ async def chat_endpoint(payload: UserPayload):
                     structured_response = json.loads(ai_full_response_object.output_text)
                     if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
                         assistant_content_to_send = structured_response['agent_final_response']
-                        print(f"--- Session [{current_session_id}] Extracted from re-registration continuation structured output: {assistant_content_to_send} ---")
+                        print(f"--- Session [{current_session_id}] Extracted from re-registration structured output: {assistant_content_to_send} ---")
                     else:
                         # Fallback to raw output_text if not properly structured
                         assistant_content_to_send = ai_full_response_object.output_text
@@ -542,7 +542,7 @@ async def chat_endpoint(payload: UserPayload):
             
             # Routine 28 - Confirmation
             ("user", "Yes, that's all correct"),
-            ("assistant", "Brilliant! Now we need to collect the £45 signing-on fee and set up your £27.50 monthly Direct Debit (September to May). What's your preferred day of the month for the monthly payments?"),
+            ("assistant", "Brilliant! Now we need to collect the £1 signing-on fee and set up your £1 monthly Direct Debit (September to May). What's your preferred day of the month for the monthly payments?"),
         ]
         
         # Add all conversation history to session
@@ -1158,7 +1158,22 @@ async def process_gocardless_event(event: dict):
     
     # Only process events we care about
     if resource_type == 'payments' and action == 'confirmed':
-        await handle_payment_confirmed(event)
+        # Check if this is a subscription payment or signing fee payment
+        subscription_id = event.get('links', {}).get('subscription')
+        if subscription_id:
+            await handle_subscription_payment_confirmed(event)
+        else:
+            await handle_payment_confirmed(event)  # Existing signing fee handler
+    elif resource_type == 'payments' and action == 'failed':
+        subscription_id = event.get('links', {}).get('subscription')
+        if subscription_id:
+            await handle_subscription_payment_failed(event)
+        else:
+            print(f"⚠️  Non-subscription payment failed: {event.get('links', {}).get('payment')}")
+    elif resource_type == 'payments' and action in ['cancelled', 'charged_back', 'submitted']:
+        subscription_id = event.get('links', {}).get('subscription')
+        if subscription_id:
+            await handle_subscription_payment_status_change(event)
     elif resource_type == 'mandates' and action == 'active':
         await handle_mandate_active(event)
     elif resource_type == 'billing_requests' and action == 'fulfilled':
@@ -1397,9 +1412,39 @@ async def send_payment_confirmation_sms(registration_data: dict):
         message = f"✅ Payment confirmed! {player_name}'s registration for Urmston Town JFC is now complete. Direct debit set up for monthly fees. See you on the pitch! 🏆"
         
         # Send SMS using existing SMS function
-        from registration_agent.tools.registration_tools.send_sms_payment_link import send_sms
+        from registration_agent.tools.registration_tools.send_sms_payment_link_tool import format_uk_phone_for_twilio
+        from twilio.rest import Client
+        from twilio.base.exceptions import TwilioException
+        import os
         
-        sms_result = send_sms(formatted_phone, message)
+        # Get Twilio credentials
+        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        twilio_phone = os.getenv('TWILIO_PHONE_NUMBER')
+        
+        if not all([account_sid, auth_token, twilio_phone]):
+            sms_result = {
+                'success': False,
+                'error': 'Missing Twilio configuration'
+            }
+        else:
+            try:
+                # Initialize Twilio client and send SMS
+                client = Client(account_sid, auth_token)
+                twilio_message = client.messages.create(
+                    body=message,
+                    from_=twilio_phone,
+                    to=formatted_phone
+                )
+                sms_result = {
+                    'success': True,
+                    'message_sid': twilio_message.sid
+                }
+            except TwilioException as e:
+                sms_result = {
+                    'success': False,
+                    'error': f'Twilio error: {str(e)}'
+                }
         
         if sms_result.get('success'):
             print(f"✅ Confirmation SMS sent to {formatted_phone}")
@@ -1408,6 +1453,192 @@ async def send_payment_confirmation_sms(registration_data: dict):
             
     except Exception as e:
         print(f"Error sending confirmation SMS: {str(e)}")
+
+async def handle_subscription_payment_confirmed(event: dict):
+    """Handle successful subscription payment - update monthly status field"""
+    
+    subscription_id = event.get('links', {}).get('subscription')
+    payment_id = event.get('links', {}).get('payment')
+    payment_date = event.get('created_at')  # e.g., "2024-10-15T10:30:00Z"
+    
+    if not subscription_id:
+        print("No subscription ID in payment confirmed event")
+        return
+        
+    print(f"💳 Subscription payment confirmed: {payment_id} for subscription {subscription_id}")
+    
+    try:
+        # Import required modules
+        from pyairtable import Api
+        from datetime import datetime
+        import os
+        
+        # Parse payment date to get month/year
+        payment_datetime = datetime.fromisoformat(payment_date.replace('Z', '+00:00'))
+        payment_month = payment_datetime.month
+        payment_year = payment_datetime.year
+        
+        # Map to status field name
+        status_field = get_subscription_status_field_for_month(payment_month, payment_year)
+        
+        if not status_field:
+            print(f"⚠️  Payment date {payment_date} doesn't map to a season month - ignoring")
+            return
+        
+        # Find registration by subscription ID
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        # Search for registration with this subscription ID
+        records = table.all(formula=f"{{ongoing_subscription_id}} = '{subscription_id}'")
+        
+        if records:
+            record = records[0]
+            record_id = record['id']
+            player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+            
+            # Update the monthly status field
+            update_data = {status_field: 'confirmed'}
+            table.update(record_id, update_data)
+            
+            month_name = status_field.replace('_subscription_payment_status', '').title()
+            print(f"✅ Updated {month_name} payment status to 'confirmed' for {player_name}")
+            
+        else:
+            print(f"❌ No registration found for subscription ID: {subscription_id}")
+        
+    except Exception as e:
+        print(f"Error handling subscription payment confirmed: {str(e)}")
+
+async def handle_subscription_payment_failed(event: dict):
+    """Handle failed subscription payment - update monthly status field"""
+    
+    subscription_id = event.get('links', {}).get('subscription')
+    payment_id = event.get('links', {}).get('payment')
+    payment_date = event.get('created_at')
+    
+    if not subscription_id:
+        print("No subscription ID in payment failed event")
+        return
+        
+    print(f"❌ Subscription payment failed: {payment_id} for subscription {subscription_id}")
+    
+    try:
+        from pyairtable import Api
+        from datetime import datetime
+        import os
+        
+        # Parse payment date to get month/year
+        payment_datetime = datetime.fromisoformat(payment_date.replace('Z', '+00:00'))
+        payment_month = payment_datetime.month
+        payment_year = payment_datetime.year
+        
+        # Map to status field name
+        status_field = get_subscription_status_field_for_month(payment_month, payment_year)
+        
+        if not status_field:
+            print(f"⚠️  Payment date {payment_date} doesn't map to a season month - ignoring")
+            return
+        
+        # Find registration by subscription ID
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        records = table.all(formula=f"{{ongoing_subscription_id}} = '{subscription_id}'")
+        
+        if records:
+            record = records[0]
+            record_id = record['id']
+            player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+            
+            # Update the monthly status field
+            update_data = {status_field: 'failed'}
+            table.update(record_id, update_data)
+            
+            month_name = status_field.replace('_subscription_payment_status', '').title()
+            print(f"🚨 Updated {month_name} payment status to 'failed' for {player_name}")
+            
+            # TODO: Trigger recovery payment process here
+            print(f"🔄 TODO: Trigger recovery payment for {player_name} - {month_name}")
+            
+        else:
+            print(f"❌ No registration found for subscription ID: {subscription_id}")
+        
+    except Exception as e:
+        print(f"Error handling subscription payment failed: {str(e)}")
+
+async def handle_subscription_payment_status_change(event: dict):
+    """Handle other subscription payment status changes (cancelled, charged_back, submitted)"""
+    
+    subscription_id = event.get('links', {}).get('subscription')
+    payment_id = event.get('links', {}).get('payment')
+    payment_date = event.get('created_at')
+    action = event.get('action')
+    
+    if not subscription_id:
+        print(f"No subscription ID in payment {action} event")
+        return
+        
+    print(f"📋 Subscription payment {action}: {payment_id} for subscription {subscription_id}")
+    
+    try:
+        from pyairtable import Api
+        from datetime import datetime
+        import os
+        
+        # Parse payment date to get month/year
+        payment_datetime = datetime.fromisoformat(payment_date.replace('Z', '+00:00'))
+        payment_month = payment_datetime.month
+        payment_year = payment_datetime.year
+        
+        # Map to status field name
+        status_field = get_subscription_status_field_for_month(payment_month, payment_year)
+        
+        if not status_field:
+            print(f"⚠️  Payment date {payment_date} doesn't map to a season month - ignoring")
+            return
+        
+        # Find registration by subscription ID
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        records = table.all(formula=f"{{ongoing_subscription_id}} = '{subscription_id}'")
+        
+        if records:
+            record = records[0]
+            record_id = record['id']
+            player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+            
+            # Update the monthly status field
+            update_data = {status_field: action}
+            table.update(record_id, update_data)
+            
+            month_name = status_field.replace('_subscription_payment_status', '').title()
+            print(f"📝 Updated {month_name} payment status to '{action}' for {player_name}")
+            
+        else:
+            print(f"❌ No registration found for subscription ID: {subscription_id}")
+        
+    except Exception as e:
+        print(f"Error handling subscription payment status change: {str(e)}")
+
+def get_subscription_status_field_for_month(month: int, year: int) -> str:
+    """Map calendar month/year to subscription status field name"""
+    
+    # Season runs September 2024 - May 2025
+    month_mapping = {
+        (9, 2024): 'sep_subscription_payment_status',
+        (10, 2024): 'oct_subscription_payment_status',
+        (11, 2024): 'nov_subscription_payment_status',
+        (12, 2024): 'dec_subscription_payment_status',
+        (1, 2025): 'jan_subscription_payment_status',
+        (2, 2025): 'feb_subscription_payment_status',
+        (3, 2025): 'mar_subscription_payment_status',
+        (4, 2025): 'apr_subscription_payment_status',
+        (5, 2025): 'may_subscription_payment_status'
+    }
+    
+    return month_mapping.get((month, year))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 

@@ -2,7 +2,7 @@
 # Core function for creating GoCardless billing request (first part of payment flow)
 
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -16,14 +16,16 @@ except ImportError:
 
 def create_payment_token(
     player_full_name: str,
-    team: str,
+    team_name: str,
     age_group: str,
     parent_full_name: str,
     preferred_payment_day: int,
-    signing_fee_amount: int = 4500,   # £45.00 in pence (production amount)
-    monthly_amount: int = 2750,       # £27.50 in pence (production amount)
+    parent_phone: str,
+    signing_fee_amount: int = 100,    # £1.00 in pence (TEST amount)
+    monthly_amount: int = 100,        # £1.00 in pence (TEST amount)
+    redirect_uri: str = "https://utjfc.ngrok.app/payment_success",
     gocardless_api_key: Optional[str] = None
-) -> Dict:
+) -> Dict[str, Any]:
     """
     Create a GoCardless billing request for UTJFC player registration.
     
@@ -33,12 +35,14 @@ def create_payment_token(
     
     Args:
         player_full_name (str): Full name of the player being registered
-        team (str): Team the player is joining
+        team_name (str): Team the player is joining
         age_group (str): Age group (e.g., "U16", "U14", etc.)
         parent_full_name (str): Full name of parent/guardian
         preferred_payment_day (int): Day of month for monthly payments (1-31, or -1 for last day)
-        signing_fee_amount (int): One-off signing fee in pence (default: 4500 = £45.00 for production)
-        monthly_amount (int): Monthly subscription in pence (default: 2750 = £27.50 for production)
+        parent_phone (str): Phone number of parent/guardian
+        signing_fee_amount (int): One-off signing fee in pence (default: 100 = £1.00 for testing)
+        monthly_amount (int): Monthly subscription in pence (default: 100 = £1.00 for testing)
+        redirect_uri (str): Redirect URI after payment completion
         gocardless_api_key (str, optional): GoCardless API key. If not provided, will try to get from env
         
     Returns:
@@ -47,7 +51,7 @@ def create_payment_token(
             - message (str): Success message or error description
             - billing_request_id (str): GoCardless billing request ID (also serves as payment token)
             - player_full_name (str): Player name used in request
-            - team (str): Team name used in request
+            - team_name (str): Team name used in request
             - age_group (str): Age group used in request
             - parent_full_name (str): Parent name used in request
             - preferred_payment_day (int): Payment day for monthly subscription
@@ -60,19 +64,19 @@ def create_payment_token(
             "message": "Player full name is required",
             "billing_request_id": "",
             "player_full_name": player_full_name or "",
-            "team": team or "",
+            "team_name": team_name or "",
             "age_group": age_group or "",
             "parent_full_name": parent_full_name or "",
             "preferred_payment_day": preferred_payment_day
         }
     
-    if not team or not team.strip():
+    if not team_name or not team_name.strip():
         return {
             "success": False,
             "message": "Team name is required",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team or "",
+            "team_name": team_name or "",
             "age_group": age_group or "",
             "parent_full_name": parent_full_name or "",
             "preferred_payment_day": preferred_payment_day
@@ -84,7 +88,7 @@ def create_payment_token(
             "message": "Age group is required",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team or "",
+            "team_name": team_name or "",
             "age_group": age_group or "",
             "parent_full_name": parent_full_name or "",
             "preferred_payment_day": preferred_payment_day
@@ -96,7 +100,7 @@ def create_payment_token(
             "message": "Parent full name is required",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name or "",
             "preferred_payment_day": preferred_payment_day
@@ -109,7 +113,7 @@ def create_payment_token(
             "message": "Preferred payment day must be 1-31 or -1 for last day of month",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
             "preferred_payment_day": preferred_payment_day
@@ -122,7 +126,7 @@ def create_payment_token(
             "message": "GoCardless SDK not installed. Please install gocardless-pro package.",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
             "preferred_payment_day": preferred_payment_day
@@ -138,7 +142,7 @@ def create_payment_token(
             "message": "GoCardless API key not configured. Payment setup unavailable.",
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
             "preferred_payment_day": preferred_payment_day
@@ -147,7 +151,7 @@ def create_payment_token(
     try:
         # Clean inputs
         player_name_clean = player_full_name.strip()
-        team_clean = team.strip()
+        team_clean = team_name.strip()
         age_group_clean = age_group.strip()
         parent_name_clean = parent_full_name.strip()
         
@@ -196,7 +200,7 @@ def create_payment_token(
                 "message": "GoCardless billing request created but no ID returned",
                 "billing_request_id": "",
                 "player_full_name": player_full_name,
-                "team": team,
+                "team_name": team_name,
                 "age_group": age_group,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
@@ -211,7 +215,7 @@ def create_payment_token(
             "message": f"Payment token created successfully for {player_name_clean}",
             "billing_request_id": billing_request_id,  # This serves as payment token
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
             "preferred_payment_day": preferred_payment_day,
@@ -236,7 +240,7 @@ def create_payment_token(
             "message": error_message,
             "billing_request_id": "",
             "player_full_name": player_full_name,
-            "team": team,
+            "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
             "preferred_payment_day": preferred_payment_day,
@@ -255,7 +259,7 @@ if __name__ == "__main__":
     # Test case
     test_case = {
         "player_full_name": "Jamie Smith",
-        "team": "Under 16s",
+        "team_name": "Under 16s",
         "age_group": "U16",
         "parent_full_name": "Sarah Smith",
         "preferred_payment_day": 15

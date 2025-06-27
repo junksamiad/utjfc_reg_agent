@@ -24,7 +24,7 @@ async def test_sms_tool():
     twilio_sid = os.getenv('TWILIO_ACCOUNT_SID')
     twilio_token = os.getenv('TWILIO_AUTH_TOKEN') 
     twilio_phone = os.getenv('TWILIO_PHONE_NUMBER')
-    payment_url = os.getenv('PAYMENT_BASE_URL', 'https://urmstontownjfc.co.uk')
+    payment_url = os.getenv('PAYMENT_BASE_URL', 'https://utjfc.ngrok.app')
     
     if not all([twilio_sid, twilio_token, twilio_phone]):
         print("❌ Missing Twilio configuration!")

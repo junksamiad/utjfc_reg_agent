@@ -508,6 +508,136 @@ REGISTRATIONS_2526_SCHEMA = {
             "searchable": True,
             "editable": True,
             "examples": ["API timeout error", "Invalid mandate", "Insufficient funds"]
+        },
+        
+        # Monthly Payment Tracking Fields (Season 2024-25: Sep 2024 - May 2025)
+        # Raw status fields store webhook data, computed fields provide Y/N indicators
+        
+        "sep_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for September 2024. Values: confirmed, failed, cancelled, submitted, etc. Blank = no payment attempted yet.",
+            "example": "confirmed"
+        },
+        "oct_subscription_payment_status": {
+            "type": "singleLineText", 
+            "description": "Raw payment status from GoCardless webhook for October 2024.",
+            "validation": None,
+            "example": "failed",
+            "field_group": "monthly_payments"
+        },
+        "nov_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for November 2024.",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        "dec_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for December 2024.",
+            "validation": None,
+            "example": "confirmed", 
+            "field_group": "monthly_payments"
+        },
+        "jan_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for January 2025.",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        "feb_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for February 2025.",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        "mar_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for March 2025.",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        "apr_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for April 2025.",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        "may_subscription_payment_status": {
+            "type": "singleLineText",
+            "description": "Raw payment status from GoCardless webhook for May 2025 (final month).",
+            "validation": None,
+            "example": "confirmed",
+            "field_group": "monthly_payments"
+        },
+        
+        # Clean boolean fields - Calculated from raw status
+        "subscription_paid_sep": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for September 2024 payment. Y = payment confirmed, N = not paid or failed. Auto-calculated from sep_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_oct": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for October 2024 payment. Auto-calculated from oct_subscription_payment_status.",
+            "validation": None,
+            "example": "N",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_nov": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for November 2024 payment. Auto-calculated from nov_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_dec": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for December 2024 payment. Auto-calculated from dec_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_jan": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for January 2025 payment. Auto-calculated from jan_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_feb": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for February 2025 payment. Auto-calculated from feb_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_mar": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for March 2025 payment. Auto-calculated from mar_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_apr": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for April 2025 payment. Auto-calculated from apr_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
+        },
+        "subscription_paid_may": {
+            "type": "formula",
+            "description": "Clean Y/N indicator for May 2025 payment (final month). Auto-calculated from may_subscription_payment_status.",
+            "validation": None,
+            "example": "Y",
+            "field_group": "monthly_payments"
         }
     },
     
@@ -520,7 +650,8 @@ REGISTRATIONS_2526_SCHEMA = {
         "parent_identity": ["parent_first_name", "parent_last_name", "parent_full_name", "parent_relationship_to_player", "registree_role"],
         "parent_address": ["parent_full_address", "parent_house_number", "parent_address_line_1", "parent_town", "parent_city", "parent_post_code"],
         "payment_info": ["billing_request_id", "preferred_payment_day", "signing_on_fee_amount", "monthly_subscription_amount", "signing_on_fee_paid", "mandate_authorised", "registration_status", "ongoing_subscription_id", "interim_subscription_id", "subscription_start_date", "subscription_status", "subscription_error"],
-        "system_fields": ["record_id", "last_modified", "created"]
+        "system_fields": ["record_id", "last_modified", "created"],
+        "monthly_payments": ["sep_subscription_payment_status", "oct_subscription_payment_status", "nov_subscription_payment_status", "dec_subscription_payment_status", "jan_subscription_payment_status", "feb_subscription_payment_status", "mar_subscription_payment_status", "subscription_paid_sep", "subscription_paid_oct", "subscription_paid_nov", "subscription_paid_dec", "subscription_paid_jan", "subscription_paid_feb", "subscription_paid_mar", "subscription_paid_apr", "subscription_paid_may"]
     },
     
     # Common search patterns

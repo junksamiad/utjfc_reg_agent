@@ -5,6 +5,18 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
+# Add HEIC support
+try:
+    from PIL import Image
+    from pillow_heif import register_heif_opener
+    # Register HEIF opener with Pillow to handle HEIC files
+    register_heif_opener()
+    HEIC_SUPPORT = True
+    print("✅ HEIC conversion support enabled")
+except ImportError:
+    HEIC_SUPPORT = False
+    print("⚠️  HEIC conversion not available - install pillow-heif for HEIC support")
+
 load_dotenv()
 
 # AWS S3 configuration
@@ -41,16 +53,58 @@ class PhotoUploadData(BaseModel):
     )
 
 
+def _convert_heic_to_jpeg(file_path: str) -> str:
+    """
+    Convert HEIC file to JPEG format for compatibility.
+    
+    Args:
+        file_path: Path to the HEIC file
+        
+    Returns:
+        str: Path to the converted JPEG file
+    """
+    if not HEIC_SUPPORT:
+        raise ImportError("HEIC conversion not available - install pillow-heif: pip install pillow-heif")
+    
+    try:
+        print(f"🔄 Converting HEIC file to JPEG: {file_path}")
+        
+        # Open HEIC file with Pillow (using pillow-heif)
+        with Image.open(file_path) as img:
+            print(f"   Original image mode: {img.mode}, size: {img.size}")
+            
+            # Convert to RGB (JPEG doesn't support RGBA)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                print(f"   Converting from {img.mode} to RGB")
+                img = img.convert('RGB')
+            
+            # Generate new filename with .jpg extension
+            base_path = os.path.splitext(file_path)[0]
+            jpeg_path = f"{base_path}_converted.jpg"
+            
+            # Save as JPEG with good quality
+            img.save(jpeg_path, 'JPEG', quality=90, optimize=True)
+            
+            jpeg_size = os.path.getsize(jpeg_path)
+            print(f"✅ HEIC converted to JPEG: {jpeg_path} ({jpeg_size:,} bytes)")
+            return jpeg_path
+            
+    except Exception as e:
+        print(f"❌ Failed to convert HEIC to JPEG: {e}")
+        raise e
+
+
 def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
     """
     Upload a player photo to S3 and return the URL.
     
     This function:
     1. Extracts the file path from session history (UPLOADED_FILE_PATH message)
-    2. Validates the photo upload data using Pydantic
-    3. Generates a unique filename for the photo
-    4. Uploads the photo to S3
-    5. Returns the S3 URL for storage in the database
+    2. Converts HEIC files to JPEG if needed
+    3. Validates the photo upload data using Pydantic
+    4. Generates a unique filename for the photo
+    5. Uploads the photo to S3
+    6. Returns the S3 URL for storage in the database
     
     Args:
         **kwargs: Photo upload data including record_id, player names
@@ -59,9 +113,12 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
         dict: Result with success status, S3 URL, and upload details
     """
     
+    print("🚀 Starting photo upload process...")
+    print(f"📋 Received kwargs: {kwargs}")
+    
     try:
         # Step 1: Get the uploaded file path from session history
-        # This is set by the upload endpoint as a system message: UPLOADED_FILE_PATH: /path/to/file
+        print("🔍 Step 1: Looking for uploaded file path in session history...")
         file_path = None
         
         # Import session history function here to avoid circular imports
@@ -74,19 +131,24 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
             
             # Get current session ID from environment or default
             session_id = os.environ.get('CURRENT_SESSION_ID', 'default_session_id')
+            print(f"   Using session ID: {session_id}")
+            
             session_history = get_session_history(session_id)
+            print(f"   Session history length: {len(session_history)}")
             
             # Look for the UPLOADED_FILE_PATH message in session history
-            for message in reversed(session_history):  # Search from most recent
+            for i, message in enumerate(reversed(session_history)):  # Search from most recent
                 if (message.get('role') == 'system' and 
                     message.get('content', '').startswith('UPLOADED_FILE_PATH:')):
                     file_path = message['content'].replace('UPLOADED_FILE_PATH:', '').strip()
+                    print(f"   ✅ Found file path at message -{i}: {file_path}")
                     break
                     
         except Exception as e:
-            print(f"Warning: Could not get file path from session history: {e}")
+            print(f"   ⚠️  Warning: Could not get file path from session history: {e}")
         
         if not file_path:
+            print("❌ No uploaded file found in session history")
             return {
                 "success": False,
                 "message": "No uploaded file found in session history",
@@ -94,18 +156,66 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
             }
         
         # Step 2: Validate the AI-provided data using Pydantic
+        print("🔍 Step 2: Validating AI-provided data...")
+        print(f"   Raw player_full_name: '{kwargs.get('player_full_name', 'NOT_PROVIDED')}'")
+        print(f"   Raw team: '{kwargs.get('team', 'NOT_PROVIDED')}'")
+        print(f"   Raw age_group: '{kwargs.get('age_group', 'NOT_PROVIDED')}'")
+        print(f"   Raw record_id: '{kwargs.get('record_id', 'NOT_PROVIDED')}'")
+        
+        # Check for placeholder text that indicates AI didn't extract properly
+        player_name = kwargs.get('player_full_name', '')
+        if '[' in player_name and ']' in player_name:
+            print(f"❌ ERROR: AI passed placeholder text instead of actual player name: {player_name}")
+            return {
+                "success": False,
+                "message": f"AI failed to extract player name from conversation history. Got placeholder: {player_name}",
+                "s3_url": None,
+                "debug_info": {
+                    "issue": "AI_PLACEHOLDER_TEXT",
+                    "received_name": player_name,
+                    "suggestion": "AI should extract actual player name from conversation history"
+                }
+            }
+        
         validated_data = PhotoUploadData(**kwargs)
+        print(f"   ✅ Data validation successful")
+        print(f"   Validated player_full_name: '{validated_data.player_full_name}'")
         
         # Step 3: Check if file exists
+        print("🔍 Step 3: Checking if file exists...")
         if not os.path.exists(file_path):
+            print(f"❌ File not found: {file_path}")
             return {
                 "success": False,
                 "message": f"File not found: {file_path}",
                 "s3_url": None
             }
         
-        # Step 4: Generate filename using player_full_name+team+age_group.ext format
+        file_size = os.path.getsize(file_path)
+        print(f"   ✅ File exists: {file_path} ({file_size:,} bytes)")
+        
+        # Step 4: Handle HEIC conversion if needed
+        print("🔍 Step 4: Checking file format and converting if needed...")
+        original_extension = os.path.splitext(file_path)[1].lower()
+        print(f"   Original file extension: {original_extension}")
+        
+        if original_extension == '.heic':
+            print("   🔄 HEIC file detected - converting to JPEG...")
+            try:
+                file_path = _convert_heic_to_jpeg(file_path)
+                print(f"   ✅ Conversion successful: {file_path}")
+            except Exception as e:
+                print(f"   ❌ HEIC conversion failed: {e}")
+                return {
+                    "success": False,
+                    "message": f"Failed to convert HEIC file: {str(e)}",
+                    "s3_url": None
+                }
+        
+        # Step 5: Generate filename using player_full_name+team+age_group.ext format
+        print("🔍 Step 5: Generating S3 filename...")
         file_extension = os.path.splitext(file_path)[1].lower()
+        print(f"   Final file extension: {file_extension}")
         
         # Clean names for filename (remove spaces, special chars, keep only alphanumeric)
         clean_name = "".join(c for c in validated_data.player_full_name if c.isalnum()).lower()
@@ -113,11 +223,17 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
         clean_age_group = "".join(c for c in validated_data.age_group if c.isalnum()).lower()
         
         filename = f"{clean_name}_{clean_team}_{clean_age_group}{file_extension}"
+        print(f"   Generated filename: {filename}")
+        print(f"   Clean name parts: '{clean_name}' + '{clean_team}' + '{clean_age_group}'")
         
-        # Step 5: Initialize S3 client (uses AWS profile set in environment)
+        # Step 6: Initialize S3 client (uses AWS profile set in environment)
+        print("🔍 Step 6: Initializing S3 client...")
         s3_client = boto3.client('s3', region_name=AWS_REGION)
+        print(f"   S3 bucket: {S3_BUCKET_NAME}")
+        print(f"   S3 region: {AWS_REGION}")
         
-        # Step 6: Upload file to S3
+        # Step 7: Upload file to S3
+        print("🔍 Step 7: Uploading to S3...")
         try:
             s3_client.upload_file(
                 file_path,
@@ -130,26 +246,42 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
                         'player_name': validated_data.player_full_name,
                         'team': validated_data.team,
                         'age_group': validated_data.age_group,
-                        'upload_timestamp': datetime.now().isoformat()
+                        'upload_timestamp': datetime.now().isoformat(),
+                        'original_extension': original_extension
                     }
                 }
             )
+            print("   ✅ S3 upload successful")
         except Exception as e:
+            print(f"   ❌ S3 upload failed: {e}")
             return {
                 "success": False,
                 "message": f"Failed to upload to S3: {str(e)}",
                 "s3_url": None
             }
         
-        # Step 7: Generate S3 URL
+        # Step 8: Generate S3 URL
         s3_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{filename}"
+        print(f"   Generated S3 URL: {s3_url}")
         
-        # Step 8: Clean up local file
-        try:
-            os.remove(file_path)
-        except Exception as e:
-            print(f"Warning: Could not delete local file {file_path}: {e}")
+        # Step 9: Clean up local files
+        print("🔍 Step 9: Cleaning up local files...")
+        files_to_clean = [file_path]
         
+        # If we converted HEIC, also clean up the original
+        if original_extension == '.heic' and '_converted.jpg' in file_path:
+            original_heic = file_path.replace('_converted.jpg', '.heic')
+            if os.path.exists(original_heic):
+                files_to_clean.append(original_heic)
+        
+        for cleanup_file in files_to_clean:
+            try:
+                os.remove(cleanup_file)
+                print(f"   ✅ Cleaned up: {cleanup_file}")
+            except Exception as e:
+                print(f"   ⚠️  Warning: Could not delete {cleanup_file}: {e}")
+        
+        print("🎉 Photo upload completed successfully!")
         return {
             "success": True,
             "message": f"Photo uploaded successfully for {validated_data.player_full_name}",
@@ -158,14 +290,27 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
             "player_name": validated_data.player_full_name,
             "team": validated_data.team,
             "age_group": validated_data.age_group,
-            "record_id": validated_data.record_id
+            "record_id": validated_data.record_id,
+            "debug_info": {
+                "original_extension": original_extension,
+                "final_extension": file_extension,
+                "heic_converted": original_extension == '.heic',
+                "file_size_bytes": file_size
+            }
         }
         
     except Exception as e:
+        print(f"❌ Photo upload failed with exception: {e}")
+        import traceback
+        print(f"   Full traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "message": f"Failed to upload photo: {str(e)}",
-            "s3_url": None
+            "s3_url": None,
+            "debug_info": {
+                "exception_type": type(e).__name__,
+                "exception_message": str(e)
+            }
         }
 
 

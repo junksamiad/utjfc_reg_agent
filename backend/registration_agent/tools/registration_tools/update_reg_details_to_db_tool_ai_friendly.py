@@ -30,16 +30,34 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
         dict: Result with success status, record ID, and registration summary
     """
     
+    print("📝 Starting registration data save process...")
+    print(f"📋 Received {len(kwargs)} fields from AI")
+    
+    # Log key fields for verification
+    key_fields = ['player_first_name', 'player_last_name', 'team', 'age_group', 'billing_request_id']
+    for field in key_fields:
+        value = kwargs.get(field, 'NOT_PROVIDED')
+        print(f"   {field}: '{value}'")
+    
     try:
         # Step 1: Validate all the AI-provided data using Pydantic
-        # The AI has intelligently extracted each field from the conversation
+        print("🔍 Step 1: Validating AI-provided registration data...")
         validated_data = RegistrationDataContract(**kwargs)
+        print(f"   ✅ Data validation successful")
+        print(f"   Player: {validated_data.player_first_name} {validated_data.player_last_name}")
+        print(f"   Team: {validated_data.team}, Age Group: {validated_data.age_group}")
+        print(f"   Billing Request ID: {validated_data.billing_request_id}")
         
         # Step 2: Prepare data for Airtable
+        print("🔍 Step 2: Preparing data for Airtable...")
         airtable_data = _prepare_airtable_data(validated_data)
+        print(f"   ✅ Prepared {len(airtable_data)} fields for database")
+        print(f"   Key fields: {list(airtable_data.keys())[:10]}...")  # Show first 10
         
         # Step 3: Write to database
+        print("🔍 Step 3: Writing to database...")
         if not AIRTABLE_API_KEY:
+            print("❌ Airtable API key not configured")
             return {
                 "success": False,
                 "message": "Airtable API key not configured",
@@ -48,13 +66,29 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
         
         api = Api(AIRTABLE_API_KEY)
         table = api.table(BASE_ID, TABLE_ID)
+        print(f"   ✅ Connected to Airtable: {BASE_ID}/{TABLE_ID}")
         
-        record = table.create(airtable_data)
+        print("   Creating new record...")
+        try:
+            record = table.create(airtable_data)
+            record_id = record["id"]
+            print(f"   ✅ Record created successfully: {record_id}")
+        except Exception as e:
+            print(f"❌ Database creation failed: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to create database record: {str(e)}",
+                "record_id": None,
+                "debug_info": {
+                    "error_type": type(e).__name__,
+                    "data_fields": list(airtable_data.keys())
+                }
+            }
         
-        return {
+        result = {
             "success": True,
             "message": f"Registration data saved successfully for {validated_data.player_first_name} {validated_data.player_last_name}",
-            "record_id": record["id"],
+            "record_id": record_id,
             "player_name": f"{validated_data.player_first_name} {validated_data.player_last_name}",
             "team": validated_data.team,
             "age_group": validated_data.age_group,
@@ -62,12 +96,25 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
             "billing_request_id": validated_data.billing_request_id
         }
         
+        print(f"🎉 Registration completed for {result['player_name']}!")
+        print(f"   Record ID: {record_id}")
+        print(f"   Billing Request ID: {result['billing_request_id']}")
+        
+        return result
+        
     except Exception as e:
+        print(f"❌ Registration save failed with exception: {e}")
+        import traceback
+        print(f"   Full traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "message": f"Failed to save registration data: {str(e)}",
             "record_id": None,
-            "validation_errors": getattr(e, 'errors', None) if hasattr(e, 'errors') else None
+            "validation_errors": getattr(e, 'errors', None) if hasattr(e, 'errors') else None,
+            "debug_info": {
+                "exception_type": type(e).__name__,
+                "exception_message": str(e)
+            }
         }
 
 

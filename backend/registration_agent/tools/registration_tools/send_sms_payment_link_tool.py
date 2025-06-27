@@ -75,7 +75,7 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
         account_sid = os.getenv('TWILIO_ACCOUNT_SID')
         auth_token = os.getenv('TWILIO_AUTH_TOKEN')
         twilio_phone = os.getenv('TWILIO_PHONE_NUMBER')
-        payment_base_url = os.getenv('PAYMENT_BASE_URL', 'https://urmstontownjfc.co.uk')
+        payment_base_url = os.getenv('PAYMENT_BASE_URL', 'https://utjfc.ngrok.app')
         
         if not all([account_sid, auth_token, twilio_phone]):
             return {

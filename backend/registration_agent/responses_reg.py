@@ -8,9 +8,61 @@ from .agent_response_schema_reg import AgentResponse
 from .agent_response_schema_rereg import ReRegistrationAgentResponse
 from urmston_town_agent.chat_history import add_message_to_session_history
 
+# Add HEIC support
+try:
+    from PIL import Image
+    from pillow_heif import register_heif_opener
+    # Register HEIF opener with Pillow to handle HEIC files
+    register_heif_opener()
+    HEIC_SUPPORT = True
+    print("✅ HEIC conversion support enabled in responses_reg")
+except ImportError:
+    HEIC_SUPPORT = False
+    print("⚠️  HEIC conversion not available in responses_reg - install pillow-heif for HEIC support")
+
 load_dotenv(override=True)  # Load environment variables from .env file, forcing override of existing vars
 
 client = OpenAI()
+
+def _convert_heic_to_jpeg_for_vision(file_path: str) -> str:
+    """
+    Convert HEIC file to JPEG format for OpenAI Vision API compatibility.
+    
+    Args:
+        file_path: Path to the HEIC file
+        
+    Returns:
+        str: Path to the converted JPEG file
+    """
+    if not HEIC_SUPPORT:
+        raise ImportError("HEIC conversion not available - install pillow-heif: pip install pillow-heif")
+    
+    try:
+        print(f"🔄 Converting HEIC file for Vision API: {file_path}")
+        
+        # Open HEIC file with Pillow (using pillow-heif)
+        with Image.open(file_path) as img:
+            print(f"   Original image mode: {img.mode}, size: {img.size}")
+            
+            # Convert to RGB (JPEG doesn't support RGBA)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                print(f"   Converting from {img.mode} to RGB")
+                img = img.convert('RGB')
+            
+            # Generate new filename with .jpg extension in same directory
+            base_path = os.path.splitext(file_path)[0]
+            jpeg_path = f"{base_path}_vision_converted.jpg"
+            
+            # Save as JPEG with good quality for Vision API
+            img.save(jpeg_path, 'JPEG', quality=85, optimize=True)
+            
+            jpeg_size = os.path.getsize(jpeg_path)
+            print(f"✅ HEIC converted to JPEG for Vision API: {jpeg_path} ({jpeg_size:,} bytes)")
+            return jpeg_path
+            
+    except Exception as e:
+        print(f"❌ Failed to convert HEIC to JPEG for Vision API: {e}")
+        raise e
 
 def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, session_id: str = "global_session"):
     """
@@ -23,6 +75,7 @@ def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, se
 
     try:
         # Find the uploaded file path from session history
+        print("🔍 Looking for uploaded file in session history...")
         uploaded_file_path = None
         for message in reversed(input_messages):
             if (message.get('role') == 'system' and 
@@ -31,22 +84,47 @@ def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, se
                 break
         
         if not uploaded_file_path or not os.path.exists(uploaded_file_path):
+            print(f"❌ No uploaded file found or file doesn't exist: {uploaded_file_path}")
             return {"error": "No uploaded file found or file doesn't exist"}
         
+        print(f"   ✅ Found uploaded file: {uploaded_file_path}")
+        
+        # Check if HEIC conversion is needed
+        file_extension = os.path.splitext(uploaded_file_path)[1].lower()
+        print(f"   File extension: {file_extension}")
+        
+        if file_extension == '.heic':
+            print("   🔄 HEIC file detected - converting for Vision API...")
+            if not HEIC_SUPPORT:
+                print("❌ HEIC conversion not available")
+                return {"error": "HEIC conversion not available - please convert to JPEG/PNG first"}
+            
+            try:
+                # Convert HEIC to JPEG for Vision API
+                uploaded_file_path = _convert_heic_to_jpeg_for_vision(uploaded_file_path)
+                file_extension = '.jpg'  # Update extension after conversion
+                print(f"   ✅ Conversion successful, using: {uploaded_file_path}")
+            except Exception as e:
+                print(f"❌ HEIC conversion failed: {e}")
+                return {"error": f"Failed to convert HEIC file: {str(e)}"}
+        
         # Read and encode the image as base64
+        print("🔍 Encoding image for Vision API...")
         with open(uploaded_file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode("utf-8")
         
-        # Determine the image MIME type
-        file_extension = os.path.splitext(uploaded_file_path)[1].lower()
+        print(f"   ✅ Image encoded ({len(base64_image)} characters)")
+        
+        # Determine the image MIME type (use JPEG for converted HEIC files)
         mime_type_map = {
             '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg', 
             '.png': 'image/png',
             '.webp': 'image/webp',
-            '.heic': 'image/heic'
+            '.gif': 'image/gif'
         }
         mime_type = mime_type_map.get(file_extension, 'image/jpeg')
+        print(f"   Using MIME type: {mime_type}")
         
         # Create a modified input that includes the image
         # The last user message should be modified to include the image
@@ -72,6 +150,15 @@ def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, se
         
         print(f"--- Modified input to include image for vision analysis ---")
         
+        # Clean up converted file if it was created for Vision API
+        def cleanup_converted_file():
+            if '_vision_converted.jpg' in uploaded_file_path:
+                try:
+                    os.remove(uploaded_file_path)
+                    print(f"   ✅ Cleaned up converted file: {uploaded_file_path}")
+                except Exception as e:
+                    print(f"   ⚠️  Warning: Could not delete converted file {uploaded_file_path}: {e}")
+        
         # Prepare parameters for the Responses API call with image input
         api_params = {
             "model": agent.model,
@@ -96,16 +183,25 @@ def chat_loop_new_registration_with_photo(agent: Agent, input_messages: list, se
         print(f"Making Responses API call with vision for photo validation")
         print(f"Model: {agent.model}, MCP mode: {agent.use_mcp}")
         
-        # Make the API call using Responses API
-        response = client.responses.create(**api_params)
-        
-        # Handle the response similar to the regular chat loop but with tool support
-        if agent.use_mcp:
-            print("MCP mode: Tool calls handled automatically by OpenAI")
-            return response
-        else:
-            # Local function calling mode: Handle function calls manually
-            return _handle_local_function_calls(agent, response, modified_input, session_id)
+        try:
+            # Make the API call using Responses API
+            response = client.responses.create(**api_params)
+            
+            # Clean up any converted files
+            cleanup_converted_file()
+            
+            # Handle the response similar to the regular chat loop but with tool support
+            if agent.use_mcp:
+                print("MCP mode: Tool calls handled automatically by OpenAI")
+                return response
+            else:
+                # Local function calling mode: Handle function calls manually
+                return _handle_local_function_calls(agent, response, modified_input, session_id)
+                
+        except Exception as e:
+            # Clean up any converted files even if API call fails
+            cleanup_converted_file()
+            raise e
         
     except Exception as e:
         print(f"Error in chat_loop_new_registration_with_photo: {e}")
