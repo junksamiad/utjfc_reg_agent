@@ -145,6 +145,10 @@ def generate_ai_friendly_registration_schema():
         For conditional fields (like medical_description, previous_team_name, player_telephone),
         only provide them if the conditions are met based on the conversation.
         
+        For payment amounts (signing_on_fee_amount, monthly_subscription_amount), extract these
+        from the create_payment_token function result - look for signing_fee_amount_pounds 
+        and monthly_amount_pounds in the tool response.
+        
         Call this function AFTER create_payment_token succeeds in routine 29.
         """
     )

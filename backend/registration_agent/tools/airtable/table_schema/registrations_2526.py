@@ -366,6 +366,148 @@ REGISTRATIONS_2526_SCHEMA = {
             "editable": True,
             "format": "UK postcode format",
             "examples": ["M41 5AB", "M33 2CD", "M15 6EF"]
+        },
+        
+        # Payment Information
+        "billing_request_id": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "text",
+            "airtable_type": "string",
+            "description": "GoCardless billing request ID (serves as payment token)",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "examples": ["BRQ0027QDEMTC1N", "BRQ0028XYZA1234"]
+        },
+        
+        "preferred_payment_day": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "number",
+            "airtable_type": "number",
+            "description": "Day of month for monthly payments (1-31 or -1 for last day)",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "examples": [15, 1, 31, -1]
+        },
+        
+        "signing_on_fee_amount": {
+            "field_id": "fld5Tx3PUAYo6Hp83",
+            "type": "currency",
+            "airtable_type": "number",
+            "description": "One-off signing fee amount in pounds (converted from pence)",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "currency_symbol": "£",
+            "precision": 2,
+            "examples": ["£45.00", "£1.00", "£50.00"]
+        },
+        
+        "monthly_subscription_amount": {
+            "field_id": "fldg0exz81ZqXvw2W",
+            "type": "currency",
+            "airtable_type": "number", 
+            "description": "Monthly subscription amount in pounds (converted from pence)",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "currency_symbol": "£",
+            "precision": 2,
+            "examples": ["£27.50", "£1.00", "£30.00"]
+        },
+        
+        "signing_on_fee_paid": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "text",
+            "airtable_type": "string",
+            "description": "Whether £45 signing fee has been paid",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "enums": ["Y", "N"],
+            "examples": ["Y", "N"]
+        },
+        
+        "mandate_authorised": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "text",
+            "airtable_type": "string",
+            "description": "Whether Direct Debit mandate has been authorised",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "enums": ["Y", "N"],
+            "examples": ["Y", "N"]
+        },
+        
+        "registration_status": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "text",
+            "airtable_type": "string",
+            "description": "Current registration status",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "enums": ["pending_payment", "active", "suspended", "incomplete"],
+            "examples": ["pending_payment", "active", "incomplete"]
+        },
+        
+        "ongoing_subscription_id": {
+            "field_id": "fldMissing",  # Will be updated when known
+            "type": "text",
+            "airtable_type": "string",
+            "description": "GoCardless subscription ID for ongoing monthly payments",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "examples": ["SB0001234567890A", "SB0002345678901B"]
+        },
+        
+        "interim_subscription_id": {
+            "field_id": "fldBgBLuGFQd11rWm",
+            "type": "text",
+            "airtable_type": "string",
+            "description": "GoCardless subscription ID for interim payment (if created)",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "examples": ["SB0003456789012C", "SB0004567890123D"]
+        },
+        
+        "subscription_start_date": {
+            "field_id": "fldDW6XLXHj56IjNi",
+            "type": "date",
+            "airtable_type": "string",
+            "description": "Start date for ongoing subscription payments in YYYY-MM-DD format",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "format": "YYYY-MM-DD",
+            "examples": ["2025-02-15", "2025-03-01", "2025-01-31"]
+        },
+        
+        "subscription_status": {
+            "field_id": "fld0hPcyLIhA818OP",
+            "type": "text",
+            "airtable_type": "string",
+            "description": "Status of subscription setup",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "enums": ["pending", "active", "failed", "cancelled"],
+            "examples": ["pending", "active", "failed"]
+        },
+        
+        "subscription_error": {
+            "field_id": "fldXGQBVJM1ERhXdH",
+            "type": "text",
+            "airtable_type": "string",
+            "description": "Error message if subscription setup failed",
+            "required": False,
+            "searchable": True,
+            "editable": True,
+            "examples": ["API timeout error", "Invalid mandate", "Insufficient funds"]
         }
     },
     
@@ -377,6 +519,7 @@ REGISTRATIONS_2526_SCHEMA = {
         "player_address": ["player_full_address", "player_house_number", "player_address_line_1", "player_town", "player_city", "player_post_code"],
         "parent_identity": ["parent_first_name", "parent_last_name", "parent_full_name", "parent_relationship_to_player", "registree_role"],
         "parent_address": ["parent_full_address", "parent_house_number", "parent_address_line_1", "parent_town", "parent_city", "parent_post_code"],
+        "payment_info": ["billing_request_id", "preferred_payment_day", "signing_on_fee_amount", "monthly_subscription_amount", "signing_on_fee_paid", "mandate_authorised", "registration_status", "ongoing_subscription_id", "interim_subscription_id", "subscription_start_date", "subscription_status", "subscription_error"],
         "system_fields": ["record_id", "last_modified", "created"]
     },
     

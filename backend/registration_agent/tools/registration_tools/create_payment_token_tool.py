@@ -57,9 +57,13 @@ CREATE_PAYMENT_TOKEN_TOOL = {
             "preferred_payment_day": {
                 "type": "integer",
                 "description": "REQUIRED: Day of month for monthly subscription payments (1-31, or -1 for last day of month). Must be collected from user in routine 29."
+            },
+            "parent_phone": {
+                "type": "string",
+                "description": "REQUIRED: Parent's phone number for SMS payment link. Must be extracted from conversation history (e.g., '07835065013', '0161 123 4567')"
             }
         },
-        "required": ["player_full_name", "age_group", "team_name", "parent_full_name", "preferred_payment_day"]
+        "required": ["player_full_name", "age_group", "team_name", "parent_full_name", "preferred_payment_day", "parent_phone"]
     }
 }
 
@@ -77,6 +81,7 @@ def handle_create_payment_token(**kwargs) -> str:
             - team_name (str): Team name with proper capitalization (e.g., 'Panthers')
             - parent_full_name (str): Parent/guardian full name (required)
             - preferred_payment_day (int): Day of month for monthly payments (1-31 or -1)
+            - parent_phone (str): Parent's phone number for SMS payment link
         
     Returns:
         str: JSON string with payment token creation results
@@ -88,6 +93,7 @@ def handle_create_payment_token(**kwargs) -> str:
         team_name = kwargs.get('team_name', '')
         parent_full_name = kwargs.get('parent_full_name', '')
         preferred_payment_day = kwargs.get('preferred_payment_day')
+        parent_phone = kwargs.get('parent_phone', '')
         
         # Validate inputs
         if not player_full_name or not player_full_name.strip():
@@ -100,6 +106,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
                 "usage_note": "Missing required player name - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
@@ -114,6 +121,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
                 "usage_note": "Missing required age group - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
@@ -128,6 +136,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
                 "usage_note": "Missing required team name - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
@@ -142,6 +151,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
                 "usage_note": "Missing required parent name - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
@@ -156,7 +166,23 @@ def handle_create_payment_token(**kwargs) -> str:
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
                 "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
                 "usage_note": "Missing required payment day - please collect this information first"
+            }
+            return json.dumps(error_result, indent=2)
+        
+        if not parent_phone or not parent_phone.strip():
+            error_result = {
+                "success": False,
+                "message": "Parent phone number is required to create payment token",
+                "billing_request_id": "",
+                "player_full_name": player_full_name,
+                "age_group": age_group,
+                "team_name": team_name,
+                "parent_full_name": parent_full_name,
+                "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
+                "usage_note": "Missing required parent phone - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
         
@@ -171,13 +197,46 @@ def handle_create_payment_token(**kwargs) -> str:
         
         # Add usage guidance based on result
         if result["success"]:
+            # Add parent phone to the result for reference
+            result["parent_phone"] = parent_phone.strip()
+            
             result["usage_note"] = (
                 f"Payment token created successfully for {result['player_full_name']}. "
                 f"Use the billing_request_id to save to database (it serves as the payment token). "
                 f"Monthly payments will be taken on day {result['preferred_payment_day']} of each month "
                 f"{'(last day)' if result['preferred_payment_day'] == -1 else ''}. "
-                f"SMS payment link should be sent to parent for flexible payment timing."
+                f"SMS payment link sent automatically to {parent_phone}."
             )
+            
+            # PROGRAMMATIC SMS TRIGGER: Send SMS automatically when payment token is created
+            try:
+                # Import SMS function for background execution
+                import asyncio
+                from .send_sms_payment_link import send_payment_sms
+                
+                # Extract data for SMS from the successful result
+                billing_request_id = result.get("billing_request_id", "")
+                child_name = result.get("player_full_name", "")
+                parent_phone_clean = parent_phone.strip()
+                
+                print(f"🚀 PROGRAMMATIC SMS TRIGGER: Sending SMS for billing_request_id={billing_request_id}")
+                print(f"📱 SMS details: child={child_name}, phone={parent_phone_clean}")
+                
+                # Send SMS asynchronously (non-blocking)
+                try:
+                    # Create async task to send SMS in background
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(send_payment_sms(billing_request_id, parent_phone_clean, child_name))
+                    print("✅ SMS task created successfully")
+                except RuntimeError:
+                    # If no event loop is running, run the SMS function directly
+                    asyncio.run(send_payment_sms(billing_request_id, parent_phone_clean, child_name))
+                    print("✅ SMS sent directly (no event loop)")
+                
+            except Exception as sms_error:
+                print(f"⚠️ SMS trigger failed (non-blocking): {sms_error}")
+                # Don't fail the payment token creation if SMS fails
+                result["sms_error"] = str(sms_error)
         else:
             result["usage_note"] = (
                 f"Payment token creation failed: {result['message']}. "
@@ -196,6 +255,7 @@ def handle_create_payment_token(**kwargs) -> str:
             "team_name": kwargs.get('team_name', ''),
             "parent_full_name": kwargs.get('parent_full_name', ''),
             "preferred_payment_day": kwargs.get('preferred_payment_day'),
+            "parent_phone": kwargs.get('parent_phone', ''),
             "usage_note": "Tool error occurred - please try again or contact support"
         }
         return json.dumps(error_result, indent=2) 

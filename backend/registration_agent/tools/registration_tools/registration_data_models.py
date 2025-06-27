@@ -265,6 +265,21 @@ class RegistrationDataContract(BaseModel):
     )
     
     # ============================================================================
+    # PAYMENT AMOUNTS (CONVERTED FROM PENCE TO POUNDS)
+    # ============================================================================
+    signing_on_fee_amount: Optional[float] = Field(
+        None,
+        ge=0,
+        description="One-off signing fee amount in pounds (converted from pence by create_payment_token function)"
+    )
+    
+    monthly_subscription_amount: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Monthly subscription amount in pounds (converted from pence by create_payment_token function)"
+    )
+    
+    # ============================================================================
     # PAYMENT STATUS FIELDS (DEFAULTS)
     # ============================================================================
     signing_on_fee_paid: Literal["Y", "N"] = Field(

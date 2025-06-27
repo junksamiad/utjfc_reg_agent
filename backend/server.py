@@ -1,9 +1,10 @@
 # This file will be populated with the content of simple_test_backend/main.py
 # The old simple_test_backend/main.py will be deleted by a subsequent operation. 
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import json
 from typing import Optional
 import uvicorn
 import json
@@ -105,6 +106,18 @@ async def startup_event():
     # prime_default_session_with_system_prompt("You are a helpful AI assistant.")
     print(f"Server started. Default session ID for chat history is: {DEFAULT_SESSION_ID}")
     print(f"Using Agent: {default_agent.name} with model {default_agent.model}")
+    
+    # Start SMS metrics background processor
+    try:
+        from registration_agent.tools.registration_tools.sms_metrics_queue import start_sms_processor
+        import asyncio
+        
+        # Start the SMS processor in the background (every 30 seconds)
+        asyncio.create_task(start_sms_processor(interval_seconds=30))
+        print("🚀 SMS metrics background processor started")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to start SMS metrics processor: {e}")
 
 @app.get("/")
 async def read_root():
@@ -966,6 +979,435 @@ async def switch_agent_mode(request: AgentModeRequest):
         }
     else:
         return {"error": "Invalid mode. Use 'local' or 'mcp'"}
+
+@app.get("/reg_setup/{billing_request_id}")
+async def handle_payment_link(billing_request_id: str):
+    """
+    Payment link handler for SMS payment links
+    
+    This endpoint is called when parents click the payment link in their SMS.
+    It looks up the registration, validates payment status, and redirects to GoCardless.
+    """
+    print(f"--- Payment link accessed: billing_request_id={billing_request_id} ---")
+    
+    try:
+        # Import required modules
+        from pyairtable import Api
+        from dotenv import load_dotenv
+        import os
+        
+        load_dotenv()
+        
+        # Get Airtable configuration
+        BASE_ID = "appBLxf3qmGIBc6ue"
+        TABLE_ID = "tbl1D7hdjVcyHbT8a"
+        AIRTABLE_API_KEY = os.getenv('AIRTABLE_API_KEY')
+        
+        if not AIRTABLE_API_KEY:
+            print("--- Payment link error: Missing Airtable API key ---")
+            return {"error": "Configuration error - please contact support"}
+        
+        # 1. Lookup registration by billing_request_id
+        api = Api(AIRTABLE_API_KEY)
+        table = api.table(BASE_ID, TABLE_ID)
+        
+        # Search for registration with this billing request ID
+        records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
+        
+        if not records:
+            print(f"--- Payment link error: No registration found for billing_request_id={billing_request_id} ---")
+            return {"error": "Invalid payment link - registration not found"}
+        
+        registration = records[0]['fields']
+        registration_id = records[0]['id']
+        
+        print(f"--- Payment link found registration: ID={registration_id}, Player={registration.get('player_first_name', 'Unknown')} {registration.get('player_last_name', '')} ---")
+        
+        # 2. Check if already paid (Airtable stores as 'Y'/'N' strings)
+        signing_fee_paid = registration.get('signing_on_fee_paid', 'N') == 'Y'
+        mandate_authorized = registration.get('mandate_authorised', 'N') == 'Y'
+        
+        print(f"--- Payment status check: signing_fee_paid={signing_fee_paid}, mandate_authorized={mandate_authorized} ---")
+        
+        if signing_fee_paid and mandate_authorized:
+            print(f"--- Payment already completed for registration {registration_id} ---")
+            return {
+                "message": "Payment already completed",
+                "player_name": f"{registration.get('player_first_name', '')} {registration.get('player_last_name', '')}",
+                "status": "already_paid"
+            }
+        
+        # 3. Generate fresh GoCardless authorization URL using existing billing request
+        print(f"--- Generating authorization URL for existing billing_request_id={billing_request_id} ---")
+        
+        try:
+            # Import the create_billing_request_flow function
+            from registration_agent.tools.registration_tools.gocardless_payment import create_billing_request_flow
+            
+            # Extract parent data for prefilling the payment form
+            parent_email = registration.get('parent_email', '')
+            parent_first_name = registration.get('parent_first_name', '')
+            parent_last_name = registration.get('parent_last_name', '')
+            parent_address_line_1 = registration.get('parent_address_line_1', '')
+            parent_city = registration.get('parent_city', '')
+            parent_post_code = registration.get('parent_post_code', '')
+            
+            # Create billing request flow with prefilled data
+            flow_result = create_billing_request_flow(
+                billing_request_id=billing_request_id,
+                parent_email=parent_email,
+                parent_first_name=parent_first_name,
+                parent_last_name=parent_last_name,
+                parent_address_line1=parent_address_line_1,
+                parent_city=parent_city,
+                parent_postcode=parent_post_code
+            )
+            
+            if flow_result.get('success') and flow_result.get('authorization_url'):
+                authorization_url = flow_result['authorization_url']
+                
+                print(f"--- Redirecting to GoCardless authorization URL: {authorization_url} ---")
+                
+                # Return redirect response - this will open in user's browser
+                from fastapi.responses import RedirectResponse
+                return RedirectResponse(url=authorization_url, status_code=302)
+            else:
+                error_msg = flow_result.get('message', 'Failed to generate authorization URL')
+                print(f"--- Authorization URL generation failed: {error_msg} ---")
+                return {"error": f"Payment setup failed: {error_msg}"}
+                
+        except Exception as payment_error:
+            print(f"--- Authorization URL generation exception: {str(payment_error)} ---")
+            return {"error": f"Payment setup error: {str(payment_error)}"}
+            
+    except Exception as e:
+        print(f"--- Payment link handler exception: {str(e)} ---")
+        return {"error": f"Payment link processing failed: {str(e)}"}
+
+@app.get("/webhooks/gocardless/test")
+async def test_webhook_endpoint():
+    """Test endpoint to verify webhook is accessible"""
+    return {"status": "Webhook endpoint is accessible", "timestamp": "2025-01-27"}
+
+@app.post("/webhooks/gocardless")
+async def handle_gocardless_webhook(request: Request):
+    """
+    Handle GoCardless webhook events for payment and mandate completion.
+    
+    Key events we handle:
+    - payment_confirmed: Payment has been confirmed 
+    - mandate_active: Mandate is now active
+    - billing_request_fulfilled: Billing request completed
+    """
+    print("--- GoCardless webhook received ---")
+    
+    try:
+        # Get the raw body for signature verification
+        body = await request.body()
+        webhook_signature = request.headers.get("webhook-signature")
+        
+        print(f"Webhook signature: {webhook_signature}")
+        
+        # TODO: Add proper signature verification when we have the secret
+        # For now, we'll skip verification during development
+        webhook_secret = os.getenv('GOCARDLESS_WEBHOOK_SECRET')
+        if webhook_secret and webhook_signature:
+            # Verify webhook signature
+            if not verify_webhook_signature(body, webhook_signature, webhook_secret):
+                print("Invalid webhook signature")
+                return {"error": "Invalid signature"}, 401
+        else:
+            print("⚠️  Webhook signature verification disabled (development mode)")
+            
+        # Parse the webhook payload
+        webhook_data = json.loads(body.decode('utf-8'))
+        
+        print(f"Webhook events count: {len(webhook_data.get('events', []))}")
+        
+        # Process each event
+        for event in webhook_data.get('events', []):
+            await process_gocardless_event(event)
+            
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"Error processing GoCardless webhook: {str(e)}")
+        return {"error": "Webhook processing failed"}, 500
+
+def verify_webhook_signature(body: bytes, signature: str, secret: str) -> bool:
+    """Verify GoCardless webhook signature"""
+    import hmac
+    import hashlib
+    
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(signature, expected_signature)
+
+async def process_gocardless_event(event: dict):
+    """Process individual GoCardless webhook event"""
+    
+    event_id = event.get('id')
+    resource_type = event.get('resource_type')
+    action = event.get('action')
+    
+    print(f"Processing event {event_id}: {resource_type}.{action}")
+    
+    # Only process events we care about
+    if resource_type == 'payments' and action == 'confirmed':
+        await handle_payment_confirmed(event)
+    elif resource_type == 'mandates' and action == 'active':
+        await handle_mandate_active(event)
+    elif resource_type == 'billing_requests' and action == 'fulfilled':
+        await handle_billing_request_fulfilled(event)
+    elif resource_type == 'payments' and action == 'paid_out':
+        print(f"💰 Payment paid out: {event.get('links', {}).get('payment')} (informational only)")
+    else:
+        print(f"Ignoring event: {resource_type}.{action}")
+
+async def handle_payment_confirmed(event: dict):
+    """Handle payment confirmation - set signing_on_fee_paid = 'Y'"""
+    
+    payment_id = event.get('links', {}).get('payment')
+    billing_request_id = event.get('links', {}).get('billing_request')
+    
+    if not payment_id:
+        print("No payment ID in event")
+        return
+        
+    print(f"💳 Payment confirmed: {payment_id}")
+    
+    # Import required modules
+    from pyairtable import Api
+    import os
+    
+    try:
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        # Find registration by billing_request_id if available
+        if billing_request_id:
+            records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
+            
+            if records:
+                record = records[0]
+                record_id = record['id']
+                player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+                
+                # Update payment status and check if we should update registration status
+                current_mandate_status = record['fields'].get('mandate_authorised', 'N')
+                
+                update_data = {'signing_on_fee_paid': 'Y'}
+                
+                # If mandate is NOT authorized, set status to incomplete (payment without mandate)
+                if current_mandate_status != 'Y':
+                    update_data['registration_status'] = 'incomplete'
+                    print(f"⚠️  Payment confirmed but no mandate - setting status to 'incomplete'")
+                
+                table.update(record_id, update_data)
+                
+                print(f"✅ Payment confirmed for {player_name} - updated signing_on_fee_paid = 'Y'")
+                if update_data.get('registration_status') == 'incomplete':
+                    print(f"🚨 WARNING: {player_name} paid fee but NO MANDATE - flagged for manual follow-up")
+            else:
+                print(f"❌ No registration found for billing_request_id: {billing_request_id}")
+        else:
+            print(f"⚠️  No billing_request_id in payment event - cannot link to registration")
+        
+    except Exception as e:
+        print(f"Error updating payment status: {str(e)}")
+
+async def handle_mandate_active(event: dict):
+    """Handle mandate activation - set mandate_authorised = 'Y' and activate subscription"""
+    
+    mandate_id = event.get('links', {}).get('mandate')
+    billing_request_id = event.get('links', {}).get('billing_request')
+    
+    if not mandate_id:
+        print("No mandate ID in event")
+        return
+        
+    print(f"📋 Mandate active: {mandate_id}")
+    
+    # Import required modules  
+    from pyairtable import Api
+    import os
+    
+    try:
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        # Find registration by billing_request_id if available
+        if billing_request_id:
+            records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
+            
+            if records:
+                record = records[0]
+                record_id = record['id']
+                fields = record['fields']
+                player_name = f"{fields.get('player_first_name', 'Unknown')} {fields.get('player_last_name', '')}"
+                
+                # Update mandate status and check if we should update registration status
+                current_payment_status = fields.get('signing_on_fee_paid', 'N')
+                current_reg_status = fields.get('registration_status', 'pending_payment')
+                
+                update_data = {'mandate_authorised': 'Y'}
+                
+                # If payment is already confirmed and status is incomplete, we can now mark as active
+                if current_payment_status == 'Y' and current_reg_status == 'incomplete':
+                    update_data['registration_status'] = 'active'
+                    print(f"✅ Late mandate authorization - registration now active!")
+                
+                # Activate GoCardless subscription using the mandate
+                print(f"🔄 Activating subscription for {player_name}...")
+                
+                # Import the subscription activation function
+                from registration_agent.tools.registration_tools.gocardless_payment import activate_subscription
+                
+                # Activate the subscription (function now pulls all data from record)
+                subscription_result = activate_subscription(
+                    mandate_id=mandate_id,
+                    registration_record=record
+                )
+                
+                if subscription_result.get('success'):
+                    ongoing_subscription_id = subscription_result.get('ongoing_subscription_id')
+                    interim_subscription_id = subscription_result.get('interim_subscription_id')
+                    start_date = subscription_result.get('start_date')
+                    interim_created = subscription_result.get('interim_created', False)
+                    
+                    # Store subscription details in database
+                    update_data['ongoing_subscription_id'] = ongoing_subscription_id
+                    update_data['subscription_start_date'] = start_date
+                    update_data['subscription_status'] = 'active'
+                    
+                    if interim_created and interim_subscription_id:
+                        update_data['interim_subscription_id'] = interim_subscription_id
+                    
+                    print(f"✅ Subscription activated for {player_name}")
+                    print(f"   - Ongoing Subscription ID: {ongoing_subscription_id}")
+                    print(f"   - Start Date: {start_date}")
+                    if interim_created:
+                        print(f"   - Interim Subscription ID: {interim_subscription_id}")
+                        print(f"   - Interim payment created for immediate month")
+                    
+                    monthly_amount = fields.get('monthly_subscription_amount', 27.5)
+                    print(f"   - Monthly Amount: £{monthly_amount:.2f}")
+                else:
+                    print(f"❌ Failed to activate subscription for {player_name}: {subscription_result.get('message')}")
+                    # Don't fail the mandate update if subscription fails - log for manual follow-up
+                    update_data['subscription_status'] = 'failed'
+                    update_data['subscription_error'] = subscription_result.get('message', 'Unknown error')
+                
+                # Update the database with all changes
+                table.update(record_id, update_data)
+                
+                print(f"✅ Mandate active for {player_name} - updated mandate_authorised = 'Y'")
+                
+                # Send completion SMS if we just activated the registration
+                if update_data.get('registration_status') == 'active':
+                    await send_payment_confirmation_sms(fields)
+                    print(f"📱 Sent completion SMS for late mandate authorization")
+            else:
+                print(f"❌ No registration found for billing_request_id: {billing_request_id}")
+        else:
+            print(f"⚠️  No billing_request_id in mandate event - cannot link to registration")
+        
+    except Exception as e:
+        print(f"Error updating mandate status: {str(e)}")
+
+async def handle_billing_request_fulfilled(event: dict):
+    """Handle billing request fulfillment - final completion step"""
+    
+    billing_request_id = event.get('links', {}).get('billing_request')
+    if not billing_request_id:
+        print("No billing request ID in event")
+        return
+        
+    print(f"🏆 Billing request fulfilled: {billing_request_id}")
+    
+    # Import required modules
+    from pyairtable import Api
+    import os
+    
+    try:
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        # Find registration by billing_request_id
+        records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
+        
+        if records:
+            record = records[0]
+            record_id = record['id']
+            player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+            
+            print(f"Found registration for {player_name} (Record: {record_id})")
+            
+            # Check current status - billing request fulfilled means BOTH payment and mandate succeeded
+            current_payment_status = record['fields'].get('signing_on_fee_paid', 'N')
+            current_mandate_status = record['fields'].get('mandate_authorised', 'N')
+            current_reg_status = record['fields'].get('registration_status', 'pending_payment')
+            
+            # This event means both payment AND mandate are successful
+            update_data = {
+                'signing_on_fee_paid': 'Y',
+                'mandate_authorised': 'Y',
+                'registration_status': 'active'
+            }
+            
+            table.update(record_id, update_data)
+            
+            print(f"✅ Registration completed for {player_name} (billing request fulfilled)")
+            print(f"   - Both payment and mandate confirmed")
+            print(f"   - registration_status: active")
+            
+            # Send confirmation SMS to parent
+            await send_payment_confirmation_sms(record['fields'])
+            
+        else:
+            print(f"❌ No registration found for billing_request_id: {billing_request_id}")
+            
+    except Exception as e:
+        print(f"Error processing billing request fulfillment: {str(e)}")
+
+async def send_payment_confirmation_sms(registration_data: dict):
+    """Send SMS confirmation when payment is completed"""
+    
+    try:
+        parent_phone = registration_data.get('parent_phone')
+        player_name = f"{registration_data.get('player_first_name', '')} {registration_data.get('player_last_name', '')}"
+        
+        if not parent_phone:
+            print("No parent phone number - skipping confirmation SMS")
+            return
+            
+        # Format phone number for SMS
+        if parent_phone.startswith('0'):
+            formatted_phone = '+44' + parent_phone[1:]
+        elif not parent_phone.startswith('+'):
+            formatted_phone = '+44' + parent_phone
+        else:
+            formatted_phone = parent_phone
+            
+        # Create confirmation message
+        message = f"✅ Payment confirmed! {player_name}'s registration for Urmston Town JFC is now complete. Direct debit set up for monthly fees. See you on the pitch! 🏆"
+        
+        # Send SMS using existing SMS function
+        from registration_agent.tools.registration_tools.send_sms_payment_link import send_sms
+        
+        sms_result = send_sms(formatted_phone, message)
+        
+        if sms_result.get('success'):
+            print(f"✅ Confirmation SMS sent to {formatted_phone}")
+        else:
+            print(f"❌ Failed to send confirmation SMS: {sms_result.get('error', 'Unknown error')}")
+            
+    except Exception as e:
+        print(f"Error sending confirmation SMS: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 

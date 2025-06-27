@@ -20,8 +20,8 @@ def create_payment_token(
     age_group: str,
     parent_full_name: str,
     preferred_payment_day: int,
-    signing_fee_amount: int = 100,     # £1.00 in pence (test amount - change to 4500 for production)
-    monthly_amount: int = 100,         # £1.00 in pence (test amount - change to 2750 for production)
+    signing_fee_amount: int = 4500,   # £45.00 in pence (production amount)
+    monthly_amount: int = 2750,       # £27.50 in pence (production amount)
     gocardless_api_key: Optional[str] = None
 ) -> Dict:
     """
@@ -37,8 +37,8 @@ def create_payment_token(
         age_group (str): Age group (e.g., "U16", "U14", etc.)
         parent_full_name (str): Full name of parent/guardian
         preferred_payment_day (int): Day of month for monthly payments (1-31, or -1 for last day)
-        signing_fee_amount (int): One-off signing fee in pence (default: 100 = £1.00 for testing)
-        monthly_amount (int): Monthly subscription in pence (default: 100 = £1.00 for testing)
+        signing_fee_amount (int): One-off signing fee in pence (default: 4500 = £45.00 for production)
+        monthly_amount (int): Monthly subscription in pence (default: 2750 = £27.50 for production)
         gocardless_api_key (str, optional): GoCardless API key. If not provided, will try to get from env
         
     Returns:
@@ -199,7 +199,11 @@ def create_payment_token(
                 "team": team,
                 "age_group": age_group,
                 "parent_full_name": parent_full_name,
-                "preferred_payment_day": preferred_payment_day
+                "preferred_payment_day": preferred_payment_day,
+                "signing_fee_amount_pence": signing_fee_amount,
+                "monthly_amount_pence": monthly_amount,
+                "signing_fee_amount_pounds": round(signing_fee_amount / 100, 2),
+                "monthly_amount_pounds": round(monthly_amount / 100, 2)
             }
         
         return {
@@ -210,7 +214,11 @@ def create_payment_token(
             "team": team,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
-            "preferred_payment_day": preferred_payment_day
+            "preferred_payment_day": preferred_payment_day,
+            "signing_fee_amount_pence": signing_fee_amount,
+            "monthly_amount_pence": monthly_amount,
+            "signing_fee_amount_pounds": round(signing_fee_amount / 100, 2),
+            "monthly_amount_pounds": round(monthly_amount / 100, 2)
         }
         
     except Exception as e:
@@ -231,7 +239,11 @@ def create_payment_token(
             "team": team,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
-            "preferred_payment_day": preferred_payment_day
+            "preferred_payment_day": preferred_payment_day,
+            "signing_fee_amount_pence": signing_fee_amount,
+            "monthly_amount_pence": monthly_amount,
+            "signing_fee_amount_pounds": round(signing_fee_amount / 100, 2),
+            "monthly_amount_pounds": round(monthly_amount / 100, 2)
         }
 
 

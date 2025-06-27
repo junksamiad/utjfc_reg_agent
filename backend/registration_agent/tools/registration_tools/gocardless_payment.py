@@ -6,6 +6,7 @@ import requests
 from typing import Dict, Optional
 import json
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 # Load environment variables
 load_dotenv()
@@ -325,6 +326,330 @@ def create_billing_request_flow(
             "authorization_url": "",
             "billing_request_id": billing_request_id,
             "flow_data": {}
+        }
+
+
+def activate_subscription(
+    mandate_id: str,
+    registration_record: Dict,
+    gocardless_api_key: Optional[str] = None
+) -> Dict:
+    """
+    Activate a GoCardless subscription after mandate authorization.
+    
+    This should be called from the mandate_active webhook to set up the monthly
+    subscription payments using the authorized mandate. Handles smart start date
+    logic based on GoCardless timing requirements.
+    
+    GoCardless Timing Requirements:
+    - 3 days advance notice (handled automatically by GoCardless)
+    - Payment submission must be 2 business days before collection date
+    - Minimum 3-day buffer used to ensure compliance
+    
+    Args:
+        mandate_id (str): GoCardless mandate ID from webhook
+        registration_record (dict): Complete registration record from database
+        gocardless_api_key (str, optional): GoCardless API key. If not provided, will try to get from env
+        
+    Returns:
+        dict: Result with:
+            - success (bool): Whether the subscription(s) were created successfully
+            - message (str): Success message or error description
+            - ongoing_subscription_id (str): Main subscription ID if successful
+            - interim_subscription_id (str): Interim subscription ID if created
+            - subscription_data (dict): Full response data if successful
+            - player_full_name (str): Player name used in request
+            - start_date (str): Calculated ongoing subscription start date
+            - interim_created (bool): Whether an interim subscription was needed
+    """
+    
+    # Validate inputs
+    if not mandate_id or not mandate_id.strip():
+        return {
+            "success": False,
+            "message": "Mandate ID is required",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": "",
+            "start_date": "",
+            "interim_created": False
+        }
+    
+    if not registration_record or not isinstance(registration_record, dict):
+        return {
+            "success": False,
+            "message": "Registration record is required",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": "",
+            "start_date": "",
+            "interim_created": False
+        }
+    
+    # Extract data from registration record
+    fields = registration_record.get('fields', {})
+    player_first_name = fields.get('player_first_name', '')
+    player_last_name = fields.get('player_last_name', '')
+    player_full_name = f"{player_first_name} {player_last_name}".strip()
+    team = fields.get('team', '')
+    age_group = fields.get('age_group', '')
+    preferred_payment_day = fields.get('preferred_payment_day', 15)
+    monthly_amount = fields.get('monthly_subscription_amount', 27.5)  # In pounds
+    
+    # Convert monthly amount from pounds to pence
+    monthly_amount_pence = int(monthly_amount * 100) if monthly_amount else 2750
+    
+    # Validate extracted data
+    if not player_full_name:
+        return {
+            "success": False,
+            "message": "Player name not found in registration record",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": player_full_name,
+            "start_date": "",
+            "interim_created": False
+        }
+    
+    # Validate payment day
+    if preferred_payment_day != -1 and (preferred_payment_day < 1 or preferred_payment_day > 31):
+        return {
+            "success": False,
+            "message": "Invalid preferred payment day in registration record",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": player_full_name,
+            "start_date": "",
+            "interim_created": False
+        }
+    
+    # Get API key
+    if not gocardless_api_key:
+        gocardless_api_key = os.getenv("GOCARDLESS_API_KEY")
+    
+    if not gocardless_api_key:
+        return {
+            "success": False,
+            "message": "GoCardless API key not configured. Subscription activation unavailable.",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": player_full_name,
+            "start_date": "",
+            "interim_created": False
+        }
+    
+    try:
+        # Clean inputs
+        player_name_clean = player_full_name.strip()
+        team_clean = team.strip() if team else ""
+        age_group_clean = age_group.strip() if age_group else ""
+        
+        # Smart subscription start date calculation
+        today = datetime.now()
+        current_month = today.month
+        current_year = today.year
+        
+        # Calculate next occurrence of preferred payment day
+        if preferred_payment_day == -1:
+            # Last day of current month
+            if current_month == 12:
+                next_occurrence = datetime(current_year + 1, 1, 1) - timedelta(days=1)
+            else:
+                next_occurrence = datetime(current_year, current_month + 1, 1) - timedelta(days=1)
+        else:
+            try:
+                # Try preferred day in current month
+                next_occurrence = datetime(current_year, current_month, preferred_payment_day)
+                if next_occurrence <= today:
+                    # Already passed this month, move to next month
+                    if current_month == 12:
+                        next_occurrence = datetime(current_year + 1, 1, preferred_payment_day)
+                    else:
+                        next_occurrence = datetime(current_year, current_month + 1, preferred_payment_day)
+            except ValueError:
+                # Day doesn't exist in current month, try next month
+                if current_month == 12:
+                    try:
+                        next_occurrence = datetime(current_year + 1, 1, preferred_payment_day)
+                    except ValueError:
+                        # Use last day of January
+                        next_occurrence = datetime(current_year + 1, 2, 1) - timedelta(days=1)
+                else:
+                    try:
+                        next_occurrence = datetime(current_year, current_month + 1, preferred_payment_day)
+                    except ValueError:
+                        # Use last day of next month
+                        if current_month + 1 == 12:
+                            next_occurrence = datetime(current_year + 1, 1, 1) - timedelta(days=1)
+                        else:
+                            next_occurrence = datetime(current_year, current_month + 2, 1) - timedelta(days=1)
+        
+        # Check if next occurrence is too soon (within 5 days - safe buffer)
+        days_until_next = (next_occurrence - today).days
+        interim_created = False
+        interim_subscription_id = ""
+        
+        # Smart logic: Don't create interim if we're late in month (after 10th) AND payment is soon
+        # This prevents unfair full-month charges for partial month usage
+        late_in_month = today.day > 10
+        payment_too_soon = days_until_next < 5
+        
+        if payment_too_soon and not late_in_month:
+            print(f"⏰ Next payment day ({next_occurrence.strftime('%Y-%m-%d')}) is too soon ({days_until_next} days). Creating interim subscription...")
+            
+            # Create interim subscription for the interim start month
+            interim_start = today + timedelta(days=5)
+            interim_start_date = interim_start.strftime("%Y-%m-%d")
+            
+            # End date is last day of the interim start month
+            interim_month = interim_start.month
+            interim_year = interim_start.year
+            if interim_month == 12:
+                interim_end_date = datetime(interim_year + 1, 1, 1) - timedelta(days=1)
+            else:
+                interim_end_date = datetime(interim_year, interim_month + 1, 1) - timedelta(days=1)
+            interim_end_date_str = interim_end_date.strftime("%Y-%m-%d")
+            
+            # Create interim subscription payload
+            interim_payload = {
+                "subscriptions": {
+                    "amount": str(monthly_amount_pence),
+                    "currency": "GBP",
+                    "name": f"Urmston Town Interim Payment - {player_name_clean}",
+                    "interval_unit": "monthly",
+                    "day_of_month": str(interim_start.day),
+                    "start_date": interim_start_date,
+                    "end_date": interim_end_date_str,
+                    "metadata": {
+                        "player_name": player_name_clean,
+                        "player_team": team_clean,
+                        "subscription_type": "interim"
+                    },
+                    "links": {
+                        "mandate": mandate_id
+                    }
+                }
+            }
+            
+            # Create interim subscription
+            headers = {
+                "Authorization": f"Bearer {gocardless_api_key}",
+                "Content-Type": "application/json",
+                "GoCardless-Version": "2015-07-06"
+            }
+            
+            interim_response = requests.post("https://api.gocardless.com/subscriptions", 
+                                           headers=headers, json=interim_payload, timeout=30)
+            interim_response.raise_for_status()
+            interim_data = interim_response.json()
+            interim_subscription_id = interim_data.get("subscriptions", {}).get("id", "")
+            interim_created = True
+            
+            print(f"✅ Interim subscription created: {interim_subscription_id} ({interim_start_date} to {interim_end_date_str})")
+            
+            # Move ongoing subscription to next month
+            if next_occurrence.month == 12:
+                ongoing_start = datetime(next_occurrence.year + 1, 1, preferred_payment_day)
+            else:
+                ongoing_start = datetime(next_occurrence.year, next_occurrence.month + 1, preferred_payment_day)
+        elif payment_too_soon and late_in_month:
+            # Skip interim due to late month registration - wait for next occurrence to be fair
+            print(f"📅 Late month registration (day {today.day}) - skipping interim to avoid unfair partial month charge")
+            print(f"⏭️  Will start subscription on next occurrence: {next_occurrence.strftime('%Y-%m-%d')}")
+            ongoing_start = next_occurrence
+        else:
+            # No interim needed, use next occurrence
+            ongoing_start = next_occurrence
+        
+        ongoing_start_date = ongoing_start.strftime("%Y-%m-%d")
+        
+        # Create main ongoing subscription
+        ongoing_payload = {
+            "subscriptions": {
+                "amount": str(monthly_amount_pence),
+                "currency": "GBP",
+                "name": "Urmston Town Monthly Subs 24-25",
+                "interval_unit": "monthly",
+                "day_of_month": str(preferred_payment_day) if preferred_payment_day != -1 else "-1",
+                "start_date": ongoing_start_date,
+                "end_date": "2025-06-01",  # End of season
+                "metadata": {
+                    "player_name": player_name_clean,
+                    "player_team": team_clean,
+                    "subscription_type": "ongoing"
+                },
+                "links": {
+                    "mandate": mandate_id
+                }
+            }
+        }
+        
+        # Create ongoing subscription
+        headers = {
+            "Authorization": f"Bearer {gocardless_api_key}",
+            "Content-Type": "application/json",
+            "GoCardless-Version": "2015-07-06"
+        }
+        
+        ongoing_response = requests.post("https://api.gocardless.com/subscriptions", 
+                                       headers=headers, json=ongoing_payload, timeout=30)
+        ongoing_response.raise_for_status()
+        ongoing_data = ongoing_response.json()
+        ongoing_subscription_id = ongoing_data.get("subscriptions", {}).get("id", "")
+        
+        if not ongoing_subscription_id:
+            return {
+                "success": False,
+                "message": "GoCardless ongoing subscription created but no ID returned",
+                "ongoing_subscription_id": "",
+                "interim_subscription_id": interim_subscription_id,
+                "subscription_data": ongoing_data,
+                "player_full_name": player_full_name,
+                "start_date": ongoing_start_date,
+                "interim_created": interim_created
+            }
+        
+        success_message = f"Subscription activated successfully for {player_name_clean} (starts {ongoing_start_date})"
+        if interim_created:
+            success_message += f" with interim payment from {interim_start_date}"
+        
+        return {
+            "success": True,
+            "message": success_message,
+            "ongoing_subscription_id": ongoing_subscription_id,
+            "interim_subscription_id": interim_subscription_id,
+            "subscription_data": ongoing_data,
+            "player_full_name": player_full_name,
+            "start_date": ongoing_start_date,
+            "interim_created": interim_created
+        }
+        
+    except requests.RequestException as e:
+        return {
+            "success": False,
+            "message": f"GoCardless API request failed. Please try again.",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": player_full_name,
+            "start_date": "",
+            "interim_created": False
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Subscription activation error. Please try again.",
+            "ongoing_subscription_id": "",
+            "interim_subscription_id": "",
+            "subscription_data": {},
+            "player_full_name": player_full_name,
+            "start_date": "",
+            "interim_created": False
         }
 
 
