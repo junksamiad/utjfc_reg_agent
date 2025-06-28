@@ -23,7 +23,8 @@ class SendSMSPaymentLinkInput(BaseModel):
     billing_request_id: str = Field(description="GoCardless billing request ID to include in payment link")
     parent_phone: str = Field(description="Parent's phone number (UK format)")
     child_name: str = Field(description="Child's name to personalize the SMS message")
-    registration_id: Optional[str] = Field(default=None, description="Registration ID for database logging")
+    parent_name: str = Field(description="Parent's first name to personalize the SMS greeting")
+    record_id: Optional[str] = Field(default=None, description="Airtable record ID for database logging")
 
 
 def format_uk_phone_for_twilio(phone: str) -> str:
@@ -102,9 +103,9 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
         
         # Create SMS message
         sms_message = (
-            f"Registration complete for {input_data.child_name}! "
-            f"Pay when convenient: {payment_link} "
-            f"Registration not complete until payment made."
+            f"Hi {input_data.parent_name}, it's the registration assistant from Urmston Town Juniors FC! "
+            f"{input_data.child_name}'s registration is complete. Please complete payment to secure your place: "
+            f"{payment_link} Payment required."
         )
         
         # Initialize Twilio client
@@ -125,7 +126,8 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
             'sms_delivery_error': '',
             'twilio_message_sid': message.sid,
             'formatted_phone': formatted_phone,
-            'child_name': input_data.child_name
+            'child_name': input_data.child_name,
+            'parent_name': input_data.parent_name
         }
         
         # Queue SMS metrics for background processing (non-blocking)
@@ -154,6 +156,7 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
             'sms_delivery_status': 'failed',
             'sms_delivery_error': error_msg,
             'child_name': input_data.child_name,
+            'parent_name': input_data.parent_name,
             'formatted_phone': format_uk_phone_for_twilio(input_data.parent_phone)
         }
         
@@ -179,6 +182,7 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
             'sms_delivery_status': 'failed',
             'sms_delivery_error': error_msg,
             'child_name': input_data.child_name,
+            'parent_name': input_data.parent_name,
             'formatted_phone': format_uk_phone_for_twilio(input_data.parent_phone)
         }
         

@@ -4,8 +4,16 @@
 import json
 try:
     from .create_payment_token import create_payment_token
+    print("🔧 DEBUG: Successfully imported create_payment_token from relative import")
+    print(f"   Function object: {create_payment_token}")
+    print(f"   Function module: {create_payment_token.__module__}")
+    print(f"   Function signature: {create_payment_token.__code__.co_varnames[:create_payment_token.__code__.co_argcount]}")
 except ImportError:
     from create_payment_token import create_payment_token
+    print("🔧 DEBUG: Imported create_payment_token from absolute import (fallback)")
+    print(f"   Function object: {create_payment_token}")
+    print(f"   Function module: {create_payment_token.__module__}")
+    print(f"   Function signature: {create_payment_token.__code__.co_varnames[:create_payment_token.__code__.co_argcount]}")
 
 # Tool definition for OpenAI Responses API
 CREATE_PAYMENT_TOKEN_TOOL = {
@@ -187,63 +195,92 @@ def handle_create_payment_token(**kwargs) -> str:
             return json.dumps(error_result, indent=2)
         
         # Create payment token
-        result = create_payment_token(
-            player_full_name=player_full_name.strip(),
-            team=team_name.strip(),
-            age_group=age_group.strip(),
-            parent_full_name=parent_full_name.strip(),
-            preferred_payment_day=int(preferred_payment_day)
-        )
+        print("🔧 DEBUG: About to call create_payment_token function")
+        print(f"   Function signature expects: player_full_name, team_name, age_group, parent_full_name, preferred_payment_day, parent_phone")
+        print(f"   Calling with parameters:")
+        print(f"     player_full_name='{player_full_name.strip()}'")
+        print(f"     team_name='{team_name.strip()}'")
+        print(f"     age_group='{age_group.strip()}'")
+        print(f"     parent_full_name='{parent_full_name.strip()}'")
+        print(f"     preferred_payment_day={int(preferred_payment_day)}")
+        print(f"     parent_phone='{parent_phone.strip()}'")
         
-        # Add usage guidance based on result
-        if result["success"]:
-            # Add parent phone to the result for reference
-            result["parent_phone"] = parent_phone.strip()
-            
-            result["usage_note"] = (
-                f"Payment token created successfully for {result['player_full_name']}. "
-                f"Use the billing_request_id to save to database (it serves as the payment token). "
-                f"Monthly payments will be taken on day {result['preferred_payment_day']} of each month "
-                f"{'(last day)' if result['preferred_payment_day'] == -1 else ''}. "
-                f"SMS payment link sent automatically to {parent_phone}."
+        try:
+            result = create_payment_token(
+                player_full_name=player_full_name.strip(),
+                team_name=team_name.strip(),
+                age_group=age_group.strip(),
+                parent_full_name=parent_full_name.strip(),
+                preferred_payment_day=int(preferred_payment_day),
+                parent_phone=parent_phone.strip(),
+                signing_fee_amount=100,   # £1.00 in pence (test amount)
+                monthly_amount=100        # £1.00 in pence (test amount)
             )
             
-            # PROGRAMMATIC SMS TRIGGER: Send SMS automatically when payment token is created
-            try:
-                # Import SMS function for background execution
-                import asyncio
-                from .send_sms_payment_link import send_payment_sms
+            print("🔧 DEBUG: create_payment_token function call completed successfully")
+            print(f"   Result success: {result.get('success', 'UNKNOWN')}")
+            print(f"   Result message: {result.get('message', 'NO_MESSAGE')}")
+            
+            # Add usage guidance based on result
+            if result["success"]:
+                # Add parent phone to the result for reference
+                result["parent_phone"] = parent_phone.strip()
                 
-                # Extract data for SMS from the successful result
-                billing_request_id = result.get("billing_request_id", "")
-                child_name = result.get("player_full_name", "")
-                parent_phone_clean = parent_phone.strip()
+                result["usage_note"] = (
+                    f"Payment token created successfully for {result['player_full_name']}. "
+                    f"Use the billing_request_id to save to database (it serves as the payment token). "
+                    f"Monthly payments will be taken on day {result['preferred_payment_day']} of each month "
+                    f"{'(last day)' if result['preferred_payment_day'] == -1 else ''}. "
+                    f"SMS payment link sent automatically to {parent_phone}."
+                )
                 
-                print(f"🚀 PROGRAMMATIC SMS TRIGGER: Sending SMS for billing_request_id={billing_request_id}")
-                print(f"📱 SMS details: child={child_name}, phone={parent_phone_clean}")
-                
-                # Send SMS asynchronously (non-blocking)
+                # PROGRAMMATIC SMS TRIGGER: Send SMS automatically when payment token is created
                 try:
-                    # Create async task to send SMS in background
-                    loop = asyncio.get_event_loop()
-                    loop.create_task(send_payment_sms(billing_request_id, parent_phone_clean, child_name))
-                    print("✅ SMS task created successfully")
-                except RuntimeError:
-                    # If no event loop is running, run the SMS function directly
-                    asyncio.run(send_payment_sms(billing_request_id, parent_phone_clean, child_name))
-                    print("✅ SMS sent directly (no event loop)")
-                
-            except Exception as sms_error:
-                print(f"⚠️ SMS trigger failed (non-blocking): {sms_error}")
-                # Don't fail the payment token creation if SMS fails
-                result["sms_error"] = str(sms_error)
-        else:
-            result["usage_note"] = (
-                f"Payment token creation failed: {result['message']}. "
-                f"Please check all required information is collected and try again."
-            )
-        
-        return json.dumps(result, indent=2)
+                    # Import SMS function for background execution
+                    import asyncio
+                    from .send_sms_payment_link import send_payment_sms
+                    
+                    # Extract data for SMS from the successful result
+                    billing_request_id = result.get("billing_request_id", "")
+                    child_name = result.get("player_full_name", "")
+                    parent_name = result.get("parent_full_name", "")
+                    parent_phone_clean = parent_phone.strip()
+                    
+                    print(f"🚀 PROGRAMMATIC SMS TRIGGER: Sending SMS for billing_request_id={billing_request_id}")
+                    print(f"📱 SMS details: child={child_name}, parent={parent_name}, phone={parent_phone_clean}")
+                    
+                    # Send SMS asynchronously (non-blocking)
+                    try:
+                        # Create async task to send SMS in background
+                        loop = asyncio.get_event_loop()
+                        loop.create_task(send_payment_sms(billing_request_id, parent_phone_clean, child_name, parent_name))
+                        print("✅ SMS task created successfully")
+                    except RuntimeError:
+                        # If no event loop is running, run the SMS function directly
+                        asyncio.run(send_payment_sms(billing_request_id, parent_phone_clean, child_name, parent_name))
+                        print("✅ SMS sent directly (no event loop)")
+                    
+                except Exception as sms_error:
+                    print(f"⚠️ SMS trigger failed (non-blocking): {sms_error}")
+                    # Don't fail the payment token creation if SMS fails
+                    result["sms_error"] = str(sms_error)
+            else:
+                result["usage_note"] = (
+                    f"Payment token creation failed: {result['message']}. "
+                    f"Please check all required information is collected and try again."
+                )
+            
+            return json.dumps(result, indent=2)
+            
+        except TypeError as te:
+            print(f"❌ DEBUG: TypeError calling create_payment_token: {te}")
+            print(f"   This suggests a parameter name mismatch")
+            print(f"   Function expects: {create_payment_token.__code__.co_varnames[:create_payment_token.__code__.co_argcount]}")
+            raise te
+        except Exception as e:
+            print(f"❌ DEBUG: Unexpected error calling create_payment_token: {e}")
+            print(f"   Error type: {type(e).__name__}")
+            raise e
         
     except Exception as e:
         error_result = {

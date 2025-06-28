@@ -449,6 +449,52 @@ def activate_subscription(
         team_clean = team.strip() if team else ""
         age_group_clean = age_group.strip() if age_group else ""
         
+        # Get mandate details to determine earliest valid start date
+        headers = {
+            "Authorization": f"Bearer {gocardless_api_key}",
+            "Content-Type": "application/json",
+            "GoCardless-Version": "2015-07-06"
+        }
+        
+        print(f"🔍 Fetching mandate details for {mandate_id}...")
+        mandate_response = requests.get(f"https://api.gocardless.com/mandates/{mandate_id}", 
+                                      headers=headers, timeout=30)
+        
+        if mandate_response.status_code != 200:
+            return {
+                "success": False,
+                "message": f"Failed to fetch mandate details: {mandate_response.status_code} - {mandate_response.text}",
+                "ongoing_subscription_id": "",
+                "interim_subscription_id": "",
+                "subscription_data": {},
+                "player_full_name": player_full_name,
+                "start_date": "",
+                "interim_created": False
+            }
+        
+        mandate_data = mandate_response.json()
+        mandate = mandate_data.get('mandates', {})
+        next_possible_charge_date = mandate.get('next_possible_charge_date')
+        mandate_status = mandate.get('status')
+        
+        print(f"📋 Mandate status: {mandate_status}")
+        print(f"📅 Next possible charge date: {next_possible_charge_date}")
+        
+        if not next_possible_charge_date:
+            return {
+                "success": False,
+                "message": f"Mandate {mandate_id} has no next_possible_charge_date",
+                "ongoing_subscription_id": "",
+                "interim_subscription_id": "",
+                "subscription_data": {},
+                "player_full_name": player_full_name,
+                "start_date": "",
+                "interim_created": False
+            }
+        
+        # Parse mandate's next possible charge date
+        earliest_start_date = datetime.strptime(next_possible_charge_date, "%Y-%m-%d")
+        
         # Smart subscription start date calculation
         today = datetime.now()
         current_month = today.month
@@ -505,6 +551,15 @@ def activate_subscription(
             # Create interim subscription for the interim start month
             interim_start = today + timedelta(days=5)
             interim_start_date = interim_start.strftime("%Y-%m-%d")
+            
+            # Validate that interim start date is not earlier than mandate's next_possible_charge_date
+            if interim_start < earliest_start_date:
+                print(f"⚠️  Calculated interim start date ({interim_start_date}) is earlier than mandate's next possible charge date ({next_possible_charge_date})")
+                print(f"🔧 Adjusting interim start date to use mandate's next possible charge date: {next_possible_charge_date}")
+                interim_start_date = next_possible_charge_date
+                interim_start = datetime.strptime(next_possible_charge_date, "%Y-%m-%d")
+            else:
+                print(f"✅ Calculated interim start date ({interim_start_date}) is valid (on/after {next_possible_charge_date})")
             
             # End date is last day of the interim start month
             interim_month = interim_start.month
@@ -568,6 +623,55 @@ def activate_subscription(
         
         ongoing_start_date = ongoing_start.strftime("%Y-%m-%d")
         
+        # 🏈 SEASON POLICY: No subscription payments until September 2025
+        # For registrations before Aug 28, 2025 - force start date to September 2025
+        cutoff_date = datetime(2025, 8, 28)  # Aug 28, 2025
+        september_policy_applies = today < cutoff_date
+        
+        if september_policy_applies:
+            # Force subscription to start in September 2025 on preferred payment day
+            try:
+                september_start = datetime(2025, 9, preferred_payment_day)
+                print(f"🏈 Season policy: Registration before Aug 28 - forcing start date to September 2025")
+                print(f"   Original calculated start: {ongoing_start_date}")
+                print(f"   September policy start: {september_start.strftime('%Y-%m-%d')}")
+                ongoing_start = september_start
+                ongoing_start_date = september_start.strftime("%Y-%m-%d")
+                
+                # Disable interim subscription for early registrations (they wait until September)
+                if interim_created:
+                    print(f"🚫 Disabling interim subscription due to September policy - all payments start in September")
+                    interim_created = False
+                    interim_subscription_id = ""
+                
+            except ValueError:
+                # Handle case where preferred_payment_day doesn't exist in September
+                if preferred_payment_day == -1:
+                    # Last day of September
+                    september_start = datetime(2025, 10, 1) - timedelta(days=1)
+                else:
+                    # Use last day of September if preferred day doesn't exist
+                    september_start = datetime(2025, 10, 1) - timedelta(days=1)
+                
+                print(f"🏈 Season policy: Preferred day {preferred_payment_day} doesn't exist in September, using {september_start.strftime('%Y-%m-%d')}")
+                ongoing_start = september_start
+                ongoing_start_date = september_start.strftime("%Y-%m-%d")
+                
+                if interim_created:
+                    print(f"🚫 Disabling interim subscription due to September policy")
+                    interim_created = False
+                    interim_subscription_id = ""
+        else:
+            print(f"📅 Registration after Aug 28 - using existing smart logic (start: {ongoing_start_date})")
+        
+        # Validate that our calculated ongoing start date is not earlier than mandate's next_possible_charge_date
+        if ongoing_start < earliest_start_date:
+            print(f"⚠️  Calculated ongoing start date ({ongoing_start_date}) is earlier than mandate's next possible charge date ({next_possible_charge_date})")
+            print(f"🔧 Adjusting ongoing start date to use mandate's next possible charge date: {next_possible_charge_date}")
+            ongoing_start_date = next_possible_charge_date
+        else:
+            print(f"✅ Calculated ongoing start date ({ongoing_start_date}) is valid (on/after {next_possible_charge_date})")
+        
         # Create main ongoing subscription
         ongoing_payload = {
             "subscriptions": {
@@ -577,7 +681,7 @@ def activate_subscription(
                 "interval_unit": "monthly",
                 "day_of_month": str(preferred_payment_day) if preferred_payment_day != -1 else "-1",
                 "start_date": ongoing_start_date,
-                "end_date": "2025-06-01",  # End of season
+                "end_date": "2026-06-01",  # End of season (updated to match test subscription)
                 "metadata": {
                     "player_name": player_name_clean,
                     "player_team": team_clean,
@@ -596,9 +700,35 @@ def activate_subscription(
             "GoCardless-Version": "2015-07-06"
         }
         
+        print(f"🔄 Creating subscription with payload: {ongoing_payload}")
         ongoing_response = requests.post("https://api.gocardless.com/subscriptions", 
                                        headers=headers, json=ongoing_payload, timeout=30)
-        ongoing_response.raise_for_status()
+        print(f"📡 GoCardless response status: {ongoing_response.status_code}")
+        print(f"📡 GoCardless response body: {ongoing_response.text}")
+        
+        if ongoing_response.status_code != 201:
+            error_detail = ongoing_response.text
+            try:
+                error_json = ongoing_response.json()
+                if 'error' in error_json:
+                    error_detail = f"{error_json['error'].get('type', 'unknown')}: {error_json['error'].get('message', 'unknown error')}"
+                    if 'errors' in error_json['error']:
+                        for err in error_json['error']['errors']:
+                            error_detail += f" | {err.get('field', 'unknown')}: {err.get('message', 'unknown error')}"
+            except:
+                pass
+            
+            return {
+                "success": False,
+                "message": f"GoCardless subscription creation failed: {error_detail}",
+                "ongoing_subscription_id": "",
+                "interim_subscription_id": "",
+                "subscription_data": {},
+                "player_full_name": player_full_name,
+                "start_date": ongoing_start_date,
+                "interim_created": False
+            }
+        
         ongoing_data = ongoing_response.json()
         ongoing_subscription_id = ongoing_data.get("subscriptions", {}).get("id", "")
         
@@ -630,9 +760,13 @@ def activate_subscription(
         }
         
     except requests.RequestException as e:
+        error_detail = str(e)
+        if hasattr(e, 'response') and e.response is not None:
+            error_detail += f" | Status: {e.response.status_code} | Body: {e.response.text}"
+        
         return {
             "success": False,
-            "message": f"GoCardless API request failed. Please try again.",
+            "message": f"GoCardless API request failed: {error_detail}",
             "ongoing_subscription_id": "",
             "interim_subscription_id": "",
             "subscription_data": {},
@@ -643,7 +777,7 @@ def activate_subscription(
     except Exception as e:
         return {
             "success": False,
-            "message": f"Subscription activation error. Please try again.",
+            "message": f"Subscription activation error: {str(e)}",
             "ongoing_subscription_id": "",
             "interim_subscription_id": "",
             "subscription_data": {},

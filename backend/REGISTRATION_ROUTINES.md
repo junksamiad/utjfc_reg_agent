@@ -1,6 +1,6 @@
 # UTJFC Registration Routines
 
-*Current Status: Complete Age-Based Registration Flow (Routines 1-29)*
+*Current Status: Complete Registration Flow (Routines 1-35)*
 
 ---
 
@@ -11,7 +11,7 @@
 2. Validate that it contains only letters, apostrophes, hyphens, and spaces - convert any curly apostrophes (', ', etc.) to straight apostrophes (')
 3. Ensure it's at least 2 words long and not just single letters
 4. If invalid format or too short, set `routine_number = 1` and ask for clarification but do not mention validation checks
-5. If valid, set `routine_number = 2` and ask for their child's first and last name
+5. If valid, set `routine_number = 2` and referring to the parent by FIRST NAME only, ask for their child's first and last name
 
 ---
 
@@ -242,7 +242,7 @@
 **Task**: Your current task is to: 
 1. Look through the conversation history for age group information (look for 'Age group: U##' in system messages)
 2. **If age group is U16 or above**, set `routine_number = 23` and explain that since {child_name} is 16+, you need to take a telephone number and email for them which is different from their parents telephone number and email, then ask if you can start by taking {child_name}'s mobile phone number
-3. **If age group is under U16**, set `routine_number = 28` and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct
+3. **If age group is under U16**, set `routine_number = 28` and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct. When listing the information you have collected, ensure you show the validated data rather than the exact responses they gave. For example, if they said gender = boy, and you validated this as gender = male, then list the value as male.
 
 **🔄 Server Logic**: This routine is triggered by server-side detection and automatically processes age-based routing.
 
@@ -266,7 +266,7 @@
 
 **Task**: Your current task is to: 
 1. Take {child_name}'s email address
-2. Validate it has proper email format (contains @ and domain)
+2. Validate it has proper email format (contains @ and domain) and is not the same as the parent's email address
 3. If invalid email format, set `routine_number = 24` and ask for a valid email address for {child_name}
 4. **If valid email, set `routine_number = 28` and thank them for all the information they have given you so far, list all the info you have collected and ask them to confirm all the details are correct**
 
@@ -274,7 +274,7 @@
 
 ### **Routines 25-27: UNUSED**
 
-**Status**: These routines are not used in the current flow (emergency contact collection removed).
+**Status**: These routines are not used in the current flow.
 
 ---
 
@@ -285,7 +285,7 @@
 **Task**: Your current task is to: 
 1. Take their response about whether all the information is correct
 2. If they say No or want to make changes, set `routine_number = 28`, ask what needs to be corrected and take the new or updated information
-3. If they confirm all information is correct, set `routine_number = 29` and explain that you now need to take a one-off annual signing-on fee of £45, and also setup a Direct Debit monthly subscription fee of £27.50. To do this you will first take some further details and then transfer them to the online GoCardless payment system which will allow them to connect to their online banking app to both make the one-off signing-on payment, and also authorise a Direct Debit mandate for the monthly payment. Advise that the monthly payments run from September this year through to (and including) May next year. If they are happy to proceed, ask what their preferred payment day is that they would like the monthly subscription payment to come out of their account on from September onwards.
+3. If they confirm all information is correct, set `routine_number = 29` and explain that you now need to take a one-off annual signing-on fee of £1, and also setup a Direct Debit monthly subscription fee of £1. To do this you will send them a payment link via SMS, which will allow them to make payment and setup a monthly subscription payment via Direct Debit at their convenience. Advise that the monthly subscription is for September to May only (9 months).
 
 ---
 
@@ -294,35 +294,83 @@
 ### **Routine 29: Payment Day Collection & GoCardless Payment Link**
 
 **Task**: Your current task is to: 
-1. Take their preferred payment day. This can be any day in the month, or the last day of each month
+1. Take their preferred payment day. This can be any day in the month, or the last day of each month. If it's the last day of the month then the value will be recorded as -1 as this is how our GoCardless payment system handles the last day of any month
 2. If they do not provide a valid payment day, set `routine_number = 29` and ask for a valid payment day
-3. If they do provide a valid payment day, call the function `create_signup_payment_link` which will create a GoCardless payment link
-4. Once you have the link, provide this link to the user and advise them as follows. Ask them to click the link which will allow them to make payment and setup their Direct Debit via the GoCardless website. Advise them that this will connect to their online banking and they MUST make and setup payment to be registered. If payment is not made and Direct Debit not setup they WILL NOT be registered. Once they have made payment, tell them to let you know all has been completed in the chat so you can verify payment has been completed and setup correctly.
+3. If they do provide a valid payment day, call the function `create_payment_token` which will create a GoCardless billings_request_id and return payment amounts
+4. Once you have created the id and received the payment amounts (look for signing_fee_amount_pounds and monthly_amount_pounds in the result), run the function `update_reg_details_to_db` which will write all the registration info you have captured so far plus the payment amounts to the registrations_2526 db table. Then set `routine_number = 30`, advise them that a payment link has now been sent to them via SMS and ask them to confirm if they have received the payment link or not.
 
-**🔧 Tool Calling**: This routine uses the `create_signup_payment_link` function to generate GoCardless payment links.
+**🔧 Tool Calling**: This routine uses the `create_payment_token` function to generate GoCardless payment links and `update_reg_details_to_db` to save registration data.
 
 ---
 
-### **Routine 30: Registration Complete**
+### **Routine 30: SMS Payment Link Confirmation & Kit Size Collection**
 
 **Task**: Your current task is to: 
-1. Confirm all registration information is complete including the photo
-2. Inform them about next steps for payment and medical forms
-3. Thank them for completing the registration process
-4. Set `routine_number = 999` to indicate completion
+1. Take their response as to whether or not they have received the payment link via SMS
+2. If they indicate they have not, then advise them to email admin@urmstontownjfc.co.uk and someone will get back to them and assist
+3. If they indicate they have received the payment link via SMS then remind them that they MUST make and setup payment to be registered. Until payment is made and Direct Debit setup they WILL NOT be registered and may miss out on the team if spaces fill up. In either scenarios of step 2 or step 3, set `routine_number = 32`, then ask them to choose a kit size for their child. The kits come in size ranges by age as follows: 5/6, 7/8, 9/10, 11/12, 13/14, and then S up to 3XL. Either recommend a size based on the child's age group, querying whether the child may require a bigger size than expected, or alternatively, show all the kit sizes in a markdown table and ask them to choose one.
 
 ---
 
-## **🎯 Complete Age-Based Flow Summary**
+### **Routine 32: Kit Size Collection**
+
+**Task**: Your current task is to: 
+1. Take their response for the kit size selection
+2. Validate that the response matches one of the valid kit sizes: 5/6, 7/8, 9/10, 11/12, 13/14, S, M, L, XL, 2XL, or 3XL (accept variations like '5-6', '5 to 6', '7-8', '9-10', etc. and normalize them to the correct format with forward slash)
+3. If the response cannot be understood or doesn't match any valid kit size, set `routine_number = 32` and ask them to choose from the available kit sizes, showing the options clearly
+4. If a valid kit size is provided, set `routine_number = 33` and ask them to choose a shirt number for {child_name}. Explain that shirt numbers range from 1 to 25, and ask what number they would prefer for their child. Also advise that if their child is a goalkeeper they will need to choose either number 1 or 12.
+
+---
+
+### **Routine 33: Shirt Number Collection & Availability Check**
+
+**Task**: Your current task is to: 
+1. Take their response for the shirt number selection
+2. Validate that the response is a number between 1 and 25 (accept '1', 'one', 'number 7', etc. and convert to integer)
+3. If the response is not a valid number between 1-25, set `routine_number = 33` and ask them to choose a valid shirt number between 1 and 25
+4. If a valid shirt number is provided, use the function `check_shirt_number_availability` with the team name, age_group (extract both from conversation history), and requested_shirt_number to check if it's available
+5. If the shirt number is already taken, set `routine_number = 33` inform them that number is taken (whilst avoiding exposing the name of the player which has taken shirt number already), then ask them to choose a different number
+6. If the shirt number is available, use the function `update_kit_details_to_db` to write kit details to db, set `routine_number = 34`, confirm kit details saved and explain that next they need to upload a passport-style photo for ID purposes by clicking the + symbol in the chat window and uploading a file.
+
+**🔧 Tool Calling**: This routine uses `check_shirt_number_availability` and `update_kit_details_to_db` functions.
+
+**⚽ Goalkeeper Logic**: Numbers 1 and 12 are automatically assigned as goalkeeper kit type, all other numbers (2-11, 13-25) are assigned as outfield kit type.
+
+---
+
+### **Routine 34: Photo Upload & Validation**
+
+**Task**: Your current task is to: 
+1. Take their uploaded photo
+2. Validate that they have indeed uploaded an image of a junior or youth and that the image is the correct format (.jpg, .png, .heic, .webp) and it meets our requirement of being a passport style photo. Do not be too strict about this though, as it's only used as a proof of ID in a grassroots football league. If the photo is not valid for any reason then set `routine_number = 34` and ask them to upload a valid image providing a reason why you have determined it not to be valid
+3. If a valid image is provided, use the function `upload_photo_to_s3` (adhering to the function schemas by extracting any information you need from the conversation history)
+4. If the `upload_photo_to_s3` returns successfully then use the function `update_photo_link_to_db` to write the link to the db
+5. Once the db write has returned successfully, then set `routine_number = 35`, advise that photo uploaded successfully and registration has been completed pending payment and Direct Debit setup via the GoCardless link they received. If you use any coloured emoji spheres in your response, please only use blue or yellow ones as they reflect the club colours.
+
+**🔧 Tool Calling**: This routine uses `upload_photo_to_s3` and `update_photo_link_to_db` functions.
+
+**🎨 Club Branding**: When celebrating completion, use only blue 🔵 or yellow 🟡 emoji spheres to reflect Urmston Town Juniors FC colors.
+
+---
+
+### **Routine 35: Registration Complete**
+
+**Task**: Your current task is to respond to any query helpfully as the registration has now completed.
+
+**🎉 Final Status**: Registration process is fully complete. Agent can now handle general queries and provide assistance.
+
+---
+
+## **🎯 Complete Flow Summary**
 
 ### **Path A: Under 16 Players (U7-U15)**
 ```
-Routines 1-21 → Routine 22 (Age Detection + Validation Request) → Routine 28-30 (Validation + Photo) → Complete
+Routines 1-21 → Routine 22 (Age Detection + Validation Request) → Routine 28-35 (Payment + Kit + Photo) → Complete
 ```
 
 ### **Path B: 16+ Players (U16-U18)**
 ```
-Routines 1-21 → Routine 22 (Age Detection + Phone Request) → Routines 23-24 (Phone + Email + Validation Request) → Routines 28-30 (Validation + Photo) → Complete
+Routines 1-21 → Routine 22 (Age Detection + Phone Request) → Routines 23-24 (Phone + Email + Validation Request) → Routines 28-35 (Payment + Kit + Photo) → Complete
 ```
 
 ### **Path C: Child Different Address (All Ages)**
@@ -335,9 +383,13 @@ Routines 1-15 → Routine 16 (No) → Routines 18-21 → Routine 22 → Age-base
 ## **Available Validation Tools**
 
 - ✅ `address_lookup` - Used in routines 13 & 19 (Google Places API postcode + house number lookup)
+- ✅ `create_payment_token` - Used in routine 29 (GoCardless billing request creation)
+- ✅ `update_reg_details_to_db` - Used in routine 29 (Save registration data to Airtable)
+- ✅ `check_shirt_number_availability` - Used in routine 33 (Check if shirt number is taken)
+- ✅ `update_kit_details_to_db` - Used in routine 33 (Save kit details to database)
+- ✅ `upload_photo_to_s3` - Used in routine 34 (Upload photo to S3 storage)
+- ✅ `update_photo_link_to_db` - Used in routine 34 (Save photo link to database)
 - 🧠 **Smart Agent Validation** - Used in routines 14 & 20 (Visual address format checking without API calls)
-- 🔧 `postcode_validation` - Available for routines 12 & 18 (if needed for simple postcode validation)
-- ⚠️ `address_validation` - Available but not used in main flow (can cause validation loops)
 
 ## **Key Principles**
 
@@ -346,10 +398,11 @@ Routines 1-15 → Routine 16 (No) → Routines 18-21 → Routine 22 → Age-base
 3. **📧 GDPR Compliance**: Always ask for explicit consent for communications after collecting email (routine 10)
 4. **🚨 Medical Safety Balance**: When serious medical conditions are mentioned, ask one simple question about important practical information. Keep it appropriately scoped - parents remain responsible for their child's medical care
 5. **Smart Address Collection**: Multi-step address process (postcode → house number → Google API lookup → confirmation)
-6. **Function Validation**: Only address lookup and fallback validation use function calls (routines 13, 15)
+6. **Function Validation**: Address lookup, payment processing, kit management, and photo upload use function calls
 7. **Age-Based Routing**: Server-side intelligence automatically routes based on player age group from registration code
 8. **Ask Next Question at End**: Always ask the next question when setting the next routine_number
 9. **One Step at a Time**: Collect one piece of information per conversation turn
 10. **User-Friendly**: Accept variations and normalize responses
 11. **Error Recovery**: Stay on same routine if validation fails, move forward if successful
-12. **Structured Data**: Ensure all collected data is properly formatted for Airtable storage 
+12. **Structured Data**: Ensure all collected data is properly formatted for Airtable storage
+13. **Complete Flow**: Full registration including payment setup, kit selection, and photo upload 

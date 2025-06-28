@@ -694,13 +694,23 @@ async def chat_endpoint(payload: UserPayload):
             team = registration_code['team'].title()
             age_group = registration_code['age_group'].upper()
             
-            welcome_message = f"""🎉 Great news! Your registration code is valid.
+            welcome_message = f"""🎉 **Great news!** Your registration code is valid.
 
-I'm here to help you register your child for the {team} {age_group} team this season.
+I'm here to help you register your child for the **{team} {age_group}** team this season.
 
 The registration process is quick and straightforward. I'll ask you for some basic information about you and your child, and then we'll get you set up.
 
-Can I take your first and last name so I know how to refer to you?"""
+## 📋 Quick Setup Guidelines
+
+Before we begin, please note:
+
+1. **📸 Have a photo ready** - You'll need to upload a passport-style photo of your child from your device to complete registration
+2. **📱 SMS payment link** - You'll receive a payment link via SMS during this process. Please don't close this chat when you get the SMS - you can complete payment anytime after our chat finishes
+3. **⏳ Processing time** - If my responses take a moment, please stay in the chat as I'm working behind the scenes to save your information
+
+---
+
+Ready to get started? **Can I take your first and last name so I know how to refer to you?**"""
             
             print(f"--- Session [{current_session_id}] Generated welcome message for new registration ---")
             
@@ -1238,14 +1248,50 @@ async def handle_payment_confirmed(event: dict):
 async def handle_mandate_active(event: dict):
     """Handle mandate activation - set mandate_authorised = 'Y' and activate subscription"""
     
-    mandate_id = event.get('links', {}).get('mandate')
+    event_mandate_id = event.get('links', {}).get('mandate')
     billing_request_id = event.get('links', {}).get('billing_request')
     
-    if not mandate_id:
+    if not event_mandate_id:
         print("No mandate ID in event")
         return
         
-    print(f"📋 Mandate active: {mandate_id}")
+    print(f"📋 Mandate active (from event): {event_mandate_id}")
+    
+    # Get the correct mandate ID from the billing request instead of the event
+    mandate_id = None
+    if billing_request_id:
+        print(f"🔍 Fetching billing request {billing_request_id} to get correct mandate ID...")
+        
+        import requests
+        import os
+        
+        try:
+            headers = {
+                'Authorization': f'Bearer {os.getenv("GOCARDLESS_API_KEY")}',
+                'Content-Type': 'application/json',
+                'GoCardless-Version': '2015-07-06'
+            }
+            
+            response = requests.get(f'https://api.gocardless.com/billing_requests/{billing_request_id}', 
+                                  headers=headers, timeout=30)
+            
+            if response.status_code == 200:
+                br_data = response.json()
+                mandate_id = br_data.get('billing_requests', {}).get('links', {}).get('mandate_request_mandate')
+                
+                if mandate_id:
+                    print(f"✅ Found correct mandate ID from billing request: {mandate_id}")
+                else:
+                    print(f"❌ No mandate_request_mandate found in billing request")
+                    print(f"📋 Billing request response: {br_data}")
+            else:
+                print(f"❌ Failed to fetch billing request: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"❌ Error fetching billing request: {str(e)}")
+    
+    if not mandate_id:
+        print(f"⚠️  Could not get mandate ID from billing request, falling back to event mandate: {event_mandate_id}")
+        mandate_id = event_mandate_id
     
     # Import required modules  
     from pyairtable import Api

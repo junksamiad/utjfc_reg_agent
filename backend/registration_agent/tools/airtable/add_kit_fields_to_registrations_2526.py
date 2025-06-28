@@ -6,7 +6,7 @@ This script adds the following kit fields:
 - new_kit_required: Boolean Y/N (single select with green/red colors)
 - kit_type_required: Single select - Goalkeeper / Outfield  
 - kit_size: Single select - all the size options (5/6, 7/8, 9/10, 11/12, 13/14, S, M, L, XL, 2XL, 3XL)
-- shirt_number: Single select - 1 to 20
+- shirt_number: Single select - 1 to 25
 
 Run this script once to update the table schema.
 """
@@ -124,7 +124,7 @@ def add_kit_fields():
             }
         },
         
-        # Shirt number (1 to 20)
+        # Shirt number (1 to 25)
         {
             "name": "shirt_number",
             "type": "singleSelect",
@@ -149,9 +149,14 @@ def add_kit_fields():
                     {"name": "17", "color": "redBright"},
                     {"name": "18", "color": "redBright"},
                     {"name": "19", "color": "redBright"},
-                    {"name": "20", "color": "redBright"}
+                    {"name": "20", "color": "redBright"},
+                    {"name": "21", "color": "orangeBright"},
+                    {"name": "22", "color": "orangeBright"},
+                    {"name": "23", "color": "orangeBright"},
+                    {"name": "24", "color": "orangeBright"},
+                    {"name": "25", "color": "orangeBright"}
                 ],
-                "description": "Shirt number chosen by player (1-20)"
+                "description": "Shirt number chosen by player (1-25)"
             }
         }
     ]
@@ -194,7 +199,7 @@ def main():
     print("  • new_kit_required (Y/N)")
     print("  • kit_type_required (Goalkeeper/Outfield)")
     print("  • kit_size (5/6, 7/8, 9/10, 11/12, 13/14, S, M, L, XL, 2XL, 3XL)")
-    print("  • shirt_number (1-20)")
+    print("  • shirt_number (1-25)")
     print()
     
     # Confirm before proceeding

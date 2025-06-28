@@ -329,8 +329,8 @@ class RegistrationDataContract(BaseModel):
     shirt_number: Optional[int] = Field(
         None,
         ge=1,
-        le=20,
-        description="Shirt number chosen by player (1-20) - validated for availability in routine 33"
+        le=25,
+        description="Shirt number chosen by player (1-25) - validated for availability in routine 33"
     )
     
     # ============================================================================

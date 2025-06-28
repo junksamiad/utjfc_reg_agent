@@ -21,8 +21,8 @@ def create_payment_token(
     parent_full_name: str,
     preferred_payment_day: int,
     parent_phone: str,
-    signing_fee_amount: int = 100,    # £1.00 in pence (TEST amount)
-    monthly_amount: int = 100,        # £1.00 in pence (TEST amount)
+    signing_fee_amount: int = 100,    # £1.00 in pence (test amount)
+    monthly_amount: int = 100,        # £1.00 in pence (test amount)
     redirect_uri: str = "https://utjfc.ngrok.app/payment_success",
     gocardless_api_key: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -56,6 +56,18 @@ def create_payment_token(
             - parent_full_name (str): Parent name used in request
             - preferred_payment_day (int): Payment day for monthly subscription
     """
+    
+    # DEBUG: Log function entry and parameters
+    print("🎯 DEBUG: create_payment_token function called")
+    print(f"   Received parameters:")
+    print(f"     player_full_name='{player_full_name}'")
+    print(f"     team_name='{team_name}'")
+    print(f"     age_group='{age_group}'")
+    print(f"     parent_full_name='{parent_full_name}'")
+    print(f"     preferred_payment_day={preferred_payment_day}")
+    print(f"     parent_phone='{parent_phone}'")
+    print(f"     signing_fee_amount={signing_fee_amount}")
+    print(f"     monthly_amount={monthly_amount}")
     
     # Validate inputs
     if not player_full_name or not player_full_name.strip():

@@ -31,11 +31,15 @@ SEND_SMS_PAYMENT_LINK_TOOL = {
                 "type": "string",
                 "description": "Child's name to personalize the SMS message"
             },
-            "registration_id": {
+            "parent_name": {
                 "type": "string",
-                "description": "Optional registration ID from database write for SMS delivery logging"
+                "description": "Parent's first name to personalize the SMS greeting"
+            },
+            "record_id": {
+                "type": "string",
+                "description": "Optional Airtable record ID from update_reg_details_to_db for SMS delivery logging"
             }
         },
-        "required": ["billing_request_id", "parent_phone", "child_name"]
+        "required": ["billing_request_id", "parent_phone", "child_name", "parent_name"]
     }
 } 
