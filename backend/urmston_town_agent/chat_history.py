@@ -1,6 +1,7 @@
 # backend/chat_history.py
 
 _global_chat_histories = {}  # Underscore indicates it's intended for internal use by this module
+_session_context = {}  # Store additional session context data (like registration codes)
 
 DEFAULT_SESSION_ID = "global_session" # Simple default for now, good for single-user testing
 MAX_HISTORY_LENGTH = 40 # Optional: Limit the number of turns to keep in history (total messages / 2)
@@ -52,6 +53,50 @@ def clear_session_history(session_id: str = None):
         print(f"History cleared for session_id: {session_id}")
     else:
         print(f"No history found to clear for session_id: {session_id}")
+    
+    # Also clear session context when clearing history
+    if session_id in _session_context:
+        _session_context[session_id] = {}
+        print(f"Context cleared for session_id: {session_id}")
+
+def set_session_context(session_id: str = None, key: str = None, value: str = None):
+    """
+    Store additional context data for a session (like registration codes).
+    
+    Args:
+        session_id: Session ID to store context for
+        key: Context key (e.g., 'registration_code')
+        value: Context value to store
+    """
+    if session_id is None:
+        session_id = DEFAULT_SESSION_ID
+    
+    if key and value:
+        if session_id not in _session_context:
+            _session_context[session_id] = {}
+        _session_context[session_id][key] = value
+        print(f"--- Session [{session_id}] Context set: {key} = {value} ---")
+    else:
+        print(f"Warning: Key ({key}) or value ({value}) missing for session {session_id}, not setting context.")
+
+def get_session_context(session_id: str = None, key: str = None) -> str:
+    """
+    Retrieve context data for a session.
+    
+    Args:
+        session_id: Session ID to get context from
+        key: Context key to retrieve (e.g., 'registration_code')
+        
+    Returns:
+        str: Context value if found, None if not found
+    """
+    if session_id is None:
+        session_id = DEFAULT_SESSION_ID
+    
+    if key and session_id in _session_context:
+        return _session_context[session_id].get(key)
+    
+    return None
 
 # Example of how to add a system prompt if desired (call this once at server startup for default session)
 # def prime_default_session_with_system_prompt(prompt: str):

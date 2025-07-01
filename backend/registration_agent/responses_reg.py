@@ -401,6 +401,9 @@ def chat_loop_new_registration_1(agent: Agent, input_messages: list, session_id:
         print("Warning: chat_loop_1 called with empty input_messages list.")
         return {"error": "Input messages list cannot be empty"}
 
+    # Set session ID in environment for tools that need it (like update_reg_details_to_db)
+    os.environ['CURRENT_SESSION_ID'] = session_id
+
     try:
         # Prepare parameters for the Responses API call
         api_params = {

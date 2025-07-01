@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Clipboard } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -11,6 +11,7 @@ interface Message {
     content: string;
     agentName?: string;
     isLoading?: boolean;
+    startTime?: number; // Add timestamp for when assistant message started
 }
 
 interface MessageListProps {
@@ -20,6 +21,32 @@ interface MessageListProps {
 
 // Flag to toggle avatar rendering
 const AVATAR_ON = true; // Set to false to hide avatars
+
+// Component for the loading timer
+const LoadingTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
+    const [seconds, setSeconds] = useState(0);
+
+    useEffect(() => {
+        const updateTimer = () => {
+            const elapsed = (Date.now() - startTime) / 1000; // Keep as decimal
+            setSeconds(elapsed);
+        };
+
+        // Update immediately
+        updateTimer();
+
+        // Update every 100ms for smooth millisecond display
+        const interval = setInterval(updateTimer, 100);
+
+        return () => clearInterval(interval);
+    }, [startTime]);
+
+    return (
+        <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+            ({seconds.toFixed(1)}s)
+        </span>
+    );
+};
 
 const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId }) => {
 
@@ -64,7 +91,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                     )}
                                 >
                                     {msg.isLoading && !msg.content ? (
-                                        <span className="animate-pulse text-gray-500 dark:text-gray-400">Assistant thinking...</span>
+                                        <div className="flex items-center">
+                                            <span className="animate-pulse text-gray-500 dark:text-gray-400">
+                                                Assistant working...
+                                            </span>
+                                            {msg.startTime && <LoadingTimer startTime={msg.startTime} />}
+                                        </div>
                                     ) : (
                                         <>
                                             <ReactMarkdown 

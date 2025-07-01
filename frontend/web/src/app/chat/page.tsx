@@ -60,7 +60,8 @@ interface Message {
   role: 'user' | 'assistant'; 
   content: string; // Back to just content
   agentName?: string; 
-  isLoading?: boolean; 
+  isLoading?: boolean;
+  startTime?: number; // Add timestamp for when assistant message started
 }
 
 interface ChatMessageInput {
@@ -113,7 +114,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 role: 'assistant',
                 content: '', // Start empty
                 agentName: action.payload.agentName || 'Assistant',
-                isLoading: true, 
+                isLoading: true,
+                startTime: Date.now(), // Add timestamp when assistant starts
             };
             return {
                 ...state,

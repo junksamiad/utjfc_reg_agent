@@ -104,8 +104,8 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
         # Create SMS message
         sms_message = (
             f"Hi {input_data.parent_name}, it's the registration assistant from Urmston Town Juniors FC! "
-            f"{input_data.child_name}'s registration is complete. Please complete payment to secure your place: "
-            f"{payment_link} Payment required."
+            f"{input_data.child_name}'s registration is almost complete. Please complete your payment and setup monthly subscription to secure your place: "
+            f"{payment_link}"
         )
         
         # Initialize Twilio client

@@ -1,8 +1,10 @@
 # This file will be populated with the content of simple_test_backend/main.py
 # The old simple_test_backend/main.py will be deleted by a subsequent operation. 
 
-from fastapi import FastAPI, UploadFile, File, Form, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, BackgroundTasks
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import json
 from typing import Optional
@@ -10,9 +12,11 @@ import uvicorn
 import json
 import os
 import tempfile
+import asyncio
+from pathlib import Path
 
 from urmston_town_agent.responses import chat_loop_1
-from urmston_town_agent.chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID
+from urmston_town_agent.chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID, set_session_context
 from urmston_town_agent.agents import Agent # Import the Agent class
 
 # Import registration agent components
@@ -594,6 +598,10 @@ async def chat_endpoint(payload: UserPayload):
         route_type = validation_result["route"]
         player_details = validation_result.get("player_details")
         
+        # Store the raw registration code in session context for later retrieval
+        raw_registration_code = payload.user_message.strip()
+        set_session_context(current_session_id, "registration_code", raw_registration_code)
+        
         if route_type == "re_registration":
             print(f"--- Routing to re-registration agent for {registration_code.get('player_name', 'player')} ---")
             if player_details:
@@ -706,7 +714,7 @@ Before we begin, please note:
 
 1. **📸 Have a photo ready** - You'll need to upload a passport-style photo of your child from your device to complete registration
 2. **📱 SMS payment link** - You'll receive a payment link via SMS during this process. Please don't close this chat when you get the SMS - you can complete payment anytime after our chat finishes
-3. **⏳ Processing time** - If my responses take a moment, please stay in the chat as I'm working behind the scenes to save your information
+3. **⏳ Processing time** - If any of my responses feel like they are taking a bit longer than normal, please stay in the chat as I'm working behind the scenes to save your information
 
 ---
 
@@ -1246,7 +1254,7 @@ async def handle_payment_confirmed(event: dict):
         print(f"Error updating payment status: {str(e)}")
 
 async def handle_mandate_active(event: dict):
-    """Handle mandate activation - set mandate_authorised = 'Y' and activate subscription"""
+    """Handle mandate activation - set mandate_authorised = 'Y' only"""
     
     event_mandate_id = event.get('links', {}).get('mandate')
     billing_request_id = event.get('links', {}).get('billing_request')
@@ -1256,42 +1264,7 @@ async def handle_mandate_active(event: dict):
         return
         
     print(f"📋 Mandate active (from event): {event_mandate_id}")
-    
-    # Get the correct mandate ID from the billing request instead of the event
-    mandate_id = None
-    if billing_request_id:
-        print(f"🔍 Fetching billing request {billing_request_id} to get correct mandate ID...")
-        
-        import requests
-        import os
-        
-        try:
-            headers = {
-                'Authorization': f'Bearer {os.getenv("GOCARDLESS_API_KEY")}',
-                'Content-Type': 'application/json',
-                'GoCardless-Version': '2015-07-06'
-            }
-            
-            response = requests.get(f'https://api.gocardless.com/billing_requests/{billing_request_id}', 
-                                  headers=headers, timeout=30)
-            
-            if response.status_code == 200:
-                br_data = response.json()
-                mandate_id = br_data.get('billing_requests', {}).get('links', {}).get('mandate_request_mandate')
-                
-                if mandate_id:
-                    print(f"✅ Found correct mandate ID from billing request: {mandate_id}")
-                else:
-                    print(f"❌ No mandate_request_mandate found in billing request")
-                    print(f"📋 Billing request response: {br_data}")
-            else:
-                print(f"❌ Failed to fetch billing request: {response.status_code} - {response.text}")
-        except Exception as e:
-            print(f"❌ Error fetching billing request: {str(e)}")
-    
-    if not mandate_id:
-        print(f"⚠️  Could not get mandate ID from billing request, falling back to event mandate: {event_mandate_id}")
-        mandate_id = event_mandate_id
+    print(f"ℹ️  Note: Subscription activation will happen in billing_request.fulfilled event")
     
     # Import required modules  
     from pyairtable import Api
@@ -1311,18 +1284,73 @@ async def handle_mandate_active(event: dict):
                 fields = record['fields']
                 player_name = f"{fields.get('player_first_name', 'Unknown')} {fields.get('player_last_name', '')}"
                 
-                # Update mandate status and check if we should update registration status
+                # Update mandate status only - subscription activation moved to billing_request.fulfilled
+                update_data = {'mandate_authorised': 'Y'}
+                
+                # Check if we should update registration status
                 current_payment_status = fields.get('signing_on_fee_paid', 'N')
                 current_reg_status = fields.get('registration_status', 'pending_payment')
-                
-                update_data = {'mandate_authorised': 'Y'}
                 
                 # If payment is already confirmed and status is incomplete, we can now mark as active
                 if current_payment_status == 'Y' and current_reg_status == 'incomplete':
                     update_data['registration_status'] = 'active'
                     print(f"✅ Late mandate authorization - registration now active!")
                 
-                # Activate GoCardless subscription using the mandate
+                table.update(record_id, update_data)
+                print(f"✅ Mandate active for {player_name} - updated mandate_authorised = 'Y'")
+            else:
+                print(f"❌ No registration found for billing_request_id: {billing_request_id}")
+        else:
+            print(f"⚠️  No billing_request_id in mandate event - cannot link to registration")
+        
+    except Exception as e:
+        print(f"Error updating mandate status: {str(e)}")
+
+async def handle_billing_request_fulfilled(event: dict):
+    """Handle billing request fulfillment - final completion step with subscription activation"""
+    
+    billing_request_id = event.get('links', {}).get('billing_request')
+    mandate_id = event.get('links', {}).get('mandate_request_mandate')
+    
+    if not billing_request_id:
+        print("No billing request ID in event")
+        return
+        
+    print(f"🏆 Billing request fulfilled: {billing_request_id}")
+    
+    if mandate_id:
+        print(f"📋 Mandate ID from billing request: {mandate_id}")
+    else:
+        print("⚠️  No mandate_request_mandate in billing request fulfilled event")
+    
+    # Import required modules
+    from pyairtable import Api
+    import os
+    
+    try:
+        api = Api(os.getenv('AIRTABLE_API_KEY'))
+        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+        
+        # Find registration by billing_request_id
+        records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
+        
+        if records:
+            record = records[0]
+            record_id = record['id']
+            fields = record['fields']
+            player_name = f"{fields.get('player_first_name', 'Unknown')} {fields.get('player_last_name', '')}"
+            
+            print(f"Found registration for {player_name} (Record: {record_id})")
+            
+            # This event means both payment AND mandate are successful
+            update_data = {
+                'signing_on_fee_paid': 'Y',
+                'mandate_authorised': 'Y',
+                'registration_status': 'active'
+            }
+            
+            # If we have a mandate ID, activate the subscription
+            if mandate_id:
                 print(f"🔄 Activating subscription for {player_name}...")
                 
                 # Import the subscription activation function
@@ -1344,6 +1372,7 @@ async def handle_mandate_active(event: dict):
                     update_data['ongoing_subscription_id'] = ongoing_subscription_id
                     update_data['subscription_start_date'] = start_date
                     update_data['subscription_status'] = 'active'
+                    update_data['subscription_activated'] = 'Y'
                     
                     if interim_created and interim_subscription_id:
                         update_data['interim_subscription_id'] = interim_subscription_id
@@ -1363,63 +1392,12 @@ async def handle_mandate_active(event: dict):
                     update_data['subscription_status'] = 'failed'
                     update_data['subscription_error'] = subscription_result.get('message', 'Unknown error')
                 
-                # Update the database with all changes
-                table.update(record_id, update_data)
-                
-                print(f"✅ Mandate active for {player_name} - updated mandate_authorised = 'Y'")
-                
-                # Send completion SMS if we just activated the registration
-                if update_data.get('registration_status') == 'active':
-                    await send_payment_confirmation_sms(fields)
-                    print(f"📱 Sent completion SMS for late mandate authorization")
             else:
-                print(f"❌ No registration found for billing_request_id: {billing_request_id}")
-        else:
-            print(f"⚠️  No billing_request_id in mandate event - cannot link to registration")
-        
-    except Exception as e:
-        print(f"Error updating mandate status: {str(e)}")
-
-async def handle_billing_request_fulfilled(event: dict):
-    """Handle billing request fulfillment - final completion step"""
-    
-    billing_request_id = event.get('links', {}).get('billing_request')
-    if not billing_request_id:
-        print("No billing request ID in event")
-        return
-        
-    print(f"🏆 Billing request fulfilled: {billing_request_id}")
-    
-    # Import required modules
-    from pyairtable import Api
-    import os
-    
-    try:
-        api = Api(os.getenv('AIRTABLE_API_KEY'))
-        table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
-        
-        # Find registration by billing_request_id
-        records = table.all(formula=f"{{billing_request_id}} = '{billing_request_id}'")
-        
-        if records:
-            record = records[0]
-            record_id = record['id']
-            player_name = f"{record['fields'].get('player_first_name', 'Unknown')} {record['fields'].get('player_last_name', '')}"
+                print(f"⚠️  No mandate ID available - cannot activate subscription")
+                update_data['subscription_status'] = 'failed'
+                update_data['subscription_error'] = 'No mandate ID available in billing request fulfilled event'
             
-            print(f"Found registration for {player_name} (Record: {record_id})")
-            
-            # Check current status - billing request fulfilled means BOTH payment and mandate succeeded
-            current_payment_status = record['fields'].get('signing_on_fee_paid', 'N')
-            current_mandate_status = record['fields'].get('mandate_authorised', 'N')
-            current_reg_status = record['fields'].get('registration_status', 'pending_payment')
-            
-            # This event means both payment AND mandate are successful
-            update_data = {
-                'signing_on_fee_paid': 'Y',
-                'mandate_authorised': 'Y',
-                'registration_status': 'active'
-            }
-            
+            # Update the database
             table.update(record_id, update_data)
             
             print(f"✅ Registration completed for {player_name} (billing request fulfilled)")
@@ -1427,7 +1405,7 @@ async def handle_billing_request_fulfilled(event: dict):
             print(f"   - registration_status: active")
             
             # Send confirmation SMS to parent
-            await send_payment_confirmation_sms(record['fields'])
+            await send_payment_confirmation_sms(fields)
             
         else:
             print(f"❌ No registration found for billing_request_id: {billing_request_id}")
@@ -1439,7 +1417,7 @@ async def send_payment_confirmation_sms(registration_data: dict):
     """Send SMS confirmation when payment is completed"""
     
     try:
-        parent_phone = registration_data.get('parent_phone')
+        parent_phone = registration_data.get('parent_telephone')
         player_name = f"{registration_data.get('player_first_name', '')} {registration_data.get('player_last_name', '')}"
         
         if not parent_phone:

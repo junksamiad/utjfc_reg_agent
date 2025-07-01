@@ -23,8 +23,9 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
     
     This function:
     1. Receives all individual fields from the AI
-    2. Validates them using our Pydantic model
-    3. Writes to database with clean error handling
+    2. Silently falls back to session context for registration_code if AI missed it
+    3. Validates them using our Pydantic model
+    4. Writes to database with clean error handling
     
     Returns:
         dict: Result with success status, record ID, and registration summary
@@ -33,8 +34,31 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
     print("📝 Starting registration data save process...")
     print(f"📋 Received {len(kwargs)} fields from AI")
     
+    # SILENT FALLBACK: Extract registration_code from session context if AI didn't provide it
+    if not kwargs.get('registration_code'):
+        print("🔍 AI didn't provide registration_code, attempting session context fallback...")
+        try:
+            # Get session ID from environment (set by the calling function)
+            session_id = os.environ.get('CURRENT_SESSION_ID')
+            if session_id:
+                # Import the session context function
+                from urmston_town_agent.chat_history import get_session_context
+                
+                # Try to get registration code from session context
+                session_registration_code = get_session_context(session_id, 'registration_code')
+                if session_registration_code:
+                    kwargs['registration_code'] = session_registration_code.strip()
+                    print(f"   ✅ Successfully retrieved registration_code from session: '{kwargs['registration_code']}'")
+                else:
+                    print("   ⚠️ No registration_code found in session context")
+            else:
+                print("   ⚠️ No CURRENT_SESSION_ID found in environment")
+        except Exception as e:
+            print(f"   ⚠️ Session context fallback failed: {e}")
+            # Continue without registration_code - let Pydantic validation handle the error
+    
     # Log key fields for verification
-    key_fields = ['player_first_name', 'player_last_name', 'team', 'age_group', 'billing_request_id']
+    key_fields = ['player_first_name', 'player_last_name', 'team', 'age_group', 'billing_request_id', 'registration_code']
     for field in key_fields:
         value = kwargs.get(field, 'NOT_PROVIDED')
         print(f"   {field}: '{value}'")
@@ -47,6 +71,7 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
         print(f"   Player: {validated_data.player_first_name} {validated_data.player_last_name}")
         print(f"   Team: {validated_data.team}, Age Group: {validated_data.age_group}")
         print(f"   Billing Request ID: {validated_data.billing_request_id}")
+        print(f"   Registration Code: {validated_data.registration_code}")
         
         # Step 2: Prepare data for Airtable
         print("🔍 Step 2: Preparing data for Airtable...")
@@ -93,12 +118,14 @@ def update_reg_details_to_db_ai_friendly(**kwargs) -> Dict[str, Any]:
             "team": validated_data.team,
             "age_group": validated_data.age_group,
             "registration_status": validated_data.registration_status,
-            "billing_request_id": validated_data.billing_request_id
+            "billing_request_id": validated_data.billing_request_id,
+            "registration_code": validated_data.registration_code
         }
         
         print(f"🎉 Registration completed for {result['player_name']}!")
         print(f"   Record ID: {record_id}")
         print(f"   Billing Request ID: {result['billing_request_id']}")
+        print(f"   Registration Code: {result['registration_code']}")
         
         return result
         
