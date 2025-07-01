@@ -9,7 +9,6 @@ https://utjfc.ngrok.app
 cd /Users/leehayton/Cursor\ Projects/utjfc_reg_agent && cd backend && source .venv/bin/activate && uvicorn server:app --reload --port 8000
 
 *** USE THIS TO START BACKEND ***
-source .venv/bin/activate && OPENAI_API_KEY=$(grep OPENAI_API_KEY .env | cut -d'=' -f2) uvicorn server:app --reload --port 8000
 
 ** cd backend && source .venv/bin/activate && OPENAI_API_KEY=$(grep OPENAI_API_KEY .env | cut -d'=' -f2) uvicorn server:app --reload --port 8000 **
 

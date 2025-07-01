@@ -1,0 +1,51 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Python cache and build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache
+*.egg-info
+build/
+dist/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Local development files
+.env.local
+.env.development
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation and README files
+*.md
+README*
+docs/
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/ 

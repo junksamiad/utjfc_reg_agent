@@ -1,0 +1,61 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Python cache and build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache
+*.egg-info
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local development files
+.env.local
+.env.development
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation and README files
+*.md
+README*
+docs/
+
+# Test files (backend specific)
+test_*.py
+*_test.py
+tests/
+test_address_flow.py
+test_child_address_handling.py
+test_communication_consent.py
+test_medical_issues_enhanced.py
+test_new_routines.py
+test_parent_contact_routines.py
+
+# CLI tools not needed in production
+gc_billing_requests_cli.py
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/

@@ -1,0 +1,30 @@
+# UTJFC Backend Requirements - Combined for Deployment
+# Core FastAPI and server dependencies
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-dotenv==1.1.0
+
+# OpenAI and AI dependencies
+openai==1.81.0
+pydantic==2.11.4
+
+# Database and external services
+pyairtable==2.3.3
+gocardless-pro==3.1.0
+boto3==1.35.90
+twilio==8.5.0
+
+# Validation and utilities
+email-validator==2.1.0
+
+# Image processing (for HEIC conversion)
+pillow==10.1.0
+pillow-heif==0.17.0
+
+# Additional dependencies for production deployment
+python-multipart==0.0.20
+httpx==0.28.1
+
+# Security and CORS
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4 
