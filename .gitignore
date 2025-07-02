@@ -24,6 +24,17 @@ frontend/web/.env.development.local
 frontend/web/.env.test.local
 frontend/web/.env.production.local
 
+# Screenshots and sensitive images
+Screenshot*.png
+Screenshot*.jpg
+Screenshot*.jpeg
+*.env*.png
+*.env*.jpg
+*.env*.jpeg
+.env*.png
+.env*.jpg
+.env*.jpeg
+
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -37,5 +48,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-*.swo # MCP Server environment file
+*.swo
+
+# MCP Server environment file
 mcp_server/.env

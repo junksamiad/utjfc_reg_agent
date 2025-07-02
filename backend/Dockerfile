@@ -7,7 +7,7 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
+ENV PORT=80
 
 # Install system dependencies for image processing and security
 RUN apt-get update \
@@ -35,11 +35,11 @@ COPY . .
 RUN mkdir -p /tmp/uploads
 
 # Expose port
-EXPOSE 8000
+EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:80/health || exit 1
 
 # Run the FastAPI application
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
