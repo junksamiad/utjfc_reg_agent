@@ -1,7 +1,7 @@
 # UTJFC Registration System - Production Deployment Guide
 
-**Version**: 1.0  
-**Date**: July 2, 2025  
+**Version**: 1.1  
+**Date**: January 2025 (Updated from July 2, 2025)  
 **Purpose**: This document provides a complete, step-by-step guide for deploying updates to the production frontend and backend of the UTJFC Registration System. It is designed to be used by developers or AI agents to ensure consistent and safe deployments.
 
 ---
@@ -22,6 +22,30 @@ Before deploying, it is crucial to understand the high-level architecture:
 2.  **AWS Profile**: An AWS credentials profile named `footballclub` must be configured with the necessary permissions for Elastic Beanstalk, S3, and CloudFront. All AWS commands in this guide use this profile.
 3.  **Node.js & npm**: Required for building the frontend application.
 4.  **Workspace Root**: All commands should be run from the root directory of the project repository unless otherwise specified.
+
+### Important: AWS CLI Pager Issue for AI Agents
+
+**Problem**: If you're an AI agent using terminal execution tools, you may encounter errors like:
+```
+head: |: No such file or directory
+head: cat: No such file or directory
+```
+
+This happens because terminal execution tools often set `PAGER="head -n 10000 | cat"`, which AWS CLI misinterprets.
+
+**Solution**: Always use one of these approaches:
+
+1. **Recommended**: Add `--no-cli-pager` to all AWS commands in this guide:
+   ```bash
+   aws --profile footballclub --no-cli-pager <command>
+   ```
+
+2. **Alternative**: Clear the pager for each command:
+   ```bash
+   AWS_PAGER="" aws --profile footballclub <command>
+   ```
+
+All commands in this guide now include `--no-cli-pager` to prevent this issue.
 
 ---
 
@@ -57,7 +81,7 @@ Elastic Beanstalk pulls the application code from a designated S3 bucket.
 1.  **Upload the new version**. Replace `[vX.X.X]` with the same version number used in the previous step.
 
     ```bash
-    aws --profile footballclub s3 cp utjfc-backend-v[vX.X.X].zip s3://elasticbeanstalk-eu-north-1-650251723700-1/
+    aws --profile footballclub s3 cp utjfc-backend-v[vX.X.X].zip s3://elasticbeanstalk-eu-north-1-650251723700-1/ --no-cli-pager
     ```
 
 ### Step 3.3: Create a New Application Version
@@ -70,7 +94,8 @@ Register the uploaded package as a new version in Elastic Beanstalk.
     aws --profile footballclub elasticbeanstalk create-application-version \
       --application-name "utjfc-registration-backend" \
       --version-label "v[vX.X.X]" \
-      --source-bundle S3Bucket="elasticbeanstalk-eu-north-1-650251723700-1",S3Key="[zip-file-name]"
+      --source-bundle S3Bucket="elasticbeanstalk-eu-north-1-650251723700-1",S3Key="[zip-file-name]" \
+      --no-cli-pager
     ```
 
 ### Step 3.4: Deploy to the Production Environment
@@ -82,7 +107,8 @@ Trigger the environment update to pull the new version and deploy it.
     ```bash
     aws --profile footballclub elasticbeanstalk update-environment \
       --environment-name "utjfc-backend-prod-2" \
-      --version-label "v[vX.X.X]"
+      --version-label "v[vX.X.X]" \
+      --no-cli-pager
     ```
 
 ### Step 3.5: Verify the Deployment
@@ -128,7 +154,7 @@ Upload the contents of the `out/` directory to the S3 bucket that serves as the 
 
 1.  **Execute the sync command**:
     ```bash
-    aws --profile footballclub s3 sync out/ s3://utjfc-frontend-chat/ --delete
+    aws --profile footballclub s3 sync out/ s3://utjfc-frontend-chat/ --delete --no-cli-pager
     ```
 
 ### Step 4.3: Invalidate the CloudFront Cache
@@ -139,7 +165,8 @@ To ensure users see the latest version immediately, you must invalidate the Clou
     ```bash
     aws --profile footballclub cloudfront create-invalidation \
       --distribution-id E2WNKV9R9SX5XH \
-      --paths "/*"
+      --paths "/*" \
+      --no-cli-pager
     ```
     *Note: CloudFront invalidations can take several minutes to complete.*
 
@@ -181,4 +208,5 @@ This action will automatically trigger an environment update, which takes a few 
 
 -   **CloudFront Path Rewriting**: A CloudFront Function named `utjfc-api-path-rewrite` is attached to the `/api/*` behavior. It strips the `/api` prefix from the URL before forwarding the request to the backend. The backend application itself does **not** use `/api` in its routes.
 -   **Docker Port**: The `Dockerfile` in the backend **must** expose port `80`. The Elastic Beanstalk Nginx proxy is configured to route traffic to this port.
--   **Deployment Time**: CloudFront and Elastic Beanstalk updates are not instantaneous. Allow 5-15 minutes for changes to fully propagate. 
+-   **Deployment Time**: CloudFront and Elastic Beanstalk updates are not instantaneous. Allow 5-15 minutes for changes to fully propagate.
+-   **AWS CLI Pager**: All commands in this guide include `--no-cli-pager` to prevent issues with AI agents or environments where `PAGER` is set to non-standard values. 

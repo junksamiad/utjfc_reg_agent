@@ -67,7 +67,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                         <div className="flex justify-end" data-msg-id={msg.id}>
                             <div
                                 className={cn(
-                                    "rounded-3xl p-3 prose prose-sm dark:prose-invert break-words max-w-[75%] shadow-sm",
+                                    "rounded-2xl sm:rounded-3xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words max-w-[85%] sm:max-w-[75%] shadow-sm",
                                     'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                                 )}
                             >
@@ -77,16 +77,16 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-start gap-2" data-msg-id={msg.id} key={`assist-grp-${msg.id}`}> 
+                        <div className="flex items-start gap-2 sm:gap-3" data-msg-id={msg.id} key={`assist-grp-${msg.id}`}> 
                             {AVATAR_ON && (
-                                <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0 mt-1">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full overflow-hidden flex-shrink-0 mt-1">
                                     <Image src="/logo.svg" alt="Avatar" width={40} height={40} />
                                 </div>
                             )}
-                            <div className="flex flex-col items-start">
+                            <div className="flex flex-col items-start min-w-0 flex-1">
                                 <div
                                     className={cn(
-                                        "rounded-lg p-3 prose prose-sm dark:prose-invert break-words w-auto",
+                                        "rounded-lg sm:rounded-xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words w-full max-w-none",
                                         'text-gray-900 dark:text-gray-100'
                                     )}
                                 >
@@ -124,11 +124,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                 {!msg.isLoading && msg.content && (
                                     <button
                                         onClick={() => copyToClipboard(msg.content)}
-                                        className="p-1 mt-1 pl-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md"
+                                        className="p-2 mt-1 sm:mt-2 pl-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md touch-manipulation"
                                         aria-label="Copy message"
                                         title="Copy message"
                                     >
-                                        <Clipboard className="h-4 w-4" />
+                                        <Clipboard className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                     </button>
                                 )}
                             </div>

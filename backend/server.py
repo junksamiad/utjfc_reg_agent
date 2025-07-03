@@ -708,9 +708,9 @@ I'm here to help you register your child for the **{team} {age_group}** team thi
 
 The registration process is quick and straightforward. I'll ask you for some basic information about you and your child, and then we'll get you set up.
 
-## 📋 Quick Setup Guidelines
+## 📋 Before We Begin
 
-Before we begin, please note:
+Please note:
 
 1. **📸 Have a photo ready** - You'll need to upload a passport-style photo of your child from your device to complete registration
 2. **📱 SMS payment link** - You'll receive a payment link via SMS during this process. Please don't close this chat when you get the SMS - you can complete payment anytime after our chat finishes
@@ -1649,17 +1649,17 @@ async def handle_subscription_payment_status_change(event: dict):
 def get_subscription_status_field_for_month(month: int, year: int) -> str:
     """Map calendar month/year to subscription status field name"""
     
-    # Season runs September 2024 - May 2025
+    # Season runs September 2025 - May 2026
     month_mapping = {
-        (9, 2024): 'sep_subscription_payment_status',
-        (10, 2024): 'oct_subscription_payment_status',
-        (11, 2024): 'nov_subscription_payment_status',
-        (12, 2024): 'dec_subscription_payment_status',
-        (1, 2025): 'jan_subscription_payment_status',
-        (2, 2025): 'feb_subscription_payment_status',
-        (3, 2025): 'mar_subscription_payment_status',
-        (4, 2025): 'apr_subscription_payment_status',
-        (5, 2025): 'may_subscription_payment_status'
+        (9, 2025): 'sep_subscription_payment_status',
+        (10, 2025): 'oct_subscription_payment_status',
+        (11, 2025): 'nov_subscription_payment_status',
+        (12, 2025): 'dec_subscription_payment_status',
+        (1, 2026): 'jan_subscription_payment_status',
+        (2, 2026): 'feb_subscription_payment_status',
+        (3, 2026): 'mar_subscription_payment_status',
+        (4, 2026): 'apr_subscription_payment_status',
+        (5, 2026): 'may_subscription_payment_status'
     }
     
     return month_mapping.get((month, year))

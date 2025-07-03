@@ -81,4 +81,22 @@
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
   }
+  
+  /* Mobile optimization utilities */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Prevent horizontal scrolling on mobile */
+  html, body {
+    overflow-x: hidden;
+  }
+  
+  /* Improve tap targets on mobile */
+  @media (max-width: 640px) {
+    button, [role="button"], input[type="button"], input[type="submit"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }

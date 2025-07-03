@@ -80,7 +80,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, onRe
                 "w-full transition-all",
                 sticky 
                   ? "fixed bottom-4 left-0 right-0 pb-4 z-10" // Changed bottom-0 to bottom-4
-                  : "mx-auto max-w-3xl" // Keep centered when not sticky
+                  : "mx-auto w-full max-w-4xl" // Keep centered when not sticky, full width on mobile
             )}
         >
              {/* Inner container: Use flex-col for vertical layout */}
@@ -92,7 +92,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, onRe
                  // Apply consistent styling here, center it within the sticky container
                  // Changed to flex-col
                  // Revert to semi-transparent background + blur
-                className="mx-auto flex flex-col max-w-3xl w-full gap-2 p-3 border border-gray-300/50 dark:border-gray-600/50 rounded-3xl bg-white/80 dark:bg-gray-800/80 shadow-lg backdrop-blur-md"
+                className="mx-auto flex flex-col w-full max-w-4xl gap-2 p-3 sm:p-4 border border-gray-300/50 dark:border-gray-600/50 rounded-2xl sm:rounded-3xl bg-white/80 dark:bg-gray-800/80 shadow-lg backdrop-blur-md"
             >
                  {/* Row 1: Textarea */}
                  {/* Use TextareaAutosize component */}
@@ -117,7 +117,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, onRe
                             type="button"
                             onClick={handleFileSelect}
                             title="Upload photo" // Tooltip
-                            className="p-1 mr-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md disabled:opacity-50" // Added mr-1
+                            className="p-2 mr-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md disabled:opacity-50 touch-manipulation" // Added mr-1
                             aria-label="Upload photo"
                             disabled={isLoading}
                         >
@@ -138,7 +138,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, onRe
                             type="button"
                             onClick={onReset} 
                             title="Reset chat" // Tooltip
-                            className="p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md disabled:opacity-50"
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md disabled:opacity-50 touch-manipulation"
                             aria-label="Reset chat"
                             disabled={isLoading} 
                          >

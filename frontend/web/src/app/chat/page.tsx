@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useReducer, useCallback, useRef, useEffect, useState, useMemo } from 'react';
-import { cn } from '@/lib/utils'; // Import the cn utility
 import ChatMessages from './_components/chat-messages'; // Renamed component
 import ChatInput from './_components/chat-input';
 import { ChevronDown, Home, RotateCcw } from 'lucide-react'; // Added RotateCcw Icon for scroll button and Home icon
+import config from '@/config/environment';
 // import { useTypingEffect } from '@/hooks/useTypingEffect'; // Remove hook import
 
 // --- Helper function to generate and manage session ID ---
@@ -64,10 +64,7 @@ interface Message {
   startTime?: number; // Add timestamp for when assistant message started
 }
 
-interface ChatMessageInput {
-  role: string;
-  content: string;
-}
+
 
 // --- Reducer Logic (Revert changes) --- 
 
@@ -243,15 +240,11 @@ export default function ChatPage() {
     const orderedMessages = useMemo(() => 
         messageOrder.map(id => messages[id]).filter(Boolean)
     , [messageOrder, messages]);
-    const hasStarted = state.messageOrder.length > 0;
 
     // Ref for the scrollable message container
     const scrollRef = useRef<HTMLDivElement>(null);
-    // State to track if scroll is at the very bottom
-    const [isScrolledToVeryBottom, setIsScrolledToVeryBottom] = useState(true);
     // State to control visibility of scroll to bottom button
     const [showScrollDownButton, setShowScrollDownButton] = useState(false);
-    const [chatInput, setChatInput] = useState(''); // Added for controlled ChatInput
 
     // Refs for scroll behavior management
     const userJustSentRef = useRef(false); 
@@ -264,10 +257,6 @@ export default function ChatPage() {
             const container = scrollRef.current;
             const messageRect = messageElement.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
-            
-            // Calculate how much space the input area takes up (approximately 200px including padding)
-            const inputAreaHeight = 200;
-            const availableHeight = containerRect.height - inputAreaHeight;
             
             // Position the message in the upper portion of available space
             const targetPosition = container.scrollTop + messageRect.top - containerRect.top - 40; // 40px from top
@@ -292,11 +281,9 @@ export default function ChatPage() {
         const el = scrollRef.current;
         if (!el) {
             setShowScrollDownButton(false);
-            setIsScrolledToVeryBottom(true);
             return;
         }
         const isAtAbsoluteBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 10; // Small threshold
-        setIsScrolledToVeryBottom(isAtAbsoluteBottom);
         setShowScrollDownButton(!isAtAbsoluteBottom && el.scrollHeight > el.clientHeight); // Show if not at bottom AND scrollable
     }, []);
 
@@ -364,7 +351,7 @@ export default function ChatPage() {
             
             console.log('Uploading file with session ID:', sessionId);
             
-            const response = await fetch('http://localhost:8000/upload', {
+            const response = await fetch(config.UPLOAD_URL, {
                 method: 'POST',
                 body: formData,
             });
@@ -421,7 +408,12 @@ export default function ChatPage() {
             const agentState = getAgentState();
             
             // Build request payload with agent state
-            const requestPayload: any = { 
+            const requestPayload: {
+                user_message: string;
+                session_id: string;
+                last_agent?: string;
+                routine_number?: number;
+            } = { 
                 user_message: currentInput, 
                 session_id: sessionId 
             };
@@ -436,7 +428,7 @@ export default function ChatPage() {
             
             console.log('Sending request with payload:', requestPayload);
             
-            const response = await fetch('http://localhost:8000/chat', {
+            const response = await fetch(config.CHAT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -465,7 +457,7 @@ export default function ChatPage() {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred with simple backend";
             dispatch({ type: 'SET_ERROR', payload: { errorContent: errorMessage } });
         }
-    }, [dispatch, scrollToMessageTop]);
+    }, [dispatch, scrollToMessageTop, scrollToVeryBottom]);
 
     // Effect for initial welcome message
     useEffect(() => {
@@ -487,25 +479,29 @@ export default function ChatPage() {
     return (
         <div className="flex flex-col h-[calc(100dvh-0px)] bg-white dark:bg-gray-900">
             {/* Header */}
-            <header className="sticky top-0 z-10 flex items-center justify-between p-3 bg-white dark:bg-gray-800 h-[60px]">
+            <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 h-[60px] sm:px-6">
                 {/* <h1 className="text-xl font-semibold text-gray-800 dark:text-white">AI Agent UI</h1> */}
                 <div className="flex-grow"></div> 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                     <button
                         onClick={handleReset}
-                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm flex items-center gap-1.5"
+                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm flex items-center gap-1.5 touch-manipulation"
                         aria-label="Clear chat"
                     >
                         <RotateCcw size={16}/>
-                        Clear Chat
+                        <span className="hidden sm:inline">Clear Chat</span>
+                        <span className="sm:hidden">Clear</span>
                     </button>
                     <a
-                        href="/" 
-                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm flex items-center gap-1.5"
+                        href="https://urmstontownjfc.co.uk" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm flex items-center gap-1.5 touch-manipulation"
                         aria-label="Go to Home"
                     >
                         <Home size={16}/>
-                        Home
+                        <span className="hidden sm:inline">Home</span>
+                        <span className="sm:hidden">Home</span>
                     </a>
                 </div>
             </header>
@@ -513,10 +509,10 @@ export default function ChatPage() {
             {/* Message Area */}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto py-4 bg-gray-50 dark:bg-gray-850 scroll-smooth" 
+                className="flex-1 overflow-y-auto py-2 sm:py-4 bg-gray-50 dark:bg-gray-850 scroll-smooth" 
                 onScroll={handleScroll}
             >
-                <div className="mx-auto max-w-3xl px-4 pb-80"> {/* Added pb-80 (320px) for maximum bottom padding to push content higher up the page */}
+                <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 pb-32 sm:pb-48 md:pb-64"> {/* Responsive padding and width */}
                     <ChatMessages messages={orderedMessages} loadingMessageId={loadingMessageId} />
                 </div>
             </div>
@@ -525,7 +521,7 @@ export default function ChatPage() {
             {showScrollDownButton && (
                  <button
                     onClick={scrollToVeryBottom}
-                    className="fixed bottom-32 left-1/2 -translate-x-1/2 z-20 p-2 bg-gray-700 dark:bg-gray-200 text-white dark:text-black rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 dark:focus:ring-gray-400 transition-opacity duration-300"
+                    className="fixed bottom-24 sm:bottom-32 left-1/2 -translate-x-1/2 z-20 p-2 sm:p-3 bg-gray-700 dark:bg-gray-200 text-white dark:text-black rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 dark:focus:ring-gray-400 transition-opacity duration-300 touch-manipulation"
                     aria-label="Scroll to bottom"
                  >
                      <ChevronDown size={20} />
@@ -533,7 +529,7 @@ export default function ChatPage() {
             )}
 
             {/* Input Area - This outer div will be sticky */}
-            <div className="sticky bottom-0 z-10 p-8 bg-gray-50 dark:bg-gray-850" data-sticky-input>
+            <div className="sticky bottom-0 z-10 p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 dark:bg-gray-850" data-sticky-input>
                  <ChatInput
                     onSendMessage={handleSendMessage}
                     onFileUpload={handleFileUpload}

@@ -23,8 +23,16 @@ load_dotenv()
 S3_BUCKET_NAME = "utjfc-player-photos"
 AWS_REGION = "eu-north-1"
 
-# Ensure AWS profile is set for S3 operations
-os.environ['AWS_PROFILE'] = 'footballclub'
+# Only set AWS profile for local development (not in production/EC2)
+# In production, EC2 instances use IAM roles instead of profiles
+import platform
+if platform.node() != 'ip-' and 'elasticbeanstalk' not in os.environ.get('SERVER_SOFTWARE', ''):
+    # We're running locally, set the AWS profile
+    os.environ['AWS_PROFILE'] = 'footballclub'
+    print("🏠 Local environment detected - using 'footballclub' AWS profile")
+else:
+    # We're in production (EC2/Elastic Beanstalk), use IAM role
+    print("☁️  Production environment detected - using IAM role for AWS access")
 
 
 class PhotoUploadData(BaseModel):

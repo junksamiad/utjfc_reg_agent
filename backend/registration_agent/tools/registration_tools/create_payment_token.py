@@ -23,7 +23,6 @@ def create_payment_token(
     parent_phone: str,
     signing_fee_amount: int = 100,    # £1.00 in pence (test amount)
     monthly_amount: int = 100,        # £1.00 in pence (test amount)
-    redirect_uri: str = "https://utjfc.ngrok.app/payment_success",
     gocardless_api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
@@ -42,7 +41,6 @@ def create_payment_token(
         parent_phone (str): Phone number of parent/guardian
         signing_fee_amount (int): One-off signing fee in pence (default: 100 = £1.00 for testing)
         monthly_amount (int): Monthly subscription in pence (default: 100 = £1.00 for testing)
-        redirect_uri (str): Redirect URI after payment completion
         gocardless_api_key (str, optional): GoCardless API key. If not provided, will try to get from env
         
     Returns:
