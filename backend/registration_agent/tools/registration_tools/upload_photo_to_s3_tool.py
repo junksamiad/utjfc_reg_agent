@@ -25,13 +25,24 @@ AWS_REGION = "eu-north-1"
 
 # Only set AWS profile for local development (not in production/EC2)
 # In production, EC2 instances use IAM roles instead of profiles
-import platform
-if platform.node() != 'ip-' and 'elasticbeanstalk' not in os.environ.get('SERVER_SOFTWARE', ''):
-    # We're running locally, set the AWS profile
+# Check for common production environment indicators
+is_production = (
+    os.environ.get('AWS_EXECUTION_ENV') is not None or  # Lambda/ECS
+    os.environ.get('AWS_CONTAINER_CREDENTIALS_RELATIVE_URI') is not None or  # ECS/Fargate
+    os.environ.get('AWS_INSTANCE_ID') is not None or  # EC2
+    os.path.exists('/opt/elasticbeanstalk') or  # Elastic Beanstalk
+    os.environ.get('EB_IS_COMMAND_LEADER') is not None  # Elastic Beanstalk
+)
+
+if not is_production and os.path.exists(os.path.expanduser('~/.aws/credentials')):
+    # We're running locally and have AWS credentials, set the AWS profile
     os.environ['AWS_PROFILE'] = 'footballclub'
     print("🏠 Local environment detected - using 'footballclub' AWS profile")
 else:
-    # We're in production (EC2/Elastic Beanstalk), use IAM role
+    # We're in production or don't have local credentials, use IAM role
+    # Make sure AWS_PROFILE is NOT set to avoid the ProfileNotFound error
+    if 'AWS_PROFILE' in os.environ:
+        del os.environ['AWS_PROFILE']
     print("☁️  Production environment detected - using IAM role for AWS access")
 
 

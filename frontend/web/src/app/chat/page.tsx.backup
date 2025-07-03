@@ -287,9 +287,17 @@ export default function ChatPage() {
         setShowScrollDownButton(!isAtAbsoluteBottom && el.scrollHeight > el.clientHeight); // Show if not at bottom AND scrollable
     }, []);
 
-    // Initial check for scroll button visibility
+    // Scroll listener effect for the scroll-down button
     useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        el.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll(); // Initial check
+
+        return () => {
+            el.removeEventListener('scroll', handleScroll);
+        };
     }, [handleScroll]);
 
     // Add handler for resetting chat
@@ -471,7 +479,8 @@ export default function ChatPage() {
     return (
         <div className="flex flex-col h-[calc(100dvh-0px)] bg-white dark:bg-gray-900">
             {/* Header */}
-            <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 h-[60px] sm:px-6 border-b border-gray-200 dark:border-gray-700">
+            <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 h-[60px] sm:px-6">
+                {/* <h1 className="text-xl font-semibold text-gray-800 dark:text-white">AI Agent UI</h1> */}
                 <div className="flex-grow"></div> 
                 <div className="flex items-center gap-1 sm:gap-2">
                     <button
@@ -500,10 +509,10 @@ export default function ChatPage() {
             {/* Message Area */}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto py-2 sm:py-4 bg-gray-50 dark:bg-gray-850 scroll-smooth min-h-0"
+                className="flex-1 overflow-y-auto py-2 sm:py-4 bg-gray-50 dark:bg-gray-850 scroll-smooth" 
                 onScroll={handleScroll}
             >
-                <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 pb-32 sm:pb-48 md:pb-64">
+                <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 pb-32 sm:pb-48 md:pb-64"> {/* Responsive padding and width */}
                     <ChatMessages messages={orderedMessages} loadingMessageId={loadingMessageId} />
                 </div>
             </div>
@@ -519,16 +528,15 @@ export default function ChatPage() {
                  </button>
             )}
 
-            {/* Input Area */}
-            <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-gray-50/80 dark:bg-gray-850/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
-                <div className="w-full max-w-4xl mx-auto">
-                    <ChatInput
-                        onSendMessage={handleSendMessage}
-                        onFileUpload={handleFileUpload}
-                        onReset={handleReset}
-                        isLoading={isLoading}
-                    />
-                </div>
+            {/* Input Area - This outer div will be sticky */}
+            <div className="sticky bottom-0 z-10 p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 dark:bg-gray-850" data-sticky-input>
+                 <ChatInput
+                    onSendMessage={handleSendMessage}
+                    onFileUpload={handleFileUpload}
+                    onReset={handleReset}
+                    isLoading={isLoading}
+                    sticky={false} 
+                />
             </div>
         </div>
     );

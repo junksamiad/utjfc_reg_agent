@@ -152,6 +152,8 @@ Follow these steps to deploy changes made within the `frontend/web/` directory.
 
 Upload the contents of the `out/` directory to the S3 bucket that serves as the CloudFront origin. The `--delete` flag removes any old files that are no longer part of the build.
 
+**IMPORTANT**: The output structure (`page.html` vs. `page/index.html`) is controlled by the `trailingSlash` setting in `frontend/web/next.config.ts`. This is set to `true` to produce `chat/index.html`. If this is ever changed, the CloudFront configuration may also need to be updated.
+
 1.  **Execute the sync command**:
     ```bash
     aws --profile footballclub s3 sync out/ s3://utjfc-frontend-chat/ --delete --no-cli-pager
@@ -172,7 +174,7 @@ To ensure users see the latest version immediately, you must invalidate the Clou
 
 ### Step 4.4: Verify the Deployment
 
-1.  Open a browser and navigate to `https://urmstontownjfc.co.uk/chat`. You may need to perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to bypass your local browser cache.
+1.  Open a browser and navigate to `https://urmstontownjfc.co.uk/chat/`. You may need to perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to bypass your local browser cache.
 
 ---
 

@@ -60,6 +60,7 @@ Each issue document contains:
 |-------|-------|----------|---------|
 | [ISSUE-001](./ISSUE-001-[OPEN]-frontend-environment-config.md) | Frontend Environment Configuration - Hardcoded API URLs | Medium | Open |
 | [ISSUE-002](./ISSUE-002-[CLOSED]-photo-upload-413-error.md) | Photo Upload 413 Request Entity Too Large Error | Critical | Closed |
+| [ISSUE-003](./ISSUE-003-[OPEN]-frontend-ios-mobile-rendering.md) | iOS Mobile Chat UI Rendering Problems | Critical | Open |
 
 ## Creating New Issues
 

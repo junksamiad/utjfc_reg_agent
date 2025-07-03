@@ -87,9 +87,13 @@
     touch-action: manipulation;
   }
   
-  /* Prevent horizontal scrolling on mobile */
+  /* Prevent horizontal scrolling on mobile and disable rubber band scroll on the page itself */
   html, body {
+    /* Prevent horizontal scroll while keeping vertical overflow restricted to internal containers */
     overflow-x: hidden;
+    overflow-y: hidden;
+    height: 100%;
+    overscroll-behavior-x: none;
   }
   
   /* Improve tap targets on mobile */
@@ -97,6 +101,47 @@
     button, [role="button"], input[type="button"], input[type="submit"] {
       min-height: 44px;
       min-width: 44px;
+    }
+  }
+  
+  /* Prevent iOS zoom on input focus by ensuring font-size >= 16px */
+  input, textarea {
+    font-size: 16px;
+  }
+  
+  /* Additional iOS-specific input handling */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    select, textarea, input[type="text"] {
+      font-size: 16px;
+    }
+  }
+  
+  /* Safe area support for iOS devices with notch */
+  .safe-area-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0) + 2.5rem);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  /* Better iOS scrolling for containers that need it */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Enhanced mobile input handling */
+  @media (max-width: 768px) {
+    /* Prevent layout shifts on focus */
+    textarea, input {
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+    
+    /* Improve touch scrolling performance */
+    * {
+      -webkit-overflow-scrolling: touch;
     }
   }
 }

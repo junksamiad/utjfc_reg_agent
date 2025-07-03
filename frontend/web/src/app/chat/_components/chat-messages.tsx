@@ -86,7 +86,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                             <div className="flex flex-col items-start min-w-0 flex-1">
                                 <div
                                     className={cn(
-                                        "rounded-lg sm:rounded-xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words w-full max-w-none",
+                                        "rounded-lg sm:rounded-xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words max-w-full",
                                         'text-gray-900 dark:text-gray-100'
                                     )}
                                 >
