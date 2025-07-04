@@ -343,10 +343,17 @@ export default function ChatPage() {
             
             console.log('Uploading file with session ID:', sessionId);
             
+            // Create AbortController for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout for photo uploads
+            
             const response = await fetch(config.UPLOAD_URL, {
                 method: 'POST',
                 body: formData,
+                signal: controller.signal,
             });
+            
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorData = await response.text();
@@ -366,7 +373,16 @@ export default function ChatPage() {
 
         } catch (error) {
             console.error("Failed to upload file:", error);
-            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during file upload";
+            let errorMessage = "An unknown error occurred during file upload";
+            
+            if (error instanceof Error) {
+                if (error.name === 'AbortError') {
+                    errorMessage = "Photo upload timed out after 90 seconds. Please try again with a smaller image or check your internet connection.";
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
             dispatch({ type: 'SET_ERROR', payload: { errorContent: errorMessage } });
         }
     }, [dispatch, scrollToVeryBottom]);

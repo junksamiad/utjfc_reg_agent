@@ -1,7 +1,7 @@
 import json
 
 # Define the new domain name
-new_domain = 'utjfc-backend-prod-2.eba-3bpsyeak.eu-north-1.elasticbeanstalk.com'
+new_domain = 'utjfc-backend-prod-3.eba-3bpsyeak.eu-north-1.elasticbeanstalk.com'
 config_file = 'cloudfront-config.json'
 
 # Load the distribution config
@@ -10,7 +10,7 @@ with open(config_file, 'r') as f:
 
 # Extract the ETag and the main config block
 etag = distribution['ETag']
-config = distribution['Distribution']['DistributionConfig']
+config = distribution['DistributionConfig']
 
 # Find and update the API origin domain
 for origin in config['Origins']['Items']:

@@ -68,7 +68,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                             <div
                                 className={cn(
                                     "rounded-2xl sm:rounded-3xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words max-w-[85%] sm:max-w-[75%] shadow-sm",
-                                    'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                                    'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                                 )}
                             >
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -87,7 +87,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                 <div
                                     className={cn(
                                         "rounded-lg sm:rounded-xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words max-w-full",
-                                        'text-gray-900 dark:text-gray-100'
+                                        'text-gray-900 dark:text-black'
                                     )}
                                 >
                                     {msg.isLoading && !msg.content ? (

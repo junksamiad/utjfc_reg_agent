@@ -1,0 +1,221 @@
+# Logfile created on 2025-07-03 20:53:36 +0000 by logger.rb/v1.6.6
+A, [2025-07-03T20:53:36.863741 #3586]   ANY -- : healthd daemon 1.0.7 initialized
+W, [2025-07-03T20:53:36.916053 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:53:41.917452 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:53:46.918683 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:53:51.919064 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:53:56.919315 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:01.919895 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:06.920174 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:11.920441 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:16.920706 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:21.920951 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:26.921209 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:31.921494 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:36.921747 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:41.922006 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:46.922276 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:51.922563 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:54:56.922799 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:01.923071 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:06.923310 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:11.923560 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:16.923809 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:21.924056 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:26.924329 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:31.924588 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:36.924865 #3586]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+F, [2025-07-03T20:55:39.242893 #3586] FATAL -- : /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:447:in 'block in Puma::Launcher#setup_signals': SIGTERM (SignalException)
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Thread#join'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Puma::Single#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:203:in 'Puma::Launcher#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/cli.rb:75:in 'Puma::CLI#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:112:in 'block in <top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in 'Dir.chdir'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in '<top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in 'Kernel#load'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in '<main>'
+A, [2025-07-03T20:55:41.380099 #3990]   ANY -- : healthd daemon 1.0.7 initialized
+W, [2025-07-03T20:55:41.439865 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:46.440567 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:51.440765 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:55:56.441015 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:01.441269 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:06.441519 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:11.441766 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:16.442085 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:21.442341 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:26.442585 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:31.442847 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:36.443104 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:41.443351 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:46.443613 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:51.443863 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:56:56.444157 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:01.444595 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:06.444852 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:11.445093 #3990]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+F, [2025-07-03T20:57:13.262094 #3990] FATAL -- : /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:447:in 'block in Puma::Launcher#setup_signals': SIGTERM (SignalException)
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Thread#join'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Puma::Single#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:203:in 'Puma::Launcher#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/cli.rb:75:in 'Puma::CLI#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:112:in 'block in <top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in 'Dir.chdir'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in '<top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in 'Kernel#load'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in '<main>'
+A, [2025-07-03T20:57:15.274905 #4882]   ANY -- : healthd daemon 1.0.7 initialized
+W, [2025-07-03T20:57:15.317893 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:20.324755 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:25.325633 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:30.325982 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:35.326255 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:40.326550 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:45.326776 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:50.327044 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:57:55.327297 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:00.327539 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:05.327784 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:10.328039 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:15.328295 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:20.328559 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:25.328773 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:30.329017 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:35.329278 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:40.329529 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:45.329795 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:50.330055 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:58:55.330384 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:00.330758 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:05.331014 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:10.331272 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:15.331513 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:20.331754 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:25.332017 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:30.332274 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:35.332508 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:40.332764 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:45.333012 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:50.333251 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T20:59:55.333510 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-20" does not exist
+W, [2025-07-03T21:00:00.333770 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:05.334023 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:10.334281 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:15.334550 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:20.334868 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:25.335125 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:30.335377 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:35.335635 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:40.335893 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:45.336179 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:50.336426 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:00:55.336752 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:00.337011 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:05.337274 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:10.337524 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:15.337785 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:20.338073 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:25.338331 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:30.338646 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:35.338908 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:40.339164 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:45.339421 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:50.339668 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:01:55.339911 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:00.340127 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:05.340370 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:10.340647 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:15.340891 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:20.341167 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:25.341403 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:30.341659 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:35.341934 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:40.342188 #4882]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+F, [2025-07-03T21:02:41.975308 #4882] FATAL -- : /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:447:in 'block in Puma::Launcher#setup_signals': SIGTERM (SignalException)
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Thread#join'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/single.rb:63:in 'Puma::Single#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/launcher.rb:203:in 'Puma::Launcher#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/puma-6.6.0/lib/puma/cli.rb:75:in 'Puma::CLI#run'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:112:in 'block in <top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in 'Dir.chdir'
+	from /opt/elasticbeanstalk/lib/ruby/lib/ruby/gems/3.4.0/gems/healthd-1.0.7/bin/healthd:19:in '<top (required)>'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in 'Kernel#load'
+	from /opt/elasticbeanstalk/lib/ruby/bin/healthd:25:in '<main>'
+A, [2025-07-03T21:02:44.245604 #6418]   ANY -- : healthd daemon 1.0.7 initialized
+W, [2025-07-03T21:02:44.325641 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:49.326116 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:54.326407 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:02:59.326772 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:04.327026 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:09.327266 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:14.327494 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:19.327781 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:24.328027 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:29.328280 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:34.328529 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:39.328787 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:44.329039 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:49.329288 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:54.329528 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:03:59.329812 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:04.330060 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:09.330294 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:14.330524 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:19.330889 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:24.331148 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:29.331412 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:34.331666 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:39.331915 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:44.332173 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:49.332437 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:54.332766 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:04:59.333032 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:04.333290 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:09.333536 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:14.333776 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:19.334007 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:24.334282 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:29.334533 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:34.334854 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:39.335106 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:44.335360 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:49.335607 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:54.335861 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:05:59.336112 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:04.336371 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:09.336610 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:14.336881 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:19.337130 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:24.337377 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:29.337634 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:34.337890 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:39.338114 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:44.338386 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:49.338740 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:54.339011 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:06:59.339312 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:04.339597 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:09.339873 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:14.340133 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:19.340379 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:24.340617 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:29.340879 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:34.341127 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:39.341377 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:44.341626 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:49.341873 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:54.342090 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:07:59.342369 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:04.342751 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:09.343004 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:14.343273 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:19.343532 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:24.343803 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:29.344068 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:34.344349 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:39.344593 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:44.344853 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:49.345123 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:08:54.345403 #6418]  WARN -- : log file "/var/log/nginx/healthd/application.log.2025-07-03-21" does not exist
+W, [2025-07-03T21:11:04.258852 #6418]  WARN -- : discarding statistic item after validation error (Invalid timestamp): {id: "0", namespace: "application", timestamp: 1751576970, data: "{\"duration\":10,\"latency_histogram\":[[0.001,1]],\"http_counters\":{\"status_404\":1,\"request_count\":1}}"}

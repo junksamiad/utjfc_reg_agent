@@ -106,7 +106,7 @@ Trigger the environment update to pull the new version and deploy it.
 
     ```bash
     aws --profile footballclub elasticbeanstalk update-environment \
-      --environment-name "utjfc-backend-prod-2" \
+      --environment-name "utjfc-backend-prod-3" \
       --version-label "v[vX.X.X]" \
       --no-cli-pager
     ```
@@ -115,11 +115,11 @@ Trigger the environment update to pull the new version and deploy it.
 
 1.  **Monitor deployment events**:
     ```bash
-    aws --profile footballclub elasticbeanstalk describe-events --environment-name "utjfc-backend-prod-2" --max-records 10 --no-cli-pager
+    aws --profile footballclub elasticbeanstalk describe-events --environment-name "utjfc-backend-prod-3" --max-records 10 --no-cli-pager
     ```
 2.  **Check environment health**. Wait for the `Status` to return to `Ready` and `Health` to become `Green`.
     ```bash
-    aws --profile footballclub elasticbeanstalk describe-environments --environment-names "utjfc-backend-prod-2" --no-cli-pager
+    aws --profile footballclub elasticbeanstalk describe-environments --environment-names "utjfc-backend-prod-3" --no-cli-pager
     ```
 3.  **Test the health endpoint** via the CloudFront proxy:
     ```bash
@@ -186,7 +186,7 @@ To ensure users see the latest version immediately, you must invalidate the Clou
 
 1.  Log in to the **AWS Management Console**.
 2.  Navigate to the **Elastic Beanstalk** service.
-3.  Select the `utjfc-backend-prod-2` environment.
+3.  Select the `utjfc-backend-prod-3` environment.
 4.  Go to **Configuration** -> **Software** -> **Edit**.
 5.  Scroll down to **Environment properties** and add or modify the variables.
 6.  Click **Apply**.
@@ -197,17 +197,20 @@ This action will automatically trigger an environment update, which takes a few 
 
 1.  **Check the environment status** to ensure it has returned to `Ready` and `Green`:
     ```bash
-    aws --profile footballclub elasticbeanstalk describe-environments --environment-names "utjfc-backend-prod-2" --no-cli-pager
+    aws --profile footballclub elasticbeanstalk describe-environments --environment-names "utjfc-backend-prod-3" --no-cli-pager
     ```
 2.  **Inspect the configuration** to confirm the variable was updated correctly. Look for the `aws:elasticbeanstalk:application:environment` namespace in the output.
     ```bash
-    aws --profile footballclub elasticbeanstalk describe-configuration-settings --application-name "utjfc-registration-backend" --environment-name "utjfc-backend-prod-2" --no-cli-pager
+    aws --profile footballclub elasticbeanstalk describe-configuration-settings --application-name "utjfc-registration-backend" --environment-name "utjfc-backend-prod-3" --no-cli-pager
     ```
 
 ---
 
 ## 6. Critical Deployment Notes
 
+-   **Current Production Environment**: The current production backend environment is `utjfc-backend-prod-3` (created July 2025 due to AWS Launch Configuration deprecation). If you need to create a new environment, use Launch Templates instead of Launch Configurations.
+-   **CloudFront Configuration**: The CloudFront distribution points to `utjfc-backend-prod-3.eba-3bpsyeak.eu-north-1.elasticbeanstalk.com`. If a new backend environment is created, run the `update_cloudfront.py` script to update the CloudFront distribution.
+-   **Nginx Configuration**: The backend uses `.platform/nginx/conf.d/proxy.conf` for nginx configuration. **Important**: Do not use `.ebextensions/01_nginx.config` as it conflicts with the modern platform approach and causes deployment failures with "nginx.service is not active, cannot reload" errors.
 -   **CloudFront Path Rewriting**: A CloudFront Function named `utjfc-api-path-rewrite` is attached to the `/api/*` behavior. It strips the `/api` prefix from the URL before forwarding the request to the backend. The backend application itself does **not** use `/api` in its routes.
 -   **Docker Port**: The `Dockerfile` in the backend **must** expose port `80`. The Elastic Beanstalk Nginx proxy is configured to route traffic to this port.
 -   **Deployment Time**: CloudFront and Elastic Beanstalk updates are not instantaneous. Allow 5-15 minutes for changes to fully propagate.

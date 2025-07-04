@@ -1,0 +1,18 @@
+Jul  3 20:52:25 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:25.730333626Z" level=info msg="Starting up"
+Jul  3 20:52:25 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:25.926114806Z" level=info msg="Loading containers: start."
+Jul  3 20:52:26 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:26.473084578Z" level=info msg="Loading containers: done."
+Jul  3 20:52:26 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:26.492562018Z" level=info msg="Docker daemon" commit=71907ca containerd-snapshotter=false storage-driver=overlay2 version=25.0.8
+Jul  3 20:52:26 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:26.493493061Z" level=info msg="Daemon has completed initialization"
+Jul  3 20:52:26 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:52:26.531495412Z" level=info msg="API listen on /run/docker.sock"
+Jul  3 20:52:52 ip-172-31-42-255 docker[1880]: 2025/07/03 20:52:52 http: superfluous response.WriteHeader call from go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*respWriterWrapper).WriteHeader (wrap.go:98)
+Jul  3 20:55:38 ip-172-31-42-255 docker[1880]: 2025/07/03 20:55:38 http2: server: error reading preface from client @: read unix /run/docker.sock->@: read: connection reset by peer
+Jul  3 20:55:49 ip-172-31-42-255 docker[1880]: 2025/07/03 20:55:49 http: superfluous response.WriteHeader call from go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*respWriterWrapper).WriteHeader (wrap.go:98)
+Jul  3 20:57:12 ip-172-31-42-255 docker[1880]: 2025/07/03 20:57:12 http2: server: error reading preface from client @: read unix /run/docker.sock->@: read: connection reset by peer
+Jul  3 20:57:12 ip-172-31-42-255 docker[1880]: 2025/07/03 20:57:12 http2: server: error reading preface from client @: read unix /run/docker.sock->@: read: connection reset by peer
+Jul  3 20:57:22 ip-172-31-42-255 docker[1880]: time="2025-07-03T20:57:22.413725145Z" level=info msg="ignoring event" container=8c42cf25d92d71bdbdade039f57c7ca3b95eb8d346d5063e4c69a74756a05774 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+Jul  3 20:57:31 ip-172-31-42-255 docker[1880]: 2025/07/03 20:57:31 http: superfluous response.WriteHeader call from go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*respWriterWrapper).WriteHeader (wrap.go:98)
+Jul  3 21:02:51 ip-172-31-42-255 docker[1880]: time="2025-07-03T21:02:51.453454799Z" level=info msg="ignoring event" container=7300fc62172322279ac2ce8984add4de739f32c029e6c93809a81b320cc94fba module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+Jul  3 21:03:00 ip-172-31-42-255 docker[1880]: 2025/07/03 21:03:00 http: superfluous response.WriteHeader call from go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*respWriterWrapper).WriteHeader (wrap.go:98)
+Jul  3 21:03:01 ip-172-31-42-255 docker[1880]: 2025/07/03 21:03:01 http2: server: error reading preface from client @: read unix /run/docker.sock->@: read: connection reset by peer
+Jul  3 21:16:53 ip-172-31-42-255 docker[1880]: time="2025-07-03T21:16:53.053305888Z" level=info msg="ignoring event" container=46066e7c742a50e425ea2f77ceb62752d0f5d23bc8cd70200c4b85940d3008f8 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+Jul  3 21:16:54 ip-172-31-42-255 docker[1880]: 2025/07/03 21:16:54 http: superfluous response.WriteHeader call from go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*respWriterWrapper).WriteHeader (wrap.go:98)

@@ -1,0 +1,60 @@
+2025/07/03 20:55:48.715973 [INFO] Loading Manifest...
+2025/07/03 20:55:48.722468 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBAutoScalingGroup --region eu-north-1
+2025/07/03 20:55:49.050012 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBBeanstalkMetadata --region eu-north-1
+2025/07/03 20:55:49.478069 [INFO] Checking if docker is running...
+2025/07/03 20:55:49.478166 [INFO] Fetch current app container id...
+2025/07/03 20:55:49.478197 [INFO] Running command: docker ps | grep 8c42cf25d92d
+2025/07/03 20:55:49.510848 [INFO] 8c42cf25d92d   d352cf9eba05   "uvicorn server:app …"   8 seconds ago   Up 7 seconds (health: starting)   80/tcp    dreamy_einstein
+
+2025/07/03 20:55:49.510894 [INFO] Running command: docker wait  8c42cf25d92d
+2025/07/03 20:57:22.679306 [INFO] 0
+
+2025/07/03 20:57:30.805205 [INFO] Loading Manifest...
+2025/07/03 20:57:30.815096 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBAutoScalingGroup --region eu-north-1
+2025/07/03 20:57:31.209323 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBBeanstalkMetadata --region eu-north-1
+2025/07/03 20:57:31.597868 [INFO] Checking if docker is running...
+2025/07/03 20:57:31.598140 [INFO] Fetch current app container id...
+2025/07/03 20:57:31.598244 [INFO] Running command: docker ps | grep 7300fc621723
+2025/07/03 20:57:31.627428 [INFO] 7300fc621723   d352cf9eba05   "uvicorn server:app …"   8 seconds ago   Up 7 seconds (health: starting)   80/tcp    awesome_borg
+
+2025/07/03 20:57:31.627477 [INFO] Running command: docker wait  7300fc621723
+2025/07/03 21:02:51.694505 [INFO] 0
+
+2025/07/03 21:02:59.898982 [INFO] Loading Manifest...
+2025/07/03 21:02:59.906424 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBAutoScalingGroup --region eu-north-1
+2025/07/03 21:03:00.375980 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBBeanstalkMetadata --region eu-north-1
+2025/07/03 21:03:00.783074 [INFO] Checking if docker is running...
+2025/07/03 21:03:00.783190 [INFO] Fetch current app container id...
+2025/07/03 21:03:00.783217 [INFO] Running command: docker ps | grep 46066e7c742a
+2025/07/03 21:03:00.820233 [INFO] 46066e7c742a   d352cf9eba05   "uvicorn server:app …"   8 seconds ago   Up 7 seconds (health: starting)   80/tcp    beautiful_dirac
+
+2025/07/03 21:03:00.820266 [INFO] Running command: docker wait  46066e7c742a
+2025/07/03 21:16:53.290991 [INFO] 0
+
+2025/07/03 21:16:53.447263 [INFO] Loading Manifest...
+2025/07/03 21:16:53.453101 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBAutoScalingGroup --region eu-north-1
+2025/07/03 21:16:53.801095 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:eu-north-1:650251723700:stack/awseb-e-w9vh6u99iz-stack/7e68bf60-584f-11f0-bc89-0e1966ad8db5 -r AWSEBBeanstalkMetadata --region eu-north-1
+2025/07/03 21:16:54.083811 [INFO] Checking if docker is running...
+2025/07/03 21:16:54.083880 [INFO] Fetch current app container id...
+2025/07/03 21:16:54.083917 [INFO] Running command: docker ps | grep 46066e7c742a
+2025/07/03 21:16:54.098465 [INFO] Starting container 46066e7c742a
+2025/07/03 21:16:54.098490 [INFO] Running command: docker start  46066e7c742a
+2025/07/03 21:16:54.421214 [INFO] 46066e7c742a
+
+2025/07/03 21:16:54.421318 [INFO] Clear existing beanstalk iptables rules...
+2025/07/03 21:16:54.421338 [INFO] Running command: iptables-save | grep -v added_by_elasticbeanstalk | iptables-restore
+2025/07/03 21:16:54.500218 [INFO] Getting container info...
+2025/07/03 21:16:54.500243 [INFO] Running command: docker inspect 46066e7c742a
+2025/07/03 21:16:54.516171 [INFO] Running command: ip route show default | awk '{print $5}'
+2025/07/03 21:16:54.522479 [INFO] ens5
+
+2025/07/03 21:16:54.522508 [INFO] Writing nginx upstream config...
+2025/07/03 21:16:54.524843 [INFO] Running command: systemctl show -p PartOf nginx.service
+2025/07/03 21:16:54.536586 [WARN] process nginx is already registered, skip registering again...
+2025/07/03 21:16:54.536611 [INFO] Running command: systemctl show -p PartOf nginx.service
+2025/07/03 21:16:54.554164 [INFO] Running command: systemctl restart nginx.service
+2025/07/03 21:17:00.014686 [INFO] Running command: service iptables save
+2025/07/03 21:17:00.059117 [INFO] iptables: Saving firewall rules to /etc/sysconfig/iptables: [  OK  ]
+
+2025/07/03 21:17:00.059134 [INFO] Traffic forward set-up completed.
+2025/07/03 21:17:00.059155 [INFO] Running command: docker wait  46066e7c742a

@@ -1,0 +1,733 @@
+2025-07-03 21:53:41,393 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:53:41,398 [INFO] Running configSets: _OnInstanceBoot
+2025-07-03 21:53:41,400 [INFO] Running configSet _OnInstanceBoot
+2025-07-03 21:53:41,402 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:53:41,667 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:53:41,670 [INFO] Running config AWSEBCfnHupEndpointOverride
+2025-07-03 21:53:41,674 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:53:41,675 [INFO] ConfigSets completed
+2025-07-03 21:53:41,676 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:53:50,717 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:53:50,721 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:53:50,723 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:53:50,725 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:53:50,728 [INFO] ConfigSets completed
+2025-07-03 21:53:50,728 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:54:35,614 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:35,619 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:54:35,621 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:54:35,623 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:54:36,093 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:54:36,093 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:54:36,095 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:54:36,095 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:54:38,527 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:38,532 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:54:38,533 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:54:38,535 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:54:38,766 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:54:38,767 [INFO] ConfigSets completed
+2025-07-03 21:54:38,768 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:54:42,743 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:42,748 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:54:42,750 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:54:42,752 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:54:42,754 [INFO] ConfigSets completed
+2025-07-03 21:54:42,754 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:54:47,378 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:47,383 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:54:47,385 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:54:47,387 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:54:47,809 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:54:47,809 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:54:47,810 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:54:47,810 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:54:52,199 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:52,203 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:54:52,206 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:54:52,208 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:54:52,406 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:54:52,408 [INFO] ConfigSets completed
+2025-07-03 21:54:52,408 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:54:56,159 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:54:56,163 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:54:56,166 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:54:56,168 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:54:56,169 [INFO] ConfigSets completed
+2025-07-03 21:54:56,169 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:55:00,622 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:00,627 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:55:00,629 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:55:00,631 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:55:00,985 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:55:00,986 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:55:00,986 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:55:00,986 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:55:09,363 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:09,368 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:55:09,370 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:55:09,372 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:55:09,634 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:55:09,635 [INFO] ConfigSets completed
+2025-07-03 21:55:09,635 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:55:13,722 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:13,727 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:55:13,729 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:55:13,731 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:55:13,733 [INFO] ConfigSets completed
+2025-07-03 21:55:13,733 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:55:17,905 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:17,909 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:55:17,911 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:55:17,914 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:55:18,259 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:55:18,260 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:55:18,260 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:55:18,260 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:55:34,696 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:34,701 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:55:34,703 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:55:34,705 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:55:34,907 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:55:34,908 [INFO] ConfigSets completed
+2025-07-03 21:55:34,908 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:55:38,676 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:38,680 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:55:38,682 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:55:38,685 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:55:38,686 [INFO] ConfigSets completed
+2025-07-03 21:55:38,686 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:55:43,162 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:55:43,167 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:55:43,169 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:55:43,171 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:55:43,539 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:55:43,539 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:55:43,539 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:55:43,539 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:56:15,891 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:56:15,896 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:56:15,898 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:56:15,900 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:56:16,096 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:56:16,098 [INFO] ConfigSets completed
+2025-07-03 21:56:16,098 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:56:19,859 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:56:19,863 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:56:19,866 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:56:19,868 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:56:19,870 [INFO] ConfigSets completed
+2025-07-03 21:56:19,870 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:56:24,134 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:56:24,139 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:56:24,141 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:56:24,143 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:56:24,469 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:56:24,469 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:56:24,470 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:56:24,470 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:57:28,827 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:57:28,832 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:57:28,834 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:57:28,836 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:57:29,036 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:57:29,037 [INFO] ConfigSets completed
+2025-07-03 21:57:29,037 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:57:33,066 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:57:33,071 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:57:33,073 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:57:33,075 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:57:33,076 [INFO] ConfigSets completed
+2025-07-03 21:57:33,077 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:57:37,386 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:57:37,390 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:57:37,392 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:57:37,395 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:57:37,748 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:57:37,748 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:57:37,748 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:57:37,749 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:59:46,132 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:59:46,136 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 21:59:46,138 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 21:59:46,140 [INFO] Running config AWSEBBaseConfig
+2025-07-03 21:59:46,343 [INFO] Command clearbackupfiles succeeded
+2025-07-03 21:59:46,344 [INFO] ConfigSets completed
+2025-07-03 21:59:46,344 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:59:50,040 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:59:50,045 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 21:59:50,047 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 21:59:50,049 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 21:59:50,051 [INFO] ConfigSets completed
+2025-07-03 21:59:50,051 [INFO] -----------------------Build complete-----------------------
+2025-07-03 21:59:54,352 [INFO] -----------------------Starting build-----------------------
+2025-07-03 21:59:54,357 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 21:59:54,359 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 21:59:54,361 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 21:59:54,709 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 21:59:54,709 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 21:59:54,710 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 21:59:54,710 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:04:11,107 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:04:11,111 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 22:04:11,114 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 22:04:11,116 [INFO] Running config AWSEBBaseConfig
+2025-07-03 22:04:11,368 [INFO] Command clearbackupfiles succeeded
+2025-07-03 22:04:11,370 [INFO] ConfigSets completed
+2025-07-03 22:04:11,370 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:04:15,318 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:04:15,322 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 22:04:15,324 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 22:04:15,326 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 22:04:15,328 [INFO] ConfigSets completed
+2025-07-03 22:04:15,328 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:04:19,871 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:04:19,875 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 22:04:19,877 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 22:04:19,879 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 22:04:20,325 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 22:04:20,326 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:04:20,326 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 22:04:20,326 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:12:52,720 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:12:52,724 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 22:12:52,726 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 22:12:52,728 [INFO] Running config AWSEBBaseConfig
+2025-07-03 22:12:52,971 [INFO] Command clearbackupfiles succeeded
+2025-07-03 22:12:52,973 [INFO] ConfigSets completed
+2025-07-03 22:12:52,973 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:12:57,048 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:12:57,053 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 22:12:57,055 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 22:12:57,057 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 22:12:57,059 [INFO] ConfigSets completed
+2025-07-03 22:12:57,059 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:13:01,398 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:13:01,403 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 22:13:01,405 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 22:13:01,407 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 22:13:01,777 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 22:13:01,777 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:13:01,778 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 22:13:01,778 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:30:06,173 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:30:06,179 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 22:30:06,181 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 22:30:06,183 [INFO] Running config AWSEBBaseConfig
+2025-07-03 22:30:06,380 [INFO] Command clearbackupfiles succeeded
+2025-07-03 22:30:06,381 [INFO] ConfigSets completed
+2025-07-03 22:30:06,382 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:30:10,325 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:30:10,329 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 22:30:10,331 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 22:30:10,334 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 22:30:10,335 [INFO] ConfigSets completed
+2025-07-03 22:30:10,335 [INFO] -----------------------Build complete-----------------------
+2025-07-03 22:30:14,878 [INFO] -----------------------Starting build-----------------------
+2025-07-03 22:30:14,882 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 22:30:14,884 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 22:30:14,886 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 22:30:15,269 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 22:30:15,269 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 22:30:15,270 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 22:30:15,270 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 23:04:23,634 [INFO] -----------------------Starting build-----------------------
+2025-07-03 23:04:23,638 [INFO] Running configSets: _OnInstanceReboot
+2025-07-03 23:04:23,641 [INFO] Running configSet _OnInstanceReboot
+2025-07-03 23:04:23,643 [INFO] Running config AWSEBBaseConfig
+2025-07-03 23:04:23,884 [INFO] Command clearbackupfiles succeeded
+2025-07-03 23:04:23,885 [INFO] ConfigSets completed
+2025-07-03 23:04:23,885 [INFO] -----------------------Build complete-----------------------
+2025-07-03 23:04:27,598 [INFO] -----------------------Starting build-----------------------
+2025-07-03 23:04:27,603 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-03 23:04:27,605 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-03 23:04:27,607 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-03 23:04:27,609 [INFO] ConfigSets completed
+2025-07-03 23:04:27,609 [INFO] -----------------------Build complete-----------------------
+2025-07-03 23:04:32,081 [INFO] -----------------------Starting build-----------------------
+2025-07-03 23:04:32,086 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-03 23:04:32,088 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-03 23:04:32,090 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-03 23:04:32,452 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-03 23:04:32,452 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-03 23:04:32,453 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-03 23:04:32,453 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 00:04:32,862 [INFO] -----------------------Starting build-----------------------
+2025-07-04 00:04:32,866 [INFO] Running configSets: _OnInstanceReboot
+2025-07-04 00:04:32,868 [INFO] Running configSet _OnInstanceReboot
+2025-07-04 00:04:32,870 [INFO] Running config AWSEBBaseConfig
+2025-07-04 00:04:33,126 [INFO] Command clearbackupfiles succeeded
+2025-07-04 00:04:33,127 [INFO] ConfigSets completed
+2025-07-04 00:04:33,127 [INFO] -----------------------Build complete-----------------------
+2025-07-04 00:04:37,173 [INFO] -----------------------Starting build-----------------------
+2025-07-04 00:04:37,178 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-04 00:04:37,180 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-04 00:04:37,182 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-04 00:04:37,183 [INFO] ConfigSets completed
+2025-07-04 00:04:37,183 [INFO] -----------------------Build complete-----------------------
+2025-07-04 00:04:41,444 [INFO] -----------------------Starting build-----------------------
+2025-07-04 00:04:41,448 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-04 00:04:41,450 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-04 00:04:41,452 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-04 00:04:41,885 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-04 00:04:41,885 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 00:04:41,886 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-04 00:04:41,886 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 01:04:42,266 [INFO] -----------------------Starting build-----------------------
+2025-07-04 01:04:42,270 [INFO] Running configSets: _OnInstanceReboot
+2025-07-04 01:04:42,273 [INFO] Running configSet _OnInstanceReboot
+2025-07-04 01:04:42,275 [INFO] Running config AWSEBBaseConfig
+2025-07-04 01:04:42,535 [INFO] Command clearbackupfiles succeeded
+2025-07-04 01:04:42,536 [INFO] ConfigSets completed
+2025-07-04 01:04:42,537 [INFO] -----------------------Build complete-----------------------
+2025-07-04 01:04:46,359 [INFO] -----------------------Starting build-----------------------
+2025-07-04 01:04:46,364 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-04 01:04:46,366 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-04 01:04:46,368 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-04 01:04:46,370 [INFO] ConfigSets completed
+2025-07-04 01:04:46,370 [INFO] -----------------------Build complete-----------------------
+2025-07-04 01:04:50,866 [INFO] -----------------------Starting build-----------------------
+2025-07-04 01:04:50,870 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-04 01:04:50,872 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-04 01:04:50,875 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-04 01:04:51,218 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-04 01:04:51,218 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 01:04:51,219 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-04 01:04:51,219 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 02:04:51,617 [INFO] -----------------------Starting build-----------------------
+2025-07-04 02:04:51,622 [INFO] Running configSets: _OnInstanceReboot
+2025-07-04 02:04:51,624 [INFO] Running configSet _OnInstanceReboot
+2025-07-04 02:04:51,626 [INFO] Running config AWSEBBaseConfig
+2025-07-04 02:04:51,919 [INFO] Command clearbackupfiles succeeded
+2025-07-04 02:04:51,921 [INFO] ConfigSets completed
+2025-07-04 02:04:51,921 [INFO] -----------------------Build complete-----------------------
+2025-07-04 02:04:56,159 [INFO] -----------------------Starting build-----------------------
+2025-07-04 02:04:56,164 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-04 02:04:56,166 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-04 02:04:56,168 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-04 02:04:56,170 [INFO] ConfigSets completed
+2025-07-04 02:04:56,170 [INFO] -----------------------Build complete-----------------------
+2025-07-04 02:05:00,638 [INFO] -----------------------Starting build-----------------------
+2025-07-04 02:05:00,642 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-04 02:05:00,644 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-04 02:05:00,646 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-04 02:05:00,983 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-04 02:05:00,984 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 02:05:00,984 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-04 02:05:00,984 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 03:05:01,379 [INFO] -----------------------Starting build-----------------------
+2025-07-04 03:05:01,383 [INFO] Running configSets: _OnInstanceReboot
+2025-07-04 03:05:01,386 [INFO] Running configSet _OnInstanceReboot
+2025-07-04 03:05:01,388 [INFO] Running config AWSEBBaseConfig
+2025-07-04 03:05:01,662 [INFO] Command clearbackupfiles succeeded
+2025-07-04 03:05:01,663 [INFO] ConfigSets completed
+2025-07-04 03:05:01,664 [INFO] -----------------------Build complete-----------------------
+2025-07-04 03:05:05,592 [INFO] -----------------------Starting build-----------------------
+2025-07-04 03:05:05,596 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-04 03:05:05,598 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-04 03:05:05,601 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-04 03:05:05,602 [INFO] ConfigSets completed
+2025-07-04 03:05:05,602 [INFO] -----------------------Build complete-----------------------
+2025-07-04 03:05:10,168 [INFO] -----------------------Starting build-----------------------
+2025-07-04 03:05:10,172 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-04 03:05:10,174 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-04 03:05:10,176 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-04 03:05:10,519 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-04 03:05:10,519 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 03:05:10,520 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-04 03:05:10,520 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 04:05:10,873 [INFO] -----------------------Starting build-----------------------
+2025-07-04 04:05:10,877 [INFO] Running configSets: _OnInstanceReboot
+2025-07-04 04:05:10,879 [INFO] Running configSet _OnInstanceReboot
+2025-07-04 04:05:10,882 [INFO] Running config AWSEBBaseConfig
+2025-07-04 04:05:11,120 [INFO] Command clearbackupfiles succeeded
+2025-07-04 04:05:11,121 [INFO] ConfigSets completed
+2025-07-04 04:05:11,121 [INFO] -----------------------Build complete-----------------------
+2025-07-04 04:05:15,175 [INFO] -----------------------Starting build-----------------------
+2025-07-04 04:05:15,180 [INFO] Running configSets: Infra-EmbeddedPreBuild
+2025-07-04 04:05:15,182 [INFO] Running configSet Infra-EmbeddedPreBuild
+2025-07-04 04:05:15,184 [INFO] Running config prebuild_0_utjfc_registration_backend
+2025-07-04 04:05:15,186 [INFO] ConfigSets completed
+2025-07-04 04:05:15,186 [INFO] -----------------------Build complete-----------------------
+2025-07-04 04:05:19,377 [INFO] -----------------------Starting build-----------------------
+2025-07-04 04:05:19,381 [INFO] Running configSets: Infra-EmbeddedPostBuild
+2025-07-04 04:05:19,384 [INFO] Running configSet Infra-EmbeddedPostBuild
+2025-07-04 04:05:19,386 [INFO] Running config postbuild_0_utjfc_registration_backend
+2025-07-04 04:05:19,799 [ERROR] Command 01_reload_nginx (sudo service nginx reload) failed
+2025-07-04 04:05:19,799 [ERROR] Error encountered during build of postbuild_0_utjfc_registration_backend: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed
+2025-07-04 04:05:19,799 [ERROR] -----------------------BUILD FAILED!------------------------
+2025-07-04 04:05:19,800 [ERROR] Unhandled exception during build: Command 01_reload_nginx failed
+Traceback (most recent call last):
+  File "/opt/aws/bin/cfn-init", line 181, in <module>
+    worklog.build(metadata, configSets, strict_mode)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 137, in build
+    Contractor(metadata, strict_mode).build(configSets, self)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 567, in build
+    self.run_config(config, worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 579, in run_config
+    CloudFormationCarpenter(config, self._auth_config, self.strict_mode).build(worklog)
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/construction.py", line 277, in build
+    changes['commands'] = CommandTool().apply(
+  File "/usr/lib/python3.9/site-packages/cfnbootstrap/command_tool.py", line 127, in apply
+    raise ToolError(u"Command %s failed" % name)
+cfnbootstrap.construction_errors.ToolError: Command 01_reload_nginx failed

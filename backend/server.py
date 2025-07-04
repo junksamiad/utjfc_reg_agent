@@ -127,6 +127,10 @@ async def startup_event():
 async def read_root():
     return {"message": "Hello from the Refactored Simple Test Backend with History and Agents!"}
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "UTJFC Registration Backend is running"}
+
 @app.post("/chat")
 async def chat_endpoint(payload: UserPayload):
     current_session_id = payload.session_id or DEFAULT_SESSION_ID
