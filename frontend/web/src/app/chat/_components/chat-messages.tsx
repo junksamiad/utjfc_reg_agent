@@ -17,6 +17,7 @@ interface Message {
 interface MessageListProps {
     messages: Message[];
     loadingMessageId: string | null;
+    processingMessageId: string | null;
 }
 
 // Flag to toggle avatar rendering
@@ -48,7 +49,7 @@ const LoadingTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
     );
 };
 
-const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId, processingMessageId }) => {
 
     const copyToClipboard = async (text: string) => {
         try {
@@ -120,8 +121,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                                         {msg.content}
                                                     </ReactMarkdown>
                                                 </div>
-                                                {/* Show timer for photo processing messages that contain "Processing" and are loading */}
-                                                {loadingMessageId === msg.id && msg.content && msg.content.includes("Processing") && msg.startTime && (
+                                                {/* Show timer for processing messages */}
+                                                {processingMessageId === msg.id && msg.content && msg.content.includes("Processing") && msg.startTime && (
                                                     <LoadingTimer startTime={msg.startTime} />
                                                 )}
                                             </div>

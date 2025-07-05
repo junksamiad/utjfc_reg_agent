@@ -19,6 +19,7 @@ def create_payment_token(
     team_name: str,
     age_group: str,
     parent_full_name: str,
+    parent_first_name: str,
     preferred_payment_day: int,
     parent_phone: str,
     signing_fee_amount: int = 100,    # £1.00 in pence (test amount)
@@ -213,6 +214,7 @@ def create_payment_token(
                 "team_name": team_name,
                 "age_group": age_group,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "signing_fee_amount_pence": signing_fee_amount,
                 "monthly_amount_pence": monthly_amount,
@@ -228,6 +230,7 @@ def create_payment_token(
             "team_name": team_name,
             "age_group": age_group,
             "parent_full_name": parent_full_name,
+            "parent_first_name": parent_first_name,
             "preferred_payment_day": preferred_payment_day,
             "signing_fee_amount_pence": signing_fee_amount,
             "monthly_amount_pence": monthly_amount,

@@ -257,6 +257,9 @@ export default function ChatPage() {
     const orderedMessages = useMemo(() => 
         messageOrder.map(id => messages[id]).filter(Boolean)
     , [messageOrder, messages]);
+    
+    // State to track which message is currently processing in background
+    const [processingMessageId, setProcessingMessageId] = useState<string | null>(null);
 
     // Ref for the scrollable message container
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -383,7 +386,12 @@ export default function ChatPage() {
             if (data.processing === true && data.session_id) {
                 console.log('🔄 Starting polling for session:', data.session_id);
                 console.log('🔄 Initial response data:', data);
+                
+                // Start typing the processing message
                 simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
+                
+                // Set this message as processing (timer will start when typing completes)
+                setProcessingMessageId(assistantMessageId);
                 
                 // Start polling for final result
                 const pollForResult = async () => {
@@ -405,9 +413,12 @@ export default function ChatPage() {
                         console.log('📋 statusData.complete === true:', statusData.complete === true);
 
                         if (statusData.complete === true) {
-                            // Processing complete, show final response
+                            // Processing complete, stop timer and show final response
                             console.log('✅ CONDITION MET: Processing complete, showing final result');
                             console.log('✅ Final response content:', statusData.response);
+                            
+                            // Stop the timer by clearing processing state
+                            setProcessingMessageId(null);
                             
                             // Update agent state from final response
                             storeAgentState(
@@ -441,7 +452,8 @@ export default function ChatPage() {
                         console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
                         console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
                         
-                        // Stop polling on error and show error message
+                        // Stop polling on error, clear timer, and show error message
+                        setProcessingMessageId(null);
                         const errorId = `error-poll-${Date.now()}`;
                         console.log('❌ Creating error message with ID:', errorId);
                         
@@ -601,7 +613,7 @@ export default function ChatPage() {
                 onScroll={handleScroll}
             >
                 <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 pb-32 sm:pb-48 md:pb-64">
-                    <ChatMessages messages={orderedMessages} loadingMessageId={loadingMessageId} />
+                    <ChatMessages messages={orderedMessages} loadingMessageId={loadingMessageId} processingMessageId={processingMessageId} />
                 </div>
             </div>
             

@@ -1,3 +1,9 @@
+cd /Users/leehayton/Cursor\ Projects/utjfc_reg_agent/frontend/web
+  npm run dev
+
+  
+
+
 *** ngrok ***
 
 https://utjfc.ngrok.app

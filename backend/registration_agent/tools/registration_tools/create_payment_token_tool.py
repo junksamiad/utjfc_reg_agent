@@ -62,6 +62,10 @@ CREATE_PAYMENT_TOKEN_TOOL = {
                 "type": "string",
                 "description": "REQUIRED: Full name of parent/guardian setting up the payment. Must be extracted from conversation history (e.g., 'John Smith', 'Sarah O'Connor')"
             },
+            "parent_first_name": {
+                "type": "string",
+                "description": "REQUIRED: Parent's first name only for SMS personalization. Must be extracted from conversation history (e.g., 'John', 'Sarah')"
+            },
             "preferred_payment_day": {
                 "type": "integer",
                 "description": "REQUIRED: Day of month for monthly subscription payments (1-31, or -1 for last day of month). Must be collected from user in routine 29."
@@ -71,7 +75,7 @@ CREATE_PAYMENT_TOKEN_TOOL = {
                 "description": "REQUIRED: Parent's phone number for SMS payment link. Must be extracted from conversation history (e.g., '07835065013', '0161 123 4567')"
             }
         },
-        "required": ["player_full_name", "age_group", "team_name", "parent_full_name", "preferred_payment_day", "parent_phone"]
+        "required": ["player_full_name", "age_group", "team_name", "parent_full_name", "parent_first_name", "preferred_payment_day", "parent_phone"]
     }
 }
 
@@ -100,6 +104,7 @@ def handle_create_payment_token(**kwargs) -> str:
         age_group = kwargs.get('age_group', '')
         team_name = kwargs.get('team_name', '')
         parent_full_name = kwargs.get('parent_full_name', '')
+        parent_first_name = kwargs.get('parent_first_name', '')
         preferred_payment_day = kwargs.get('preferred_payment_day')
         parent_phone = kwargs.get('parent_phone', '')
         
@@ -113,6 +118,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required player name - please collect this information first"
@@ -128,6 +134,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required age group - please collect this information first"
@@ -143,6 +150,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required team name - please collect this information first"
@@ -158,9 +166,26 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required parent name - please collect this information first"
+            }
+            return json.dumps(error_result, indent=2)
+        
+        if not parent_first_name or not parent_first_name.strip():
+            error_result = {
+                "success": False,
+                "message": "Parent first name is required to create payment token",
+                "billing_request_id": "",
+                "player_full_name": player_full_name,
+                "age_group": age_group,
+                "team_name": team_name,
+                "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
+                "preferred_payment_day": preferred_payment_day,
+                "parent_phone": parent_phone,
+                "usage_note": "Missing required parent first name - please collect this information first"
             }
             return json.dumps(error_result, indent=2)
         
@@ -173,6 +198,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required payment day - please collect this information first"
@@ -188,6 +214,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 "age_group": age_group,
                 "team_name": team_name,
                 "parent_full_name": parent_full_name,
+                "parent_first_name": parent_first_name,
                 "preferred_payment_day": preferred_payment_day,
                 "parent_phone": parent_phone,
                 "usage_note": "Missing required parent phone - please collect this information first"
@@ -202,6 +229,7 @@ def handle_create_payment_token(**kwargs) -> str:
         print(f"     team_name='{team_name.strip()}'")
         print(f"     age_group='{age_group.strip()}'")
         print(f"     parent_full_name='{parent_full_name.strip()}'")
+        print(f"     parent_first_name='{parent_first_name.strip()}'")
         print(f"     preferred_payment_day={int(preferred_payment_day)}")
         print(f"     parent_phone='{parent_phone.strip()}'")
         
@@ -211,6 +239,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 team_name=team_name.strip(),
                 age_group=age_group.strip(),
                 parent_full_name=parent_full_name.strip(),
+                parent_first_name=parent_first_name.strip(),
                 preferred_payment_day=int(preferred_payment_day),
                 parent_phone=parent_phone.strip(),
                 signing_fee_amount=100,   # £1.00 in pence (test amount)

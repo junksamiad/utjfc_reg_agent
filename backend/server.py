@@ -100,7 +100,7 @@ def process_photo_background(session_id: str, temp_file_path: str, routine_numbe
         ai_full_response_object = chat_loop_new_registration_with_photo(dynamic_agent, session_history, session_id)
         
         # Parse the AI response
-        assistant_content_to_send = "✅ Photo uploaded successfully! Registration processing complete."
+        assistant_content_to_send = "✅ Photo uploaded successfully! Your registration is now complete pending payment setup. Please use the payment link sent to you via SMS to complete your monthly subscription setup. If you experience any issues, please contact the club at admin@urmstontownjfc.co.uk. We look forward to seeing you on the pitch! ⚽🏃‍♂️🎉"
         routine_number_from_agent = None
         
         try:
@@ -782,6 +782,200 @@ async def chat_endpoint(payload: UserPayload):
             "routine_number": 29  # Jump straight to payment day collection with full history
         }
         print(f"--- Session [{current_session_id}] RETURNING CHEAT CODE RESPONSE TO CLIENT: {response_json} ---")
+        return response_json
+    
+    # Check for extended testing cheat code 'sdh' (Skip to Photo Upload)
+    if payload.user_message.strip().lower() == "sdh":
+        print(f"--- Session [{current_session_id}] Extended testing cheat code 'sdh' detected - jumping directly to routine 34 (photo upload) with full registration completed ---")
+        
+        # Add the cheat code to session history
+        add_message_to_session_history(current_session_id, "user", payload.user_message)
+        
+        # Inject structured registration data for age-based routing
+        from registration_agent.routing_validation import inject_structured_registration_data
+        inject_structured_registration_data(current_session_id, "200-leopards-u9-2526")
+        
+        # Add explicit registration code for AI agent to extract
+        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u9-2526")
+        
+        # Pre-populate complete conversation history (routines 1-28) - same as 'lah'
+        conversation_history = [
+            # Routine 1 - Parent name
+            ("assistant", "Can I take your first and last name so I know how to refer to you?"),
+            ("user", "Lee Hayton"),
+            ("assistant", "Perfect, thanks Lee! Now could you please tell me your child's first and last name?"),
+            
+            # Routine 2 - Child name  
+            ("user", "Seb Hayton"),
+            ("assistant", "Great! Could you please tell me Seb's date of birth?"),
+            
+            # Routine 3 - Child DOB
+            ("user", "18th July 2014"),
+            ("assistant", "Perfect! Could you tell me what gender Seb is?"),
+            
+            # Routine 4 - Child gender
+            ("user", "He's a boy"),
+            ("assistant", "Thanks! Does Seb have any known medical issues that the club should be aware of?"),
+            
+            # Routine 5 - Medical issues
+            ("user", "Yes, he has asthma"),
+            ("assistant", "Is there anything important we need to know about this condition, such as where inhalers are kept?"),
+            ("user", "He keeps his inhaler in his bag"),
+            ("assistant", "Thanks for that information. Did Seb play for another football team last season?"),
+            
+            # Routine 6 - Previous team
+            ("user", "Yes, he played for Urmston Meds"),
+            ("assistant", "What's your relationship to Seb?"),
+            
+            # Routine 7 - Parent relationship
+            ("user", "I'm his dad"),
+            ("assistant", "Could you provide your telephone number?"),
+            
+            # Routine 8 - Parent phone
+            ("user", "07835 065 013"),
+            ("assistant", "What's your email address?"),
+            
+            # Routine 9 - Parent email
+            ("user", "junksamiad@gmail.com"),
+            ("assistant", "Do you consent to receive club communications by email and SMS throughout the season?"),
+            
+            # Routine 10 - Communication consent
+            ("user", "Yes, that's fine"),
+            ("assistant", "Could you please provide your date of birth?"),
+            
+            # Routine 11 - Parent DOB
+            ("user", "2nd June 1981"),
+            ("assistant", "What's your postcode?"),
+            
+            # Routine 12 - Parent postcode
+            ("user", "M32 8JL"),
+            ("assistant", "What's your house number?"),
+            
+            # Routine 13 - Parent house number  
+            ("user", "11"),
+            ("assistant", "I found this address: 11 Granby Rd, Stretford, Manchester M32 8JL. Is this correct?"),
+            
+            # Routine 15 - Address confirmation
+            ("user", "Yes, that's correct"),
+            ("assistant", "Does Seb live at the same address?"),
+            
+            # Routine 16 - Child address same
+            ("user", "Yes, same address"),
+            
+            # System would route to routine 22 for age check, then 28 for summary
+            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Previous team: Urmston Meds\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
+            
+            # Routine 28 - Confirmation
+            ("user", "Yes, that's all correct"),
+            ("assistant", "Brilliant! Now we need to collect the £1 signing-on fee and set up your £1 monthly Direct Debit (September to May). What's your preferred day of the month for the monthly payments?"),
+            
+            # Routine 29 - Payment day (auto-completed)
+            ("user", "15th"),
+            ("assistant", "Perfect! I'm now creating your payment link..."),
+            
+            # Routine 29 completion - Payment link confirmation
+            ("user", "Yes, I've received the payment link"),
+            ("assistant", "Great! Now let's sort out Seb's kit. What size would you like for the shirt and shorts?"),
+            
+            # Routine 33 - Kit size (auto-completed)
+            ("user", "9-10"),
+            ("assistant", "Perfect! Finally, what shirt number would Seb like? (1-99)"),
+            
+            # Routine 33 - Shirt number (auto-completed)
+            ("user", "19"),
+            ("assistant", "Excellent! The only thing left is to upload a passport-style photo of Seb for registration. Please use the + symbol in the chat window to upload a clear photo of Seb (similar style to a school or passport picture)."),
+        ]
+        
+        # Add all conversation history to session
+        for role, message in conversation_history:
+            add_message_to_session_history(current_session_id, role, message)
+        
+        # Now execute the actual tool calls to create real database records
+        print(f"--- Session [{current_session_id}] Executing real tool calls for complete registration ---")
+        
+        try:
+            # Import the tools we need
+            from registration_agent.tools.registration_tools.create_payment_token import create_payment_token
+            from registration_agent.tools.registration_tools.update_reg_details_to_db_tool_ai_friendly import update_reg_details_to_db
+            from registration_agent.tools.registration_tools.check_shirt_number_availability import check_shirt_number_availability
+            from registration_agent.tools.registration_tools.update_kit_details_to_db import update_kit_details_to_db
+            
+            # 1. Create payment token (routine 29 tool call)
+            print(f"--- Session [{current_session_id}] Creating payment token ---")
+            payment_result = create_payment_token(
+                parent_first_name="Lee",
+                parent_last_name="Hayton", 
+                parent_email="junksamiad@gmail.com",
+                parent_phone="07835065013",
+                player_first_name="Seb",
+                player_last_name="Hayton",
+                registration_code="200-leopards-u9-2526",
+                preferred_payment_day=15,
+                monthly_amount=300  # £3.00 test amount
+            )
+            print(f"--- Session [{current_session_id}] Payment token result: {payment_result} ---")
+            
+            # 2. Update registration details to database
+            print(f"--- Session [{current_session_id}] Updating registration details to database ---")
+            db_result = update_reg_details_to_db(
+                registration_code="200-leopards-u9-2526",
+                parent_full_name="Lee Hayton",
+                parent_first_name="Lee",
+                parent_last_name="Hayton",
+                parent_email="junksamiad@gmail.com", 
+                parent_phone="07835065013",
+                parent_dob="02-06-1981",
+                parent_relationship="Father",
+                parent_address="11 Granby Rd, Stretford, Manchester M32 8JL",
+                parent_postcode="M32 8JL",
+                consent_club_comms="Yes",
+                player_full_name="Seb Hayton",
+                player_first_name="Seb",
+                player_last_name="Hayton", 
+                player_dob="18-07-2014",
+                player_gender="Male",
+                player_address="11 Granby Rd, Stretford, Manchester M32 8JL",
+                player_postcode="M32 8JL",
+                medical_conditions="Asthma (inhaler in bag)",
+                previous_club="Urmston Meds"
+            )
+            print(f"--- Session [{current_session_id}] Database update result: {db_result} ---")
+            
+            # 3. Check shirt number availability (routine 33)
+            print(f"--- Session [{current_session_id}] Checking shirt number availability ---")
+            number_check = check_shirt_number_availability(
+                registration_code="200-leopards-u9-2526",
+                requested_number=19
+            )
+            print(f"--- Session [{current_session_id}] Number check result: {number_check} ---")
+            
+            # 4. Update kit details to database (routine 33) 
+            print(f"--- Session [{current_session_id}] Updating kit details to database ---")
+            kit_result = update_kit_details_to_db(
+                registration_code="200-leopards-u9-2526",
+                kit_size="9-10",
+                shirt_number=19
+            )
+            print(f"--- Session [{current_session_id}] Kit update result: {kit_result} ---")
+            
+            print(f"--- Session [{current_session_id}] All tool calls completed successfully ---")
+            
+        except Exception as e:
+            print(f"--- Session [{current_session_id}] Error executing tool calls: {e} ---")
+        
+        # Generate final message for routine 34 (photo upload)
+        cheat_message = "The only thing left is to upload a passport-style photo of Seb for registration. Please use the + symbol in the chat window to upload a clear photo of Seb (similar style to a school or passport picture)."
+        
+        # Add final message to session history
+        add_message_to_session_history(current_session_id, "assistant", cheat_message)
+        
+        # Return response that jumps to routine 34 (photo upload) with complete registration
+        response_json = {
+            "response": cheat_message,
+            "last_agent": "new_registration", 
+            "routine_number": 34  # Jump straight to photo upload with full registration completed
+        }
+        print(f"--- Session [{current_session_id}] RETURNING EXTENDED CHEAT CODE RESPONSE TO CLIENT: {response_json} ---")
         return response_json
     
     # Check for registration code and validate FIRST (before adding to history)
