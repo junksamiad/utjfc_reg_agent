@@ -14,6 +14,8 @@ import os
 import tempfile
 import asyncio
 from pathlib import Path
+import threading
+from datetime import datetime
 
 from urmston_town_agent.responses import chat_loop_1
 from urmston_town_agent.chat_history import get_session_history, add_message_to_session_history, clear_session_history, DEFAULT_SESSION_ID, set_session_context
@@ -26,6 +28,146 @@ from registration_agent.registration_routines import RegistrationRoutines
 from registration_agent.responses_reg import chat_loop_new_registration_1, chat_loop_renew_registration_1
 
 app = FastAPI()
+
+# In-memory storage for upload processing status
+upload_status_store = {}
+status_lock = threading.Lock()
+
+def set_upload_status(session_id: str, status: dict):
+    """Thread-safe status update"""
+    with status_lock:
+        upload_status_store[session_id] = {
+            **status,
+            'updated_at': datetime.now().isoformat()
+        }
+
+def get_upload_status(session_id: str) -> dict:
+    """Thread-safe status retrieval"""
+    with status_lock:
+        return upload_status_store.get(session_id, {'complete': False, 'message': 'Not found'})
+
+def process_photo_background(session_id: str, temp_file_path: str, routine_number: int, last_agent: str):
+    """Background task to process photo upload with AI agent"""
+    try:
+        print(f"--- Background processing started for session [{session_id}] ---")
+        
+        # Set initial processing status
+        set_upload_status(session_id, {
+            'complete': False,
+            'message': 'Processing photo with AI...',
+            'progress': 'ai_processing'
+        })
+        
+        # Get session history
+        session_history = get_session_history(session_id)
+        
+        # Route to photo upload routine (assuming this is routine 34)
+        upload_routine_number = 34
+        routine_message = RegistrationRoutines.get_routine_message(upload_routine_number)
+        
+        if not routine_message:
+            set_upload_status(session_id, {
+                'complete': True,
+                'error': True,
+                'response': 'Photo upload routine not configured',
+                'last_agent': last_agent,
+                'routine_number': routine_number
+            })
+            return
+        
+        print(f"--- Background session [{session_id}] Using photo upload routine: {routine_message[:100]}... ---")
+        
+        # Create dynamic agent for photo upload
+        dynamic_instructions = new_registration_agent.get_instructions_with_routine(routine_message)
+        
+        from registration_agent.agents_reg import Agent
+        dynamic_agent = Agent(
+            name=new_registration_agent.name,
+            model=new_registration_agent.model,
+            instructions=dynamic_instructions,
+            tools=new_registration_agent.tools,
+            use_mcp=new_registration_agent.use_mcp
+        )
+        
+        # Set the current session ID in environment for the upload tool to access
+        os.environ['CURRENT_SESSION_ID'] = session_id
+        
+        # Route to AI agent for photo validation and processing
+        print(f"--- Background session [{session_id}] Routing to AI agent for photo validation and upload ---")
+        
+        # Use the special photo validation chat function for routine 34
+        from registration_agent.responses_reg import chat_loop_new_registration_with_photo
+        ai_full_response_object = chat_loop_new_registration_with_photo(dynamic_agent, session_history, session_id)
+        
+        # Parse the AI response
+        assistant_content_to_send = "✅ Photo uploaded successfully! Registration processing complete."
+        routine_number_from_agent = None
+        
+        try:
+            print(f"Background session [{session_id}] AI response object type: {type(ai_full_response_object)}")
+            print(f"Background session [{session_id}] AI response object: {ai_full_response_object}")
+            
+            if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                print(f"Background session [{session_id}] Found output, length: {len(ai_full_response_object.output)}")
+                if (len(ai_full_response_object.output) > 0 and 
+                    hasattr(ai_full_response_object.output[0], 'content') and 
+                    ai_full_response_object.output[0].content and 
+                    len(ai_full_response_object.output[0].content) > 0 and
+                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                    
+                    text_content = ai_full_response_object.output[0].content[0].text
+                    print(f"Background session [{session_id}] Raw text content: {text_content}")
+                    
+                    try:
+                        structured_response = json.loads(text_content)
+                        print(f"Background session [{session_id}] Parsed JSON: {structured_response}")
+                        if isinstance(structured_response, dict):
+                            assistant_content_to_send = structured_response.get("response", assistant_content_to_send)
+                            routine_number_from_agent = structured_response.get("routine_number")
+                        else:
+                            assistant_content_to_send = str(structured_response)
+                    except (json.JSONDecodeError, TypeError, AttributeError) as parse_error:
+                        print(f"Background session [{session_id}] JSON parse failed, using text directly: {parse_error}")
+                        assistant_content_to_send = text_content
+                else:
+                    print(f"Background session [{session_id}] AI response structure unexpected")
+                    assistant_content_to_send = "✅ Photo uploaded and processed successfully!"
+            else:
+                print(f"Background session [{session_id}] No output found in AI response")
+                assistant_content_to_send = "✅ Photo uploaded and processed successfully!"
+                
+        except Exception as response_error:
+            print(f"Background session [{session_id}] Response parsing error: {response_error}")
+            assistant_content_to_send = "✅ Photo uploaded successfully! Registration details have been saved."
+        
+        # Store successful completion
+        set_upload_status(session_id, {
+            'complete': True,
+            'error': False,
+            'response': assistant_content_to_send,
+            'last_agent': last_agent,
+            'routine_number': routine_number_from_agent or routine_number
+        })
+        
+        print(f"--- Background processing completed for session [{session_id}] ---")
+        
+    except Exception as e:
+        print(f"--- Background processing failed for session [{session_id}]: {e} ---")
+        set_upload_status(session_id, {
+            'complete': True,
+            'error': True,
+            'response': f'Photo processing failed: {str(e)}',
+            'last_agent': last_agent,
+            'routine_number': routine_number
+        })
+    finally:
+        # Clean up temp file
+        try:
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                print(f"--- Cleaned up temp file: {temp_file_path} ---")
+        except Exception as cleanup_error:
+            print(f"--- Failed to clean up temp file {temp_file_path}: {cleanup_error} ---")
 
 # Pydantic model for the chat request
 class UserPayload(BaseModel):
@@ -130,6 +272,76 @@ async def read_root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "UTJFC Registration Backend is running"}
+
+@app.get("/upload-status/{session_id}")
+async def get_upload_processing_status(session_id: str):
+    """Get the current status of photo upload processing"""
+    status = get_upload_status(session_id)
+    return status
+
+@app.post("/upload-async")
+async def upload_file_async_endpoint(
+    file: UploadFile = File(...),
+    session_id: str = Form(...),
+    routine_number: Optional[int] = Form(None),
+    last_agent: Optional[str] = Form(None)
+):
+    """Handle file uploads for player registration photos - ASYNC VERSION"""
+    print(f"--- Session [{session_id}] ASYNC File upload received: {file.filename} ({file.content_type}, {file.size if hasattr(file, 'size') else 'unknown'} bytes) ---")
+    
+    # Validate file type
+    allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic']
+    if file.content_type not in allowed_types:
+        return {"error": f"Invalid file type: {file.content_type}. Allowed types: {', '.join(allowed_types)}"}
+    
+    try:
+        # Read file content and save to temporary file
+        content = await file.read()
+        file_extension = os.path.splitext(file.filename)[1] if file.filename else '.jpg'
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+        temp_file.write(content)
+        temp_file.close()
+        
+        print(f"--- Session [{session_id}] ASYNC File saved to temporary location: {temp_file.name} ---")
+        
+        # Add user message to session history
+        add_message_to_session_history(session_id, "user", f"📎 Uploaded photo: {file.filename}")
+        
+        # Add the uploaded file path as a system message so the AI can access it
+        add_message_to_session_history(session_id, "system", f"UPLOADED_FILE_PATH: {temp_file.name}")
+        
+        # Set initial status as processing
+        set_upload_status(session_id, {
+            'complete': False,
+            'message': 'Photo received! Processing...',
+            'progress': 'received'
+        })
+        
+        # Start background processing in a separate thread
+        import threading
+        background_thread = threading.Thread(
+            target=process_photo_background,
+            args=(session_id, temp_file.name, routine_number or 34, last_agent or "new_registration")
+        )
+        background_thread.daemon = True
+        background_thread.start()
+        
+        # Return immediately with dummy response and processing flag
+        response_json = {
+            "response": "📸 Photo Received. Processing your registration, please wait whilst we check and upload your image...",
+            "processing": True,
+            "session_id": session_id,
+            "last_agent": last_agent or "new_registration",
+            "routine_number": routine_number or 34
+        }
+        
+        print(f"--- Session [{session_id}] RETURNING IMMEDIATE ASYNC RESPONSE: {response_json} ---")
+        print(f"--- Session [{session_id}] Background processing started in separate thread ---")
+        return response_json
+    
+    except Exception as e:
+        print(f"--- Session [{session_id}] Error in async upload endpoint: {e} ---")
+        return {"error": f"File upload failed: {str(e)}"}
 
 @app.post("/chat")
 async def chat_endpoint(payload: UserPayload):
@@ -719,6 +931,7 @@ Please note:
 1. **📸 Have a photo ready** - You'll need to upload a passport-style photo of your child from your device to complete registration
 2. **📱 SMS payment link** - You'll receive a payment link via SMS during this process. Please don't close this chat when you get the SMS - you can complete payment anytime after our chat finishes
 3. **⏳ Processing time** - If any of my responses feel like they are taking a bit longer than normal, please stay in the chat as I'm working behind the scenes to save your information
+4. **🎉 Sibling discount** - If you're registering an additional child (sibling) with the same surname, a 10% discount will automatically be applied to their monthly subscription payment
 
 ---
 

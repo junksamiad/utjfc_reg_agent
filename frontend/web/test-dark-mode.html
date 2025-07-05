@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Very basic dark mode - no prose classes */
+        .dark-test {
+            background: #1f2937;
+            color: white;
+        }
+        .chat-bubble {
+            background: white;
+            color: #1f2937;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px;
+            max-width: 500px;
+        }
+        .dark-test .chat-bubble {
+            background: white;  /* Keep white background */
+            color: #1f2937;     /* Keep dark text */
+        }
+    </style>
+</head>
+<body class="p-8">
+    <!-- Light mode test -->
+    <div class="mb-8">
+        <h2 class="text-xl font-bold mb-4">Light Mode Test</h2>
+        <div class="chat-bubble">
+            <p>What's your preferred day of the month for the monthly subscription payment to come out (from September onwards)? (For example: 1st, 15th, 25th, or 'end of the month')</p>
+            <p><strong>Ages 5-6</strong></p>
+            <p><em>Could you please confirm if you have received the payment link</em></p>
+            <p>Here are all the tools for reference: <span>Ages 7-8</span></p>
+        </div>
+    </div>
+
+    <!-- Dark mode test -->
+    <div class="dark-test">
+        <h2 class="text-xl font-bold mb-4">Dark Mode Test (Vanilla)</h2>
+        <div class="chat-bubble">
+            <p>What's your preferred day of the month for the monthly subscription payment to come out (from September onwards)? (For example: 1st, 15th, 25th, or 'end of the month')</p>
+            <p><strong>Ages 5-6</strong></p>
+            <p><em>Could you please confirm if you have received the payment link</em></p>
+            <p>Here are all the tools for reference: <span>Ages 7-8</span></p>
+        </div>
+    </div>
+
+    <!-- Tailwind dark mode test -->
+    <div class="dark bg-gray-900 text-white p-4">
+        <h2 class="text-xl font-bold mb-4">Tailwind Dark Mode Test</h2>
+        <div class="bg-white text-gray-900 p-4 rounded-lg max-w-lg">
+            <p>What's your preferred day of the month for the monthly subscription payment to come out (from September onwards)? (For example: 1st, 15th, 25th, or 'end of the month')</p>
+            <p><strong>Ages 5-6</strong></p>
+            <p><em>Could you please confirm if you have received the payment link</em></p>
+            <p>Here are all the tools for reference: <span>Ages 7-8</span></p>
+        </div>
+    </div>
+
+    <button onclick="toggleDarkMode()" class="mt-8 px-4 py-2 bg-blue-500 text-white rounded">
+        Toggle System Dark Mode
+    </button>
+
+    <script>
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+</body>
+</html>

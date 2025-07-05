@@ -398,6 +398,25 @@ def activate_subscription(
     preferred_payment_day = fields.get('preferred_payment_day', 15)
     monthly_amount = fields.get('monthly_subscription_amount', 27.5)  # In pounds
     
+    # 🎉 SIBLING DISCOUNT LOGIC: Check for existing siblings and apply 10% discount
+    try:
+        parent_full_name = fields.get('parent_full_name', '')
+        if parent_full_name and player_last_name:
+            # Query for existing registrations with same parent name and player surname
+            sibling_query = f"AND({{parent_full_name}} = '{parent_full_name}', FIND('{player_last_name}', {{player_full_name}}) > 0, {{billing_request_id}} != '{billing_request_id}')"
+            existing_siblings = table.all(formula=sibling_query)
+            
+            if len(existing_siblings) > 0:
+                original_amount = monthly_amount
+                monthly_amount = monthly_amount * 0.9  # Apply 10% sibling discount
+                print(f"🎉 SIBLING DISCOUNT APPLIED: Parent '{parent_full_name}' has {len(existing_siblings)} existing child(ren) with surname '{player_last_name}'")
+                print(f"   Original amount: £{original_amount:.2f} → Discounted amount: £{monthly_amount:.2f}")
+            else:
+                print(f"ℹ️  NO SIBLING DISCOUNT: This is the first child registered for parent '{parent_full_name}' with surname '{player_last_name}'")
+    except Exception as e:
+        print(f"⚠️  SIBLING DISCOUNT CHECK FAILED: {str(e)} - Proceeding with original amount")
+        # Continue with original amount if sibling check fails
+    
     # Convert monthly amount from pounds to pence
     monthly_amount_pence = int(monthly_amount * 100) if monthly_amount else 2750
     

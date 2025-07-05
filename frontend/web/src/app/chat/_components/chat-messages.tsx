@@ -86,9 +86,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                             <div className="flex flex-col items-start min-w-0 flex-1">
                                 <div
                                     className={cn(
-                                        "rounded-lg sm:rounded-xl p-3 sm:p-4 prose prose-sm dark:prose-invert break-words max-w-full",
-                                        'text-gray-900 dark:text-black'
+                                        "p-3 sm:p-4 break-words max-w-full",
+                                        'text-gray-900'
                                     )}
+                                    style={{ color: '#1f2937' }}
                                 >
                                     {msg.isLoading && !msg.content ? (
                                         <div className="flex items-center">
@@ -98,27 +99,35 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loadingMessageId })
                                             {msg.startTime && <LoadingTimer startTime={msg.startTime} />}
                                         </div>
                                     ) : (
-                                        <>
-                                            <ReactMarkdown 
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    a: ({ href, children, ...props }) => (
-                                                        <a 
-                                                            href={href} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            {...props}
-                                                        >
-                                                            {children}
-                                                        </a>
-                                                    )
-                                                }}
-                                            >
-                                                {msg.content}
-                                            </ReactMarkdown>
-                                            {/* Pulsing cursor only shown when loading and content exists */}
-                                            {loadingMessageId === msg.id && msg.content && <span className="animate-pulse animate-fade-in ml-1">▍</span>}
-                                        </>
+                                        <div className="chat-bubble-content prose prose-sm max-w-none">
+                                            <div className="flex items-center flex-wrap">
+                                                <div className="flex-grow">
+                                                    <ReactMarkdown 
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            a: ({ href, children, ...props }) => (
+                                                                <a 
+                                                                    href={href} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    {...props}
+                                                                >
+                                                                    {children}
+                                                                </a>
+                                                            )
+                                                        }}
+                                                    >
+                                                        {msg.content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                                {/* Show timer for photo processing messages that contain "Processing" and are loading */}
+                                                {loadingMessageId === msg.id && msg.content && msg.content.includes("Processing") && msg.startTime && (
+                                                    <LoadingTimer startTime={msg.startTime} />
+                                                )}
+                                            </div>
+                                            {/* Pulsing cursor only shown when loading and content exists and NOT processing photo */}
+                                            {loadingMessageId === msg.id && msg.content && !msg.content.includes("Processing") && <span className="animate-pulse animate-fade-in ml-1">▍</span>}
+                                        </div>
                                     )}
                                 </div>
                                 {!msg.isLoading && msg.content && (

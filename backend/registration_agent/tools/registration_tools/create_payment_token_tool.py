@@ -243,7 +243,7 @@ def handle_create_payment_token(**kwargs) -> str:
                     # Extract data for SMS from the successful result
                     billing_request_id = result.get("billing_request_id", "")
                     child_name = result.get("player_full_name", "")
-                    parent_name = result.get("parent_full_name", "")
+                    parent_name = result.get("parent_first_name", "")
                     parent_phone_clean = parent_phone.strip()
                     
                     print(f"🚀 PROGRAMMATIC SMS TRIGGER: Sending SMS for billing_request_id={billing_request_id}")

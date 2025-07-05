@@ -8,7 +8,11 @@ export const config = {
   
   // Individual endpoint URLs
   get UPLOAD_URL() {
-    return `${this.API_BASE_URL}/upload`;
+    return `${this.API_BASE_URL}/upload-async`;
+  },
+  
+  get UPLOAD_STATUS_URL() {
+    return `${this.API_BASE_URL}/upload-status`;
   },
   
   get CHAT_URL() {

@@ -82,6 +82,28 @@
     animation: fade-in 0.5s ease-out;
   }
   
+  /* Force all chat bubble content to use dark gray text */
+  .chat-bubble-content * {
+    color: #1f2937 !important;
+  }
+
+  .chat-bubble-content strong,
+  .chat-bubble-content b {
+    color: #1f2937 !important;
+    font-weight: bold !important;
+  }
+
+  .chat-bubble-content em,
+  .chat-bubble-content i {
+    color: #1f2937 !important;
+    font-style: italic !important;
+  }
+
+  .chat-bubble-content a {
+    color: #1f2937 !important;
+    text-decoration: underline !important;
+  }
+  
   /* Mobile optimization utilities */
   .touch-manipulation {
     touch-action: manipulation;

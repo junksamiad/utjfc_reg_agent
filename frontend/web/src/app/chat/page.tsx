@@ -106,6 +106,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
             };
 
         case 'START_ASSISTANT_MESSAGE':
+            console.log('🔧 REDUCER: START_ASSISTANT_MESSAGE', action.payload);
             const newMessage: Message = {
                 id: action.payload.id,
                 role: 'assistant',
@@ -114,7 +115,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 isLoading: true,
                 startTime: Date.now(), // Add timestamp when assistant starts
             };
-            return {
+            const newState = {
                 ...state,
                 isLoading: true, // Ensure global loading state is active
                 currentAssistantMessageId: action.payload.id, 
@@ -122,6 +123,12 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 messages: { ...state.messages, [action.payload.id]: newMessage },
                 messageOrder: [...state.messageOrder, action.payload.id],
             };
+            console.log('🔧 REDUCER: New state after START_ASSISTANT_MESSAGE:', {
+                messageCount: Object.keys(newState.messages).length,
+                messageOrder: newState.messageOrder,
+                loadingMessageId: newState.loadingMessageId
+            });
+            return newState;
 
         case 'APPEND_DELTA': // Renamed back
             if (!state.messages[action.payload.id] || state.loadingMessageId !== action.payload.id) return state;
@@ -204,6 +211,13 @@ const simulateTyping = (
     fullContent: string,
     agentName?: string
 ) => {
+    console.log('🎬 simulateTyping called:', {
+        messageId,
+        contentLength: fullContent?.length,
+        contentPreview: fullContent?.substring(0, 50),
+        agentName
+    });
+
     // Add error handling for undefined or empty content
     if (!fullContent || typeof fullContent !== 'string') {
         console.error('simulateTyping: Invalid content provided:', fullContent);
@@ -212,6 +226,7 @@ const simulateTyping = (
     }
 
     if (agentName) {
+        console.log('🎬 Updating agent name to:', agentName);
         dispatch({ type: 'UPDATE_AGENT_NAME', payload: { id: messageId, agentName } });
     }
 
@@ -219,6 +234,7 @@ const simulateTyping = (
     // Splitting by character for a smoother, more granular typing effect
     const chunks = fullContent.split(''); 
     let currentChunkIndex = 0;
+    console.log('🎬 Starting typing animation with', chunks.length, 'characters');
 
     function typeNextChunk() {
         if (currentChunkIndex < chunks.length) {
@@ -227,6 +243,7 @@ const simulateTyping = (
             currentChunkIndex++;
             setTimeout(typeNextChunk, TYPING_SPEED_MS);
         } else {
+            console.log('🎬 Typing animation complete for messageId:', messageId);
             dispatch({ type: 'COMPLETE_ASSISTANT_MESSAGE', payload: { id: messageId } });
         }
     }
@@ -343,17 +360,10 @@ export default function ChatPage() {
             
             console.log('Uploading file with session ID:', sessionId);
             
-            // Create AbortController for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout for photo uploads
-            
             const response = await fetch(config.UPLOAD_URL, {
                 method: 'POST',
                 body: formData,
-                signal: controller.signal,
             });
-            
-            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorData = await response.text();
@@ -369,20 +379,91 @@ export default function ChatPage() {
                 data.routine_number || null
             );
             
-            simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
+            // Check if response indicates processing is needed
+            if (data.processing === true && data.session_id) {
+                console.log('🔄 Starting polling for session:', data.session_id);
+                console.log('🔄 Initial response data:', data);
+                simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
+                
+                // Start polling for final result
+                const pollForResult = async () => {
+                    try {
+                        console.log('📡 Making polling request to:', `${config.UPLOAD_STATUS_URL}/${data.session_id}`);
+                        const statusResponse = await fetch(`${config.UPLOAD_STATUS_URL}/${data.session_id}`, {
+                            method: 'GET',
+                        });
+
+                        console.log('📡 Polling response status:', statusResponse.status);
+                        if (!statusResponse.ok) {
+                            throw new Error(`Status check failed with status ${statusResponse.status}`);
+                        }
+
+                        const statusData = await statusResponse.json();
+                        console.log('📋 Raw polling response:', statusData);
+                        console.log('📋 statusData.complete type:', typeof statusData.complete);
+                        console.log('📋 statusData.complete value:', statusData.complete);
+                        console.log('📋 statusData.complete === true:', statusData.complete === true);
+
+                        if (statusData.complete === true) {
+                            // Processing complete, show final response
+                            console.log('✅ CONDITION MET: Processing complete, showing final result');
+                            console.log('✅ Final response content:', statusData.response);
+                            
+                            // Update agent state from final response
+                            storeAgentState(
+                                statusData.last_agent || null,
+                                statusData.routine_number || null
+                            );
+                            console.log('✅ Agent state updated');
+                            
+                            // Create a new message for the final result
+                            const finalMessageId = `assistant-final-${Date.now()}`;
+                            console.log('✅ Creating final message with ID:', finalMessageId);
+                            
+                            dispatch({ 
+                                type: 'START_ASSISTANT_MESSAGE', 
+                                payload: { id: finalMessageId, agentName: 'UTJFC Assistant' } 
+                            });
+                            console.log('✅ Dispatched START_ASSISTANT_MESSAGE');
+                            
+                            simulateTyping(dispatch, finalMessageId, statusData.response, 'UTJFC Assistant');
+                            console.log('✅ Started simulateTyping for final message');
+                            
+                        } else {
+                            // Still processing, continue polling
+                            console.log('⏳ CONDITION NOT MET: Still processing, continuing to poll...');
+                            console.log('⏳ Complete value was:', statusData.complete, 'Type:', typeof statusData.complete);
+                            setTimeout(pollForResult, 2000); // Poll every 2 seconds
+                        }
+                    } catch (error) {
+                        console.error('❌ POLLING ERROR CAUGHT:', error);
+                        console.error('❌ Error type:', typeof error);
+                        console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+                        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
+                        
+                        // Stop polling on error and show error message
+                        const errorId = `error-poll-${Date.now()}`;
+                        console.log('❌ Creating error message with ID:', errorId);
+                        
+                        dispatch({ 
+                            type: 'START_ASSISTANT_MESSAGE', 
+                            payload: { id: errorId, agentName: 'System Error' } 
+                        });
+                        dispatch({ type: 'SET_ERROR', payload: { errorContent: 'Failed to check processing status. Please try again.' } });
+                        console.log('❌ Error messages dispatched');
+                    }
+                };
+                
+                // Start polling after a short delay
+                setTimeout(pollForResult, 2000);
+            } else {
+                // No polling needed, show response immediately
+                simulateTyping(dispatch, assistantMessageId, data.response, 'UTJFC Assistant');
+            }
 
         } catch (error) {
             console.error("Failed to upload file:", error);
-            let errorMessage = "An unknown error occurred during file upload";
-            
-            if (error instanceof Error) {
-                if (error.name === 'AbortError') {
-                    errorMessage = "Photo upload timed out after 90 seconds. Please try again with a smaller image or check your internet connection.";
-                } else {
-                    errorMessage = error.message;
-                }
-            }
-            
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during file upload";
             dispatch({ type: 'SET_ERROR', payload: { errorContent: errorMessage } });
         }
     }, [dispatch, scrollToVeryBottom]);
@@ -528,10 +609,10 @@ export default function ChatPage() {
             {showScrollDownButton && (
                  <button
                     onClick={scrollToVeryBottom}
-                    className="fixed bottom-24 sm:bottom-32 left-1/2 -translate-x-1/2 z-20 p-2 sm:p-3 bg-gray-700 dark:bg-gray-200 text-white dark:text-black rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 dark:focus:ring-gray-400 transition-opacity duration-300 touch-manipulation"
+                    className="fixed bottom-24 sm:bottom-32 left-1/2 -translate-x-1/2 z-20 p-3 bg-gray-700 dark:bg-gray-200 text-white dark:text-black rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 dark:focus:ring-gray-400 transition-opacity duration-300 touch-manipulation flex items-center justify-center"
                     aria-label="Scroll to bottom"
                  >
-                     <ChevronDown size={20} />
+                     <ChevronDown size={18} className="flex-shrink-0" />
                  </button>
             )}
 

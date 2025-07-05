@@ -133,7 +133,26 @@ Trigger the environment update to pull the new version and deploy it.
 
 Follow these steps to deploy changes made within the `frontend/web/` directory.
 
-### Step 4.1: Build the Static Site
+### Option A: Automated Deployment (Recommended)
+
+Use the automated deployment script that includes all necessary steps:
+
+```bash
+./deploy-frontend.sh
+```
+
+This script automatically:
+- Installs dependencies
+- Builds the application
+- Syncs to S3
+- **Invalidates CloudFront cache**
+- Provides deployment status
+
+### Option B: Manual Step-by-Step Deployment
+
+**⚠️ WARNING**: If using manual deployment, **DO NOT SKIP** the CloudFront invalidation step. Skipping this step will cause users to see old cached content.
+
+#### Step 4.1: Build the Static Site
 
 1.  **Navigate to the frontend directory**:
     ```bash
@@ -148,7 +167,7 @@ Follow these steps to deploy changes made within the `frontend/web/` directory.
     npm run build
     ```
 
-### Step 4.2: Sync Files to S3
+#### Step 4.2: Sync Files to S3
 
 Upload the contents of the `out/` directory to the S3 bucket that serves as the CloudFront origin. The `--delete` flag removes any old files that are no longer part of the build.
 
@@ -159,9 +178,9 @@ Upload the contents of the `out/` directory to the S3 bucket that serves as the 
     aws --profile footballclub s3 sync out/ s3://utjfc-frontend-chat/ --delete --no-cli-pager
     ```
 
-### Step 4.3: Invalidate the CloudFront Cache
+#### Step 4.3: Invalidate the CloudFront Cache (CRITICAL)
 
-To ensure users see the latest version immediately, you must invalidate the CloudFront edge caches.
+**🚨 CRITICAL STEP**: To ensure users see the latest version immediately, you **MUST** invalidate the CloudFront edge caches. **Failure to do this step will result in users seeing old content.**
 
 1.  **Create the invalidation**. This command invalidates all files.
     ```bash
@@ -172,7 +191,7 @@ To ensure users see the latest version immediately, you must invalidate the Clou
     ```
     *Note: CloudFront invalidations can take several minutes to complete.*
 
-### Step 4.4: Verify the Deployment
+#### Step 4.4: Verify the Deployment
 
 1.  Open a browser and navigate to `https://urmstontownjfc.co.uk/chat/`. You may need to perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to bypass your local browser cache.
 
