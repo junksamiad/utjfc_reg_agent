@@ -65,8 +65,8 @@ The application is deployed as a zip archive. It is critical to exclude developm
 2.  **Create the zip archive**. **IMPORTANT**: Update `[vX.X.X]` to the new version number. This version label will be used in subsequent AWS commands.
 
     ```bash
-    # Example version: v1.6.4
-    zip -r ../utjfc-backend-v1.6.4.zip . -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' '*.log' '.venv/*' 'venv/*' '.env*' '*.db'
+    # Example version: v1.6.13 (current latest as of Jan 2025)
+    zip -r ../utjfc-backend-v1.6.13.zip . -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' '*.log' '.venv/*' 'venv/*' '.env*' '*.db'
     ```
 
 3.  **Return to the root directory**:

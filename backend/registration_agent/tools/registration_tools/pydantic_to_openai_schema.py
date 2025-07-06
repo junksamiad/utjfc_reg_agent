@@ -68,7 +68,7 @@ def _convert_pydantic_field_to_openai_property(field_name: str, field_info: Fiel
         elif field_name == "parent_relationship_to_player":
             property_def["description"] = (field_info.description or "") + \
                 " IMPORTANT: Normalize user input - 'mum/mom/mother' → 'Mother', 'dad/daddy/father' → 'Father', 'gran/grandma/grandfather/grandad' → 'Other'"
-        elif field_name in ["player_has_any_medical_issues", "communication_consent", "played_elsewhere_last_season"]:
+        elif field_name in ["player_has_any_medical_issues", "communication_consent", "played_for_urmston_town_last_season"]:
             property_def["description"] = (field_info.description or "") + \
                 " IMPORTANT: Normalize user input - 'yes/yeah/yep/y' → 'Y', 'no/nope/n' → 'N'"
         else:

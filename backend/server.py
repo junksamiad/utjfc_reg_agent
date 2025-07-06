@@ -716,10 +716,10 @@ async def chat_endpoint(payload: UserPayload):
             ("user", "Yes, he has asthma"),
             ("assistant", "Is there anything important we need to know about this condition, such as where inhalers are kept?"),
             ("user", "He keeps his inhaler in his bag"),
-            ("assistant", "Thanks for that information. Did Seb play for another football team last season?"),
+            ("assistant", "Thanks for that information. Did Seb play for Urmston Town last season?"),
             
             # Routine 6 - Previous team
-            ("user", "Yes, he played for Urmston Meds"),
+            ("user", "Yes"),
             ("assistant", "What's your relationship to Seb?"),
             
             # Routine 7 - Parent relationship
@@ -758,7 +758,7 @@ async def chat_endpoint(payload: UserPayload):
             ("user", "Yes, same address"),
             
             # System would route to routine 22 for age check, then 28 for summary
-            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Previous team: Urmston Meds\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
+            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
             
             # Routine 28 - Confirmation
             ("user", "Yes, that's all correct"),
@@ -821,10 +821,10 @@ async def chat_endpoint(payload: UserPayload):
             ("user", "Yes, he has asthma"),
             ("assistant", "Is there anything important we need to know about this condition, such as where inhalers are kept?"),
             ("user", "He keeps his inhaler in his bag"),
-            ("assistant", "Thanks for that information. Did Seb play for another football team last season?"),
+            ("assistant", "Thanks for that information. Did Seb play for Urmston Town last season?"),
             
             # Routine 6 - Previous team
-            ("user", "Yes, he played for Urmston Meds"),
+            ("user", "Yes"),
             ("assistant", "What's your relationship to Seb?"),
             
             # Routine 7 - Parent relationship
@@ -863,7 +863,7 @@ async def chat_endpoint(payload: UserPayload):
             ("user", "Yes, same address"),
             
             # System would route to routine 22 for age check, then 28 for summary
-            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Previous team: Urmston Meds\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
+            ("assistant", "Thanks Lee! Let me confirm all the details I've collected:\n\n**Your Details:**\n- Name: Lee Hayton\n- Relationship: Father\n- Phone: 07835 065 013\n- Email: junksamiad@gmail.com\n- DOB: 02-06-1981\n- Address: 11 Granby Rd, Stretford, Manchester M32 8JL\n\n**Seb's Details:**\n- Name: Seb Hayton\n- DOB: 18-07-2014\n- Gender: Male\n- Team: Leopards U9\n- Medical: Asthma (inhaler in bag)\n- Address: Same as parent\n\n**Communication:** Consent given for club emails/SMS\n\nIs all this information correct?"),
             
             # Routine 28 - Confirmation
             ("user", "Yes, that's all correct"),
@@ -925,19 +925,36 @@ async def chat_endpoint(payload: UserPayload):
                 parent_email="junksamiad@gmail.com", 
                 parent_phone="07835065013",
                 parent_dob="02-06-1981",
-                parent_relationship="Father",
-                parent_address="11 Granby Rd, Stretford, Manchester M32 8JL",
-                parent_postcode="M32 8JL",
-                consent_club_comms="Yes",
+                parent_relationship_to_player="Father",
+                parent_address_line_1="11 Granby Rd",
+                parent_town="Stretford",
+                parent_city="Manchester",
+                parent_full_address="11 Granby Rd, Stretford, Manchester M32 8JL",
+                parent_post_code="M32 8JL",
+                parent_house_number="11",
+                communication_consent="Y",
                 player_full_name="Seb Hayton",
                 player_first_name="Seb",
                 player_last_name="Hayton", 
                 player_dob="18-07-2014",
                 player_gender="Male",
-                player_address="11 Granby Rd, Stretford, Manchester M32 8JL",
-                player_postcode="M32 8JL",
-                medical_conditions="Asthma (inhaler in bag)",
-                previous_club="Urmston Meds"
+                player_address_line_1="11 Granby Rd",
+                player_town="Stretford",
+                player_city="Manchester",
+                player_full_address="11 Granby Rd, Stretford, Manchester M32 8JL",
+                player_post_code="M32 8JL",
+                player_house_number="11",
+                player_has_any_medical_issues="Y",
+                description_of_player_medical_issues="Asthma (inhaler in bag)",
+                played_for_urmston_town_last_season="Y",
+                team="Leopards",
+                age_group="u9",
+                registration_type="200",
+                season="2526",
+                billing_request_id=payment_result.get("billing_request_id", "TEST_BILLING_ID"),
+                preferred_payment_day=15,
+                signing_on_fee_amount=payment_result.get("signing_fee_amount_pounds", 1.0),
+                monthly_subscription_amount=payment_result.get("monthly_amount_pounds", 3.0)
             )
             print(f"--- Session [{current_session_id}] Database update result: {db_result} ---")
             

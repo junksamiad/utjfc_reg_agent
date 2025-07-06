@@ -397,13 +397,20 @@ def activate_subscription(
     age_group = fields.get('age_group', '')
     preferred_payment_day = fields.get('preferred_payment_day', 15)
     monthly_amount = fields.get('monthly_subscription_amount', 27.5)  # In pounds
+    billing_request_id = fields.get('billing_request_id', '')  # Extract billing request ID
+    record_id = registration_record.get('id', '')  # Get record ID for updating
     
     # 🎉 SIBLING DISCOUNT LOGIC: Check for existing siblings and apply 10% discount
     try:
         parent_full_name = fields.get('parent_full_name', '')
         if parent_full_name and player_last_name:
+            # Initialize Airtable for sibling search
+            from pyairtable import Api
+            api = Api(os.getenv('AIRTABLE_API_KEY'))
+            table = api.table('appBLxf3qmGIBc6ue', 'tbl1D7hdjVcyHbT8a')
+            
             # Query for existing registrations with same parent name and player surname
-            sibling_query = f"AND({{parent_full_name}} = '{parent_full_name}', FIND('{player_last_name}', {{player_full_name}}) > 0, {{billing_request_id}} != '{billing_request_id}')"
+            sibling_query = f"AND({{parent_full_name}} = '{parent_full_name}', {{player_last_name}} = '{player_last_name}', {{billing_request_id}} != '{billing_request_id}')"
             existing_siblings = table.all(formula=sibling_query)
             
             if len(existing_siblings) > 0:
@@ -411,6 +418,14 @@ def activate_subscription(
                 monthly_amount = monthly_amount * 0.9  # Apply 10% sibling discount
                 print(f"🎉 SIBLING DISCOUNT APPLIED: Parent '{parent_full_name}' has {len(existing_siblings)} existing child(ren) with surname '{player_last_name}'")
                 print(f"   Original amount: £{original_amount:.2f} → Discounted amount: £{monthly_amount:.2f}")
+                
+                # Update the database with the discounted amount
+                if record_id:
+                    try:
+                        table.update(record_id, {'monthly_subscription_amount': monthly_amount})
+                        print(f"   ✅ Updated database with discounted amount: £{monthly_amount:.2f}")
+                    except Exception as update_error:
+                        print(f"   ⚠️  Warning: Failed to update database with discounted amount: {update_error}")
             else:
                 print(f"ℹ️  NO SIBLING DISCOUNT: This is the first child registered for parent '{parent_full_name}' with surname '{player_last_name}'")
     except Exception as e:

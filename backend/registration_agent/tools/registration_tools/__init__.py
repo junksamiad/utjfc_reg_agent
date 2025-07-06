@@ -18,6 +18,8 @@ from .update_reg_details_to_db_tool_ai_friendly import UPDATE_REG_DETAILS_TO_DB_
 from .send_sms_payment_link import ai_send_sms_payment_link
 from .sms_metrics_queue import queue_sms_metrics, get_sms_queue
 from .send_sms_payment_link_tool_definition import SEND_SMS_PAYMENT_LINK_TOOL
+from .check_if_kit_needed import check_if_kit_needed
+from .check_if_kit_needed_tool import CHECK_IF_KIT_NEEDED_TOOL, handle_check_if_kit_needed
 
 __all__ = [
     'validate_person_name',
@@ -45,5 +47,8 @@ __all__ = [
     'ai_send_sms_payment_link',
     'queue_sms_metrics',
     'get_sms_queue',
-    'SEND_SMS_PAYMENT_LINK_TOOL'
+    'SEND_SMS_PAYMENT_LINK_TOOL',
+    'check_if_kit_needed',
+    'CHECK_IF_KIT_NEEDED_TOOL',
+    'handle_check_if_kit_needed'
 ] 

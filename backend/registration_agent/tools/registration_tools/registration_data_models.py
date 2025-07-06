@@ -209,15 +209,15 @@ class RegistrationDataContract(BaseModel):
     # ============================================================================
     # PREVIOUS CLUB INFORMATION (CONDITIONAL)
     # ============================================================================
-    played_elsewhere_last_season: Literal["Y", "N"] = Field(
+    played_for_urmston_town_last_season: Literal["Y", "N"] = Field(
         ...,
-        description="Whether child played for another team last season - required, validated in routine 6"
+        description="Whether child played for Urmston Town last season - required, validated in routine 6"
     )
     
     previous_team_name: Optional[str] = Field(
         None, 
         max_length=100,
-        description="Name of previous team - required if played_elsewhere_last_season='Y'"
+        description="Name of previous team - required if played_for_urmston_town_last_season='N'"
     )
     
     # ============================================================================
@@ -353,10 +353,10 @@ class RegistrationDataContract(BaseModel):
     @field_validator('previous_team_name')
     @classmethod
     def validate_previous_team(cls, v, info):
-        """Ensure previous team name is provided if played elsewhere."""
+        """Ensure previous team name is provided if didn't play for Urmston Town."""
         values = info.data if hasattr(info, 'data') else {}
-        if values.get('played_elsewhere_last_season') == 'Y' and not v:
-            raise ValueError('Previous team name is required when played elsewhere last season')
+        if values.get('played_for_urmston_town_last_season') == 'N' and not v:
+            raise ValueError('Previous team name is required when did not play for Urmston Town last season')
         return v
     
     @field_validator('parent_telephone', 'player_telephone')

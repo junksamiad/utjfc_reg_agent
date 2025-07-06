@@ -76,7 +76,8 @@ async def send_sms_payment_link(input_data: SendSMSPaymentLinkInput) -> dict:
         account_sid = os.getenv('TWILIO_ACCOUNT_SID')
         auth_token = os.getenv('TWILIO_AUTH_TOKEN')
         twilio_phone = os.getenv('TWILIO_PHONE_NUMBER')
-        payment_base_url = os.getenv('PAYMENT_BASE_URL', 'https://d1ahgtos8kkd8y.cloudfront.net/api')
+        # Hard code production CloudFront URL for SMS links (always use production for payment links)
+        payment_base_url = 'https://d1ahgtos8kkd8y.cloudfront.net/api'
         
         if not all([account_sid, auth_token, twilio_phone]):
             return {

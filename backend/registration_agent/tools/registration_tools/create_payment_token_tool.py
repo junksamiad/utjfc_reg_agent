@@ -243,7 +243,7 @@ def handle_create_payment_token(**kwargs) -> str:
                 preferred_payment_day=int(preferred_payment_day),
                 parent_phone=parent_phone.strip(),
                 signing_fee_amount=100,   # £1.00 in pence (test amount)
-                monthly_amount=100        # £1.00 in pence (test amount)
+                monthly_amount=300        # £3.00 in pence (test amount)
             )
             
             print("🔧 DEBUG: create_payment_token function call completed successfully")

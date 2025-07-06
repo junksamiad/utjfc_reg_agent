@@ -303,12 +303,23 @@
 
 ---
 
-### **Routine 30: SMS Payment Link Confirmation & Kit Size Collection**
+### **Routine 30: SMS Payment Link Confirmation & Smart Kit Routing**
 
 **Task**: Your current task is to: 
 1. Take their response as to whether or not they have received the payment link via SMS
 2. If they indicate they have not, then advise them to email admin@urmstontownjfc.co.uk and someone will get back to them and assist. Never offer to resend by email, or resend the SMS as we can't currently do that. The only way we can help is if they email us.
-3. If they indicate they have received the payment link via SMS, bring to their attention that we still have some information to collect from them in this chat, but remind them that within the next 7 days, they MUST click the link in the SMS message, make payment and setup subscription in order to be registered. Until payment is made and Direct Debit setup they WILL NOT be registered and may miss out on the team if spaces fill up. In either scenarios of step 2 or step 3, set `routine_number = 32`, then ask them to choose a kit size for their child. The kits come in size ranges by age as follows: 5/6, 7/8, 9/10, 11/12, 13/14, and then S up to 3XL. Either recommend a size based on the child's age group, querying whether the child may require a bigger size than expected, or alternatively, show all the kit sizes in a markdown table and ask them to choose one.
+3. If they indicate they have received the payment link via SMS, bring to their attention that we still have some information to collect from them in this chat, but remind them that within the next 7 days, they MUST click the link in the SMS message, make payment and setup subscription in order to be registered. Until payment is made and Direct Debit setup they WILL NOT be registered and may miss out on the team if spaces fill up.
+4. **🔍 Smart Kit Decision Logic**: In either scenario of them indicating they have received or not received the payment link, the next thing to do is to determine whether they need a new kit. To do this, check your conversation history to see if they answered 'No', to being asked whether their child played for Urmston Town last season. If they did imply 'No' to that question, set `routine_number = 32`, then ask them to choose a kit size for their child. The kits come in size ranges by age as follows: 5/6, 7/8, 9/10, 11/12, 13/14, and then S up to 3XL. Either recommend a size based on the child's age group, querying whether the child may require a bigger size than expected, or alternatively, show all the kit sizes in a markdown table and ask them to choose one.
+5. **⚽ Returning Player Kit Check**: If in the conversation history they did imply their child played for Urmston Town last season, then call the function `check_if_kit_needed` to see whether their team is due a new kit. If the result returned implies 'No', then set `routine_number = 34` and explain that next they need to upload a passport-style photo for ID purposes by clicking the + symbol in the chat window and uploading a file.
+6. **🆕 Kit Required for Returning Player**: If the result returned from the `check_if_kit_needed` function implies 'Yes', then set `routine_number = 32`, then ask them to choose a kit size for their child. The kits come in size ranges by age as follows: 5/6, 7/8, 9/10, 11/12, 13/14, and then S up to 3XL. Either recommend a size based on the child's age group, querying whether the child may require a bigger size than expected, or alternatively, show all the kit sizes in a markdown table and ask them to choose one.
+
+**🧠 Smart Logic**: This routine now includes intelligent kit routing:
+- **New Players** (answered 'No' to previous Urmston Town) → Always get kit selection (routine 32)
+- **Returning Players** → Check if team needs new kits via `check_if_kit_needed` function
+  - If kit not needed → Skip kit selection, go to photo upload (routine 34)
+  - If kit needed → Go to kit selection (routine 32)
+
+**🔧 Tool Calling**: Uses `check_if_kit_needed` function for returning players to determine if their team requires new kit this season.
 
 ---
 
@@ -385,6 +396,7 @@ Routines 1-15 → Routine 16 (No) → Routines 18-21 → Routine 22 → Age-base
 - ✅ `address_lookup` - Used in routines 13 & 19 (Google Places API postcode + house number lookup)
 - ✅ `create_payment_token` - Used in routine 29 (GoCardless billing request creation)
 - ✅ `update_reg_details_to_db` - Used in routine 29 (Save registration data to Airtable)
+- ✅ `check_if_kit_needed` - Used in routine 30 (Check if returning player's team needs new kit)
 - ✅ `check_shirt_number_availability` - Used in routine 33 (Check if shirt number is taken)
 - ✅ `update_kit_details_to_db` - Used in routine 33 (Save kit details to database)
 - ✅ `upload_photo_to_s3` - Used in routine 34 (Upload photo to S3 storage)
