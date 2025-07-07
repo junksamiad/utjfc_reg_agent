@@ -22,8 +22,8 @@ def create_payment_token(
     parent_first_name: str,
     preferred_payment_day: int,
     parent_phone: str,
-    signing_fee_amount: int = 100,    # £1.00 in pence (test amount)
-    monthly_amount: int = 300,        # £3.00 in pence (test amount - allows 10% sibling discount = £2.70, above £1.00 minimum)
+    signing_fee_amount: int = 4500,   # £45.00 in pence (live amount)
+    monthly_amount: int = 2750,       # £27.50 in pence (live amount - allows 10% sibling discount = £24.75, above £1.00 minimum)
     gocardless_api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
@@ -40,8 +40,8 @@ def create_payment_token(
         parent_full_name (str): Full name of parent/guardian
         preferred_payment_day (int): Day of month for monthly payments (1-31, or -1 for last day)
         parent_phone (str): Phone number of parent/guardian
-        signing_fee_amount (int): One-off signing fee in pence (default: 100 = £1.00 for testing)
-        monthly_amount (int): Monthly subscription in pence (default: 300 = £3.00 for testing, allows 10% sibling discount = £2.70, above £1.00 minimum)
+        signing_fee_amount (int): One-off signing fee in pence (default: 4500 = £45.00 live amount)
+        monthly_amount (int): Monthly subscription in pence (default: 2750 = £27.50 live amount, allows 10% sibling discount = £24.75, above £1.00 minimum)
         gocardless_api_key (str, optional): GoCardless API key. If not provided, will try to get from env
         
     Returns:

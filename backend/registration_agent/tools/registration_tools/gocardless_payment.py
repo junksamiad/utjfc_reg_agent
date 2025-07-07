@@ -15,8 +15,8 @@ def create_billing_request(
     player_full_name: str,
     team: str,
     age_group: str,
-    signing_fee_amount: int = 100,   # £1.00 in pence (for testing)
-    monthly_amount: int = 100,       # £1.00 in pence (for testing)
+    signing_fee_amount: int = 4500,  # £45.00 in pence (live amount)
+    monthly_amount: int = 2750,      # £27.50 in pence (live amount)
     gocardless_api_key: Optional[str] = None
 ) -> Dict:
     """

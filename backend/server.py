@@ -26,8 +26,200 @@ from registration_agent.routing_validation import validate_and_route_registratio
 from registration_agent.registration_agents import re_registration_agent, new_registration_agent
 from registration_agent.registration_routines import RegistrationRoutines
 from registration_agent.responses_reg import chat_loop_new_registration_1, chat_loop_renew_registration_1
+import time
 
 app = FastAPI()
+
+def retry_ai_call_with_parsing(ai_call_func, *args, max_retries=3, delay=1.0, session_id="unknown", call_type="AI"):
+    """
+    Retry an AI function call with exponential backoff when parsing fails.
+    
+    Args:
+        ai_call_func: The AI function to call (e.g., chat_loop_new_registration_1)
+        *args: Arguments to pass to the AI function
+        max_retries: Maximum number of retry attempts (default: 3)
+        delay: Initial delay between retries in seconds (default: 1.0)
+        session_id: Session ID for logging
+        call_type: Type of AI call for logging (e.g., "registration", "photo upload")
+    
+    Returns:
+        tuple: (success, ai_response_object, parsed_content, routine_number)
+               success: bool - whether parsing was successful
+               ai_response_object: the raw AI response
+               parsed_content: the parsed message content (or error message)
+               routine_number: extracted routine number (or None)
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"--- Session [{session_id}] {call_type} AI call attempt {attempt + 1}/{max_retries + 1} ---")
+            
+            # Call the AI function
+            ai_full_response_object = ai_call_func(*args)
+            
+            # Attempt to parse the response
+            parsed_content = f"Error: Could not parse {call_type.lower()} AI response for frontend."
+            routine_number = None
+            
+            try:
+                # Parse structured response to get both message and routine_number
+                if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                    if (len(ai_full_response_object.output) > 0 and 
+                        hasattr(ai_full_response_object.output[0], 'content') and 
+                        ai_full_response_object.output[0].content and 
+                        len(ai_full_response_object.output[0].content) > 0 and
+                        hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                        
+                        try:
+                            text_content = ai_full_response_object.output[0].content[0].text
+                            structured_response = json.loads(text_content)
+                            if isinstance(structured_response, dict):
+                                if 'agent_final_response' in structured_response:
+                                    parsed_content = structured_response['agent_final_response']
+                                    print(f"--- Session [{session_id}] Successfully parsed {call_type} response on attempt {attempt + 1} ---")
+                                    if 'routine_number' in structured_response:
+                                        routine_number = structured_response['routine_number']
+                                    return True, ai_full_response_object, parsed_content, routine_number
+                                else:
+                                    print(f"--- Session [{session_id}] Missing 'agent_final_response' in structured response ---")
+                            else:
+                                parsed_content = text_content
+                                print(f"--- Session [{session_id}] Response not a dict, using raw text ---")
+                                return True, ai_full_response_object, parsed_content, routine_number
+                        except json.JSONDecodeError as e:
+                            print(f"--- Session [{session_id}] JSON decode error on attempt {attempt + 1}: {e} ---")
+                            parsed_content = ai_full_response_object.output[0].content[0].text
+                            return True, ai_full_response_object, parsed_content, routine_number
+                            
+            except Exception as parse_error:
+                print(f"--- Session [{session_id}] Parse error on attempt {attempt + 1}: {parse_error} ---")
+                
+                # If this is the last attempt, return the failed response
+                if attempt == max_retries:
+                    print(f"--- Session [{session_id}] All {max_retries + 1} attempts failed, returning error ---")
+                    return False, ai_full_response_object, parsed_content, routine_number
+                
+                # Wait before retrying (exponential backoff)
+                wait_time = delay * (2 ** attempt)
+                print(f"--- Session [{session_id}] Retrying in {wait_time} seconds... ---")
+                time.sleep(wait_time)
+                
+        except Exception as ai_error:
+            print(f"--- Session [{session_id}] AI call error on attempt {attempt + 1}: {ai_error} ---")
+            
+            # If this is the last attempt, return the failed response
+            if attempt == max_retries:
+                print(f"--- Session [{session_id}] All {max_retries + 1} attempts failed due to AI errors ---")
+                return False, None, f"Error: {call_type} AI call failed after {max_retries + 1} attempts", None
+            
+            # Wait before retrying (exponential backoff)
+            wait_time = delay * (2 ** attempt)
+            print(f"--- Session [{session_id}] Retrying in {wait_time} seconds... ---")
+            time.sleep(wait_time)
+    
+    # Should never reach here, but just in case
+    return False, None, f"Error: {call_type} AI call failed unexpectedly", None
+
+
+def retry_rereg_ai_call_with_parsing(ai_call_func, *args, max_retries=3, delay=1.0, session_id="unknown"):
+    """
+    Retry a re-registration AI function call with exponential backoff when parsing fails.
+    Re-registration uses a different response structure (output_text instead of output[0].content[0].text).
+    
+    Args:
+        ai_call_func: The AI function to call (e.g., chat_loop_renew_registration_1)
+        *args: Arguments to pass to the AI function
+        max_retries: Maximum number of retry attempts (default: 3)
+        delay: Initial delay between retries in seconds (default: 1.0)
+        session_id: Session ID for logging
+    
+    Returns:
+        tuple: (success, ai_response_object, parsed_content)
+               success: bool - whether parsing was successful
+               ai_response_object: the raw AI response
+               parsed_content: the parsed message content (or error message)
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"--- Session [{session_id}] Re-registration AI call attempt {attempt + 1}/{max_retries + 1} ---")
+            
+            # Call the AI function
+            ai_full_response_object = ai_call_func(*args)
+            
+            # Attempt to parse the response
+            parsed_content = "Error: Could not parse re-registration AI response for frontend."
+            
+            try:
+                # Handle structured output from Responses API (re-registration specific)
+                if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
+                    try:
+                        # Parse the structured JSON response
+                        structured_response = json.loads(ai_full_response_object.output_text)
+                        if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                            parsed_content = structured_response['agent_final_response']
+                            print(f"--- Session [{session_id}] Successfully parsed re-registration response on attempt {attempt + 1} ---")
+                            return True, ai_full_response_object, parsed_content
+                        else:
+                            # Fallback to raw output_text if not properly structured
+                            parsed_content = ai_full_response_object.output_text
+                            print(f"--- Session [{session_id}] Using raw output_text as fallback ---")
+                            return True, ai_full_response_object, parsed_content
+                    except json.JSONDecodeError as e:
+                        print(f"--- Session [{session_id}] JSON decode error on attempt {attempt + 1}: {e}, using raw output_text ---")
+                        parsed_content = ai_full_response_object.output_text
+                        return True, ai_full_response_object, parsed_content
+                        
+                # Fallback to detailed parsing for Responses API (if output_text not available)
+                elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
+                    if (len(ai_full_response_object.output) > 0 and 
+                        hasattr(ai_full_response_object.output[0], 'content') and 
+                        ai_full_response_object.output[0].content and 
+                        len(ai_full_response_object.output[0].content) > 0 and
+                        hasattr(ai_full_response_object.output[0].content[0], 'text')):
+                        
+                        try:
+                            text_content = ai_full_response_object.output[0].content[0].text
+                            structured_response = json.loads(text_content)
+                            if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
+                                parsed_content = structured_response['agent_final_response']
+                                print(f"--- Session [{session_id}] Successfully parsed re-registration detailed response on attempt {attempt + 1} ---")
+                                return True, ai_full_response_object, parsed_content
+                            else:
+                                parsed_content = text_content
+                                return True, ai_full_response_object, parsed_content
+                        except json.JSONDecodeError as e:
+                            print(f"--- Session [{session_id}] JSON decode error in detailed parsing: {e} ---")
+                            parsed_content = ai_full_response_object.output[0].content[0].text
+                            return True, ai_full_response_object, parsed_content
+                            
+            except Exception as parse_error:
+                print(f"--- Session [{session_id}] Re-registration parse error on attempt {attempt + 1}: {parse_error} ---")
+                
+                # If this is the last attempt, return the failed response
+                if attempt == max_retries:
+                    print(f"--- Session [{session_id}] All {max_retries + 1} re-registration attempts failed, returning error ---")
+                    return False, ai_full_response_object, parsed_content
+                
+                # Wait before retrying (exponential backoff)
+                wait_time = delay * (2 ** attempt)
+                print(f"--- Session [{session_id}] Retrying re-registration in {wait_time} seconds... ---")
+                time.sleep(wait_time)
+                
+        except Exception as ai_error:
+            print(f"--- Session [{session_id}] Re-registration AI call error on attempt {attempt + 1}: {ai_error} ---")
+            
+            # If this is the last attempt, return the failed response
+            if attempt == max_retries:
+                print(f"--- Session [{session_id}] All {max_retries + 1} re-registration attempts failed due to AI errors ---")
+                return False, None, f"Error: Re-registration AI call failed after {max_retries + 1} attempts"
+            
+            # Wait before retrying (exponential backoff)
+            wait_time = delay * (2 ** attempt)
+            print(f"--- Session [{session_id}] Retrying re-registration in {wait_time} seconds... ---")
+            time.sleep(wait_time)
+    
+    # Should never reach here, but just in case
+    return False, None, "Error: Re-registration AI call failed unexpectedly"
+
 
 # In-memory storage for upload processing status
 upload_status_store = {}
@@ -390,43 +582,29 @@ async def chat_endpoint(payload: UserPayload):
             use_mcp=new_registration_agent.use_mcp
         )
         
-        # Use new registration flow with dynamic agent
-        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history, current_session_id)
+        # Use new registration flow with dynamic agent and retry mechanism
+        success, ai_full_response_object, assistant_content_to_send, routine_number_from_agent = retry_ai_call_with_parsing(
+            chat_loop_new_registration_1, 
+            dynamic_agent, 
+            session_history, 
+            current_session_id,
+            max_retries=3,
+            session_id=current_session_id,
+            call_type="Registration"
+        )
         
-        # Process the response (same logic as other registration agents)
+        # Process the response
         print(f"--- Session [{current_session_id}] Routine-based Registration AI Response Object: ---")
         print(ai_full_response_object)
         
-        assistant_role_to_store = "assistant" 
-        assistant_content_to_send = "Error: Could not parse registration AI response for frontend."
-        routine_number_from_agent = None
+        assistant_role_to_store = "assistant"
         
-        try:
-            # Parse structured response to get both message and routine_number
-            if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-                if (len(ai_full_response_object.output) > 0 and 
-                    hasattr(ai_full_response_object.output[0], 'content') and 
-                    ai_full_response_object.output[0].content and 
-                    len(ai_full_response_object.output[0].content) > 0 and
-                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                    
-                    try:
-                        text_content = ai_full_response_object.output[0].content[0].text
-                        structured_response = json.loads(text_content)
-                        if isinstance(structured_response, dict):
-                            if 'agent_final_response' in structured_response:
-                                assistant_content_to_send = structured_response['agent_final_response']
-                            if 'routine_number' in structured_response:
-                                routine_number_from_agent = structured_response['routine_number']
-                                print(f"--- Session [{current_session_id}] Agent set routine_number to: {routine_number_from_agent} ---")
-                        else:
-                            assistant_content_to_send = text_content
-                    except json.JSONDecodeError:
-                        assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-                        
-        except Exception as e:
-            print(f"--- Session [{current_session_id}] Error parsing routine-based registration AI response: {e} ---")
-            assistant_content_to_send = f"Error parsing registration AI response: {str(e)}"
+        if success:
+            print(f"--- Session [{current_session_id}] Successfully parsed registration response ---")
+            if routine_number_from_agent:
+                print(f"--- Session [{current_session_id}] Agent set routine_number to: {routine_number_from_agent} ---")
+        else:
+            print(f"--- Session [{current_session_id}] Failed to parse registration response after retries ---")
         
         print(f"--- Session [{current_session_id}] Final routine-based assistant content to send: {assistant_content_to_send} ---")
         
@@ -545,43 +723,29 @@ async def chat_endpoint(payload: UserPayload):
             use_mcp=new_registration_agent.use_mcp
         )
         
-        # Use new registration flow with dynamic agent
-        ai_full_response_object = chat_loop_new_registration_1(dynamic_agent, session_history, current_session_id)
+        # Use new registration flow with dynamic agent and retry mechanism
+        success, ai_full_response_object, assistant_content_to_send, routine_number_from_agent = retry_ai_call_with_parsing(
+            chat_loop_new_registration_1, 
+            dynamic_agent, 
+            session_history, 
+            current_session_id,
+            max_retries=3,
+            session_id=current_session_id,
+            call_type="Registration Continuation"
+        )
         
-        # Process the response (same logic as routine flow)
+        # Process the response
         print(f"--- Session [{current_session_id}] Registration continuation AI Response Object: ---")
         print(ai_full_response_object)
         
-        assistant_role_to_store = "assistant" 
-        assistant_content_to_send = "Error: Could not parse registration AI response for frontend."
-        routine_number_from_agent = None
+        assistant_role_to_store = "assistant"
         
-        try:
-            # Parse structured response to get both message and routine_number
-            if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-                if (len(ai_full_response_object.output) > 0 and 
-                    hasattr(ai_full_response_object.output[0], 'content') and 
-                    ai_full_response_object.output[0].content and 
-                    len(ai_full_response_object.output[0].content) > 0 and
-                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                    
-                    try:
-                        text_content = ai_full_response_object.output[0].content[0].text
-                        structured_response = json.loads(text_content)
-                        if isinstance(structured_response, dict):
-                            if 'agent_final_response' in structured_response:
-                                assistant_content_to_send = structured_response['agent_final_response']
-                            if 'routine_number' in structured_response:
-                                routine_number_from_agent = structured_response['routine_number']
-                                print(f"--- Session [{current_session_id}] Agent set routine_number to: {routine_number_from_agent} ---")
-                        else:
-                            assistant_content_to_send = text_content
-                    except json.JSONDecodeError:
-                        assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-                        
-        except Exception as e:
-            print(f"--- Session [{current_session_id}] Error parsing registration continuation AI response: {e} ---")
-            assistant_content_to_send = f"Error parsing registration AI response: {str(e)}"
+        if success:
+            print(f"--- Session [{current_session_id}] Successfully parsed registration continuation response ---")
+            if routine_number_from_agent:
+                print(f"--- Session [{current_session_id}] Agent set routine_number to: {routine_number_from_agent} ---")
+        else:
+            print(f"--- Session [{current_session_id}] Failed to parse registration continuation response after retries ---")
         
         print(f"--- Session [{current_session_id}] Final registration continuation assistant content to send: {assistant_content_to_send} ---")
         
@@ -605,66 +769,25 @@ async def chat_endpoint(payload: UserPayload):
         add_message_to_session_history(current_session_id, "user", payload.user_message)
         session_history = get_session_history(current_session_id)
         
-        # Use re-registration flow (no routine system, just simple continuation)
-        ai_full_response_object = chat_loop_renew_registration_1(re_registration_agent, session_history)
+        # Use re-registration flow with retry mechanism
+        success, ai_full_response_object, assistant_content_to_send = retry_rereg_ai_call_with_parsing(
+            chat_loop_renew_registration_1, 
+            re_registration_agent, 
+            session_history,
+            max_retries=3,
+            session_id=current_session_id
+        )
         
-        # Process the re-registration agent response (same logic as initial re-registration)
+        # Process the re-registration agent response
         print(f"--- Session [{current_session_id}] Re-registration continuation AI Response Object: ---")
         print(ai_full_response_object)
         
-        assistant_role_to_store = "assistant" 
-        assistant_content_to_send = "Error: Could not parse re-registration AI response for frontend."
+        assistant_role_to_store = "assistant"
         
-        try:
-            # Handle structured output from Responses API (same logic as initial re-registration)
-            if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
-                try:
-                    # Parse the structured JSON response
-                    structured_response = json.loads(ai_full_response_object.output_text)
-                    if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                        assistant_content_to_send = structured_response['agent_final_response']
-                        print(f"--- Session [{current_session_id}] Extracted from re-registration structured output: {assistant_content_to_send} ---")
-                    else:
-                        # Fallback to raw output_text if not properly structured
-                        assistant_content_to_send = ai_full_response_object.output_text
-                        print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
-                except json.JSONDecodeError as e:
-                    print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
-                    assistant_content_to_send = ai_full_response_object.output_text
-                    
-            # Fallback to detailed parsing for Responses API (if output_text not available)
-            elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-                if (len(ai_full_response_object.output) > 0 and 
-                    hasattr(ai_full_response_object.output[0], 'type') and 
-                    ai_full_response_object.output[0].type == 'message' and
-                    hasattr(ai_full_response_object.output[0], 'content') and 
-                    ai_full_response_object.output[0].content and 
-                    len(ai_full_response_object.output[0].content) > 0 and
-                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                    
-                    try:
-                        # Try to parse structured output from detailed format
-                        text_content = ai_full_response_object.output[0].content[0].text
-                        structured_response = json.loads(text_content)
-                        if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                            assistant_content_to_send = structured_response['agent_final_response']
-                        else:
-                            assistant_content_to_send = text_content
-                    except json.JSONDecodeError:
-                        assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-                else:
-                    assistant_content_to_send = "Re-registration assistant is processing your request..."
-                    
-            # Handle error responses
-            elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
-                assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
-            else:
-                print(f"--- Session [{current_session_id}] Unexpected re-registration continuation response format ---")
-                assistant_content_to_send = "Error: Unexpected response format from re-registration AI."
-                
-        except Exception as e:
-            print(f"--- Session [{current_session_id}] Error parsing re-registration continuation AI response: {e} ---")
-            assistant_content_to_send = f"Error parsing re-registration AI response: {str(e)}"
+        if success:
+            print(f"--- Session [{current_session_id}] Successfully parsed re-registration continuation response ---")
+        else:
+            print(f"--- Session [{current_session_id}] Failed to parse re-registration continuation response after retries ---")
         
         print(f"--- Session [{current_session_id}] Final re-registration continuation assistant content to send: {assistant_content_to_send} ---")
         
@@ -1038,8 +1161,14 @@ async def chat_endpoint(payload: UserPayload):
             add_message_to_session_history(current_session_id, "user", payload.user_message)
             session_history = get_session_history(current_session_id)
             
-            # Use re-registration flow
-            ai_full_response_object = chat_loop_renew_registration_1(re_registration_agent, session_history)
+            # Use re-registration flow with retry mechanism
+            success, ai_full_response_object, assistant_content_to_send = retry_rereg_ai_call_with_parsing(
+                chat_loop_renew_registration_1, 
+                re_registration_agent, 
+                session_history,
+                max_retries=3,
+                session_id=current_session_id
+            )
             
             # Process the re-registration agent response
             print(f"--- Session [{current_session_id}] Re-registration AI Response Object: ---")
@@ -1048,59 +1177,12 @@ async def chat_endpoint(payload: UserPayload):
 
             print(f"--- Session [{current_session_id}] Attempting to parse re-registration structured response ---")
 
-            assistant_role_to_store = "assistant" 
-            assistant_content_to_send = "Error: Could not parse re-registration AI response for frontend."
+            assistant_role_to_store = "assistant"
             
-            try:
-                # Handle structured output from Responses API (same logic as universal bot)
-                if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
-                    try:
-                        # Parse the structured JSON response
-                        structured_response = json.loads(ai_full_response_object.output_text)
-                        if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                            assistant_content_to_send = structured_response['agent_final_response']
-                            print(f"--- Session [{current_session_id}] Extracted from re-registration structured output: {assistant_content_to_send} ---")
-                        else:
-                            # Fallback to raw output_text if not properly structured
-                            assistant_content_to_send = ai_full_response_object.output_text
-                            print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
-                    except json.JSONDecodeError as e:
-                        print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
-                        assistant_content_to_send = ai_full_response_object.output_text
-                        
-                # Fallback to detailed parsing for Responses API (if output_text not available)
-                elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-                    if (len(ai_full_response_object.output) > 0 and 
-                        hasattr(ai_full_response_object.output[0], 'type') and 
-                        ai_full_response_object.output[0].type == 'message' and
-                        hasattr(ai_full_response_object.output[0], 'content') and 
-                        ai_full_response_object.output[0].content and 
-                        len(ai_full_response_object.output[0].content) > 0 and
-                        hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                        
-                        try:
-                            # Try to parse structured output from detailed format
-                            text_content = ai_full_response_object.output[0].content[0].text
-                            structured_response = json.loads(text_content)
-                            if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                                assistant_content_to_send = structured_response['agent_final_response']
-                            else:
-                                assistant_content_to_send = text_content
-                        except json.JSONDecodeError:
-                            assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-                    else:
-                        assistant_content_to_send = "Re-registration assistant is processing your request..."
-                        
-                # Handle error responses
-                elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
-                    assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
-                else:
-                    print(f"--- Session [{current_session_id}] Unexpected re-registration response format ---")
-                    assistant_content_to_send = "Error: Unexpected response format from re-registration AI."
-                    
-            except Exception as e:
-                print(f"--- Session [{current_session_id}] Error parsing re-registration AI response: {e} ---")
-                assistant_content_to_send = f"Error parsing re-registration AI response: {str(e)}"
+            if success:
+                print(f"--- Session [{current_session_id}] Successfully parsed re-registration initial response ---")
+            else:
+                print(f"--- Session [{current_session_id}] Failed to parse re-registration initial response after retries ---")
             
             print(f"--- Session [{current_session_id}] Final re-registration assistant content to send: {assistant_content_to_send} ---")
             
@@ -1172,8 +1254,15 @@ Ready to get started? **Can I take your first and last name so I know how to ref
     print(f"--- Session [{current_session_id}] Current session history length: {len(session_history)} ---")
     print(f"--- Session [{current_session_id}] Continuing with universal bot ---")
     
-    # Get AI response using the agent
-    ai_full_response_object = chat_loop_1(default_agent, session_history)
+    # Get AI response using the agent with retry mechanism
+    success, ai_full_response_object, assistant_content_to_send, routine_number_from_agent = retry_ai_call_with_parsing(
+        chat_loop_1, 
+        default_agent, 
+        session_history,
+        max_retries=3,
+        session_id=current_session_id,
+        call_type="Universal Agent"
+    )
     
     print(f"--- Session [{current_session_id}] Full AI Response Object: ---")
     print(ai_full_response_object)
@@ -1181,60 +1270,12 @@ Ready to get started? **Can I take your first and last name so I know how to ref
 
     print(f"--- Session [{current_session_id}] Attempting to parse structured response ---")
 
-    assistant_role_to_store = "assistant" 
-    assistant_content_to_send = "Error: Could not parse AI response for frontend."
+    assistant_role_to_store = "assistant"
     
-    try:
-        # Handle structured output from Responses API
-        if hasattr(ai_full_response_object, 'output_text') and ai_full_response_object.output_text:
-            try:
-                # Parse the structured JSON response
-                structured_response = json.loads(ai_full_response_object.output_text)
-                if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                    assistant_content_to_send = structured_response['agent_final_response']
-                    print(f"--- Session [{current_session_id}] Extracted from structured output: {assistant_content_to_send} ---")
-                else:
-                    # Fallback to raw output_text if not properly structured
-                    assistant_content_to_send = ai_full_response_object.output_text
-                    print(f"--- Session [{current_session_id}] Using raw output_text as fallback ---")
-            except json.JSONDecodeError as e:
-                print(f"--- Session [{current_session_id}] JSON decode error: {e}, using raw output_text ---")
-                assistant_content_to_send = ai_full_response_object.output_text
-                
-        # Fallback to detailed parsing for Responses API (if output_text not available)
-        elif hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-            if (len(ai_full_response_object.output) > 0 and 
-                hasattr(ai_full_response_object.output[0], 'type') and 
-                ai_full_response_object.output[0].type == 'message' and
-                hasattr(ai_full_response_object.output[0], 'content') and 
-                ai_full_response_object.output[0].content and 
-                len(ai_full_response_object.output[0].content) > 0 and
-                hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                
-                try:
-                    # Try to parse structured output from detailed format
-                    text_content = ai_full_response_object.output[0].content[0].text
-                    structured_response = json.loads(text_content)
-                    if isinstance(structured_response, dict) and 'agent_final_response' in structured_response:
-                        assistant_content_to_send = structured_response['agent_final_response']
-                    else:
-                        assistant_content_to_send = text_content
-                except json.JSONDecodeError:
-                    assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-            else:
-                assistant_content_to_send = "Assistant is processing your request..."
-                
-        # Handle error responses
-        elif isinstance(ai_full_response_object, dict) and "error" in ai_full_response_object:
-            assistant_content_to_send = f"Error: {ai_full_response_object['error']}"
-        else:
-            print(f"--- Session [{current_session_id}] Unexpected response format ---")
-            print(f"--- Response object attributes: {dir(ai_full_response_object)} ---")
-            assistant_content_to_send = "Error: Unexpected response format from AI."
-            
-    except Exception as e:
-        print(f"--- Session [{current_session_id}] Error parsing AI response: {e} ---")
-        assistant_content_to_send = f"Error parsing AI response: {str(e)}"
+    if success:
+        print(f"--- Session [{current_session_id}] Successfully parsed universal agent response ---")
+    else:
+        print(f"--- Session [{current_session_id}] Failed to parse universal agent response after retries ---")
     
     print(f"--- Session [{current_session_id}] Final assistant content to send: {assistant_content_to_send} ---")
     
@@ -1311,39 +1352,24 @@ async def upload_file_endpoint(
         # Route to AI agent for photo validation and processing
         print(f"--- Session [{session_id}] Routing to AI agent for photo validation and upload ---")
         
-        # Use the special photo validation chat function for routine 34
+        # Use the special photo validation chat function for routine 34 with retry mechanism
         from registration_agent.responses_reg import chat_loop_new_registration_with_photo
-        ai_full_response_object = chat_loop_new_registration_with_photo(dynamic_agent, session_history, session_id)
+        success, ai_full_response_object, assistant_content_to_send, routine_number_from_agent = retry_ai_call_with_parsing(
+            chat_loop_new_registration_with_photo,
+            dynamic_agent,
+            session_history,
+            session_id,
+            max_retries=3,
+            session_id=session_id,
+            call_type="Photo Upload"
+        )
         
-        # Parse the AI response
-        assistant_content_to_send = "Error: Could not parse AI photo upload response."
-        routine_number_from_agent = None
-        
-        try:
-            if hasattr(ai_full_response_object, 'output') and ai_full_response_object.output:
-                if (len(ai_full_response_object.output) > 0 and 
-                    hasattr(ai_full_response_object.output[0], 'content') and 
-                    ai_full_response_object.output[0].content and 
-                    len(ai_full_response_object.output[0].content) > 0 and
-                    hasattr(ai_full_response_object.output[0].content[0], 'text')):
-                    
-                    try:
-                        text_content = ai_full_response_object.output[0].content[0].text
-                        structured_response = json.loads(text_content)
-                        if isinstance(structured_response, dict):
-                            if 'agent_final_response' in structured_response:
-                                assistant_content_to_send = structured_response['agent_final_response']
-                            if 'routine_number' in structured_response:
-                                routine_number_from_agent = structured_response['routine_number']
-                                print(f"--- Session [{session_id}] AI agent set routine_number to: {routine_number_from_agent} ---")
-                        else:
-                            assistant_content_to_send = text_content
-                    except json.JSONDecodeError:
-                        assistant_content_to_send = ai_full_response_object.output[0].content[0].text
-                        
-        except Exception as e:
-            print(f"--- Session [{session_id}] Error parsing AI photo upload response: {e} ---")
-            assistant_content_to_send = f"Error processing photo upload: {str(e)}"
+        if success:
+            print(f"--- Session [{session_id}] Successfully parsed photo upload response ---")
+            if routine_number_from_agent:
+                print(f"--- Session [{session_id}] AI agent set routine_number to: {routine_number_from_agent} ---")
+        else:
+            print(f"--- Session [{session_id}] Failed to parse photo upload response after retries ---")
         
         response_json = {
             "response": assistant_content_to_send,
