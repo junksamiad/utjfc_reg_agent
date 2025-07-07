@@ -328,7 +328,7 @@ async def upload_file_async_endpoint(
         
         # Return immediately with dummy response and processing flag
         response_json = {
-            "response": "📸 Photo Received. Processing your registration, please wait whilst we check and upload your image...",
+            "response": "📸 Photo Received. Processing your registration, please wait whilst we verify and upload your image. This could take between 30-90 seconds so please keep the chat open until we have completed this check.",
             "processing": True,
             "session_id": session_id,
             "last_agent": last_agent or "new_registration",

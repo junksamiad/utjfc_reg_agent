@@ -1,4 +1,9 @@
-from pydantic import BaseModel, Field, field_validator, EmailStr
+from pydantic import BaseModel, Field, field_validator
+try:
+    from pydantic import EmailStr
+except ImportError:
+    # Fallback for development without email-validator
+    EmailStr = str
 from typing import Optional, Literal
 from datetime import datetime
 import re
@@ -98,10 +103,10 @@ class RegistrationDataContract(BaseModel):
         ..., 
         min_length=1,
         max_length=20,
-        description="Parent's phone number - UK mobile (07...) or Manchester landline (0161...) - required, validated in routine 8"
+        description="Parent's phone number - UK mobile (07...) - required, validated in routine 8"
     )
     
-    parent_email: EmailStr = Field(
+    parent_email: str = Field(
         ...,
         description="Parent's email address - required, validated and lowercased in routine 9"
     )
@@ -229,7 +234,7 @@ class RegistrationDataContract(BaseModel):
         description="Player's mobile number - required for U16+, must be different from parent's"
     )
     
-    player_email: Optional[EmailStr] = Field(
+    player_email: Optional[str] = Field(
         None,
         description="Player's email address - required for U16+, must be different from parent's"
     )
@@ -367,8 +372,8 @@ class RegistrationDataContract(BaseModel):
             return v
         # Remove any spaces, dashes, brackets
         cleaned = re.sub(r'[\s\-\(\)]', '', v)
-        if not re.match(r'^(07\d{9}|0161\d{7})$', cleaned):
-            raise ValueError('Phone number must be UK mobile (07...) or Manchester landline (0161...)')
+        if not re.match(r'^07\d{9}$', cleaned):
+            raise ValueError('Phone number must be UK mobile (07...) with 11 digits')
         return cleaned
     
     @field_validator('parent_post_code', 'player_post_code')

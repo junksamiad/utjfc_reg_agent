@@ -72,7 +72,7 @@ CREATE_PAYMENT_TOKEN_TOOL = {
             },
             "parent_phone": {
                 "type": "string",
-                "description": "REQUIRED: Parent's phone number for SMS payment link. Must be extracted from conversation history (e.g., '07835065013', '0161 123 4567')"
+                "description": "REQUIRED: Parent's mobile phone number for SMS payment link. Must be extracted from conversation history (e.g., '07835065013')"
             }
         },
         "required": ["player_full_name", "age_group", "team_name", "parent_full_name", "parent_first_name", "preferred_payment_day", "parent_phone"]

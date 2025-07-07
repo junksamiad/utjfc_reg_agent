@@ -79,7 +79,7 @@ def add_missing_fields():
             "name": "parent_telephone",
             "type": "singleLineText",
             "options": {
-                "description": "Parent's telephone number (UK mobile 07... or Manchester landline 0161...)"
+                "description": "Parent's telephone number (UK mobile 07...)"
             }
         },
         {
