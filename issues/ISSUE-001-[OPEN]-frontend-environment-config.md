@@ -1,6 +1,6 @@
 # Issue #001: Frontend Environment Configuration - Hardcoded API URLs
 
-**Priority**: Medium  
+**Priority**: Low [ON HOLD] 
 **Type**: Configuration / Security  
 **Component**: Frontend  
 **Created**: January 2025  
