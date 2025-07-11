@@ -70,13 +70,16 @@ docker compose down
 ### Testing
 ```bash
 # Photo upload comprehensive test
-python3 test_photo_upload.py
+cd test_scripts/integration
+python test_photo_upload.py
 
 # Backend MCP flow test
-python3 test_backend_mcp_flow.py
+cd test_scripts/integration
+python test_backend_mcp_flow.py
 
 # S3 photo cleanup
-python3 cleanup_test_photos.py
+cd test_scripts/utilities
+python cleanup_test_photos.py
 ```
 
 ## Architecture Overview
@@ -98,28 +101,42 @@ python3 cleanup_test_photos.py
    - **Airtable Integration**: Database operations through MCP protocol
    - **FastAPI-based**: RESTful API with streaming support
 
-### Registration Agent System
+### Agent Architecture
 
-The system uses a sophisticated AI agent architecture:
+The system implements a **two-tier agent architecture**:
 
-- **Routing Logic**: Automatic detection of registration codes (100-series for re-registration, 200-series for new registration)
-- **Dual Agent Types**: 
-  - `re_registration_agent`: Handles returning players
-  - `new_registration_agent`: Handles new players with full 35-step workflow
-- **Business Logic**: Age-based routing, sibling discounts, kit requirements, payment processing
+1. **Orchestrator Agent (`urmston_town_agent/`)**
+   - **Entry Point**: All chat requests initially handled here
+   - **General Inquiries**: Club information, player lookups, team details
+   - **Database Operations**: Direct Airtable access for queries
+   - **Routing Decision**: Detects registration codes and routes to specialized agents
+
+2. **Specialized Registration Agents (`registration_agent/`)**
+   - **Triggered By**: Valid registration codes only
+   - **100-Series**: Re-registration flow for existing players
+   - **200-Series**: New registration flow with 35-step process
+   - **No Return Path**: Once routed to registration, stays there for session
+   - **Business Logic**: Age-based routing, sibling discounts, kit requirements, payment processing
 
 ### Key File Locations
 
-- **Agent Definitions**: `backend/registration_agent/registration_agents.py`
-- **35-Step Workflow**: `backend/registration_agent/registration_routines.py`
-- **AI Response Processing**: `backend/registration_agent/responses_reg.py`
+- **Orchestrator Agent**: `backend/urmston_town_agent/`
+  - `agents.py` - Base agent class with MCP/local modes
+  - `responses.py` - AI integration with chat_loop_1
+  - `chat_history.py` - Centralized session management
+- **Registration Agents**: `backend/registration_agent/`
+  - `registration_agents.py` - Specialized agent instances
+  - `registration_routines.py` - 35-step workflow definitions
+  - `routing_validation.py` - Code detection and validation
+  - `responses_reg.py` - AI response processing
+- **Main Router**: `backend/server.py` - Entry point and routing logic
 - **Tool Ecosystem**: `backend/registration_agent/tools/`
 - **Database Operations**: `backend/registration_agent/tools/airtable/`
 - **Chat Interface**: `frontend/web/src/app/chat/`
 
 ## External Services Integration
 
-- **OpenAI GPT-4**: AI agent processing
+- **OpenAI GPT-4.1**: AI model for all agents (required for MCP compatibility)
 - **Airtable**: Primary database for registration data
 - **GoCardless**: Direct debit payment processing
 - **Twilio**: SMS notifications and payment links
@@ -132,12 +149,17 @@ The system uses a sophisticated AI agent architecture:
 Create `backend/.env` with:
 ```
 OPENAI_API_KEY=your_key_here
-AIRTABLE_PAT=your_token_here
-GOCARDLESS_TOKEN=your_token_here
+AIRTABLE_API_KEY=your_pat_token_here  # Personal Access Token starting with 'pat'
+GOCARDLESS_API_KEY=your_key_here
+GOCARDLESS_WEBHOOK_SECRET=your_secret_here
 TWILIO_ACCOUNT_SID=your_sid_here
 TWILIO_AUTH_TOKEN=your_token_here
+TWILIO_PHONE_NUMBER=your_phone_here
 AWS_ACCESS_KEY_ID=your_key_here
 AWS_SECRET_ACCESS_KEY=your_secret_here
+GOOGLE_MAPS_API_KEY=your_key_here
+USE_MCP=true
+MCP_SERVER_URL=https://utjfc-mcp-server.replit.app/mcp
 ```
 
 ### Frontend Environment Variables
@@ -148,13 +170,17 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## AI Agent Workflow
 
-The system implements a 35-step registration process with intelligent routing:
+The system implements a two-tier agent architecture with intelligent routing:
 
-1. **Code Detection**: Regex pattern matching for registration codes
-2. **Agent Selection**: Route to appropriate agent based on code type
-3. **Conversational Flow**: Step-by-step data collection with validation
-4. **Tool Integration**: Automated validation, payment processing, and data storage
-5. **Error Handling**: Retry mechanisms with exponential backoff for AI failures
+1. **Entry Point**: All requests go through orchestrator agent first
+2. **Code Detection**: `validate_and_route_registration()` checks for registration codes
+3. **Three-Way Routing**:
+   - **No Code**: Continue with orchestrator agent (general chat)
+   - **100-Series Code**: Route to re-registration agent
+   - **200-Series Code**: Route to new registration agent (35-step workflow)
+4. **Session Continuity**: History maintained across agent switches
+5. **Tool Integration**: Each agent has specific tools for its purpose
+6. **Error Handling**: Retry mechanisms with exponential backoff
 
 ## Key Features
 
@@ -179,3 +205,12 @@ The system implements a 35-step registration process with intelligent routing:
 - Frontend uses polling for long-running operations (photo processing)
 - Comprehensive logging and monitoring throughout the system
 - Production deployment through AWS Elastic Beanstalk with CloudFront
+
+## Important Architecture Notes
+
+- **All requests initially hit the orchestrator agent** (`urmston_town_agent`)
+- **Registration agents are only triggered by valid codes** - not directly accessible
+- **The orchestrator handles all non-registration conversations**
+- **Session history is centralized** - all agents share the same history system
+- **MCP mode is production default** - local mode for development/testing
+- **Model consistency** - All agents use GPT-4.1 for MCP compatibility
