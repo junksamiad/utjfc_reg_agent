@@ -21,7 +21,7 @@ def check_shirt_number_availability(**kwargs) -> Dict[str, Any]:
     Args:
         team (str): Team name (e.g., "Tigers", "Eagles") - must be properly capitalized
         age_group (str): Age group in lowercase format u## (e.g., "u10", "u16")
-        requested_shirt_number (int): Shirt number to check (1-25)
+        requested_shirt_number (int): Shirt number to check (1-49)
         
     Returns:
         dict: Result with all existing shirt numbers for AI to analyze availability
@@ -48,10 +48,10 @@ def check_shirt_number_availability(**kwargs) -> Dict[str, Any]:
         # Normalize age_group to lowercase format
         age_group = age_group.lower()
         
-        if not isinstance(requested_shirt_number, int) or not (1 <= requested_shirt_number <= 25):
+        if not isinstance(requested_shirt_number, int) or not (1 <= requested_shirt_number <= 49):
             return {
                 "success": False,
-                "message": "Requested shirt number must be an integer between 1 and 25"
+                "message": "Requested shirt number must be an integer between 1 and 49"
             }
         
         # Check Airtable API key
@@ -122,7 +122,7 @@ def generate_shirt_number_check_schema():
         The AI should then analyze the returned 'players' array to determine:
         1. If the requested shirt number is already taken (check shirt_number field)
         2. Which player has that number if taken
-        3. What alternative numbers are available (1-25 range)
+        3. What alternative numbers are available (1-49 range)
         
         Use this function when a user requests a specific shirt number during registration.
         Extract the team and age_group from the conversation history - this information
@@ -143,8 +143,8 @@ def generate_shirt_number_check_schema():
                 "requested_shirt_number": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 25,
-                    "description": "The shirt number the player wants (1-25)"
+                    "maximum": 49,
+                    "description": "The shirt number the player wants (1-49)"
                 }
             },
             "required": ["team", "age_group", "requested_shirt_number"]

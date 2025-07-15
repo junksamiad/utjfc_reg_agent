@@ -36,8 +36,8 @@ class KitDetailsData(BaseModel):
     shirt_number: int = Field(
         ...,
         ge=1,
-        le=25,
-        description="Shirt number chosen by player (1-25) - should be extracted from conversation history where they chose their shirt number"
+        le=49,
+        description="Shirt number chosen by player (1-49) - should be extracted from conversation history where they chose their shirt number"
     )
     
     # Record ID to update (extracted from initial registration)
@@ -202,7 +202,7 @@ def generate_update_kit_details_schema():
         
         IMPORTANT: Set kit_type_required based on shirt_number:
         - If shirt_number is 1 or 12, set kit_type_required to 'Goalkeeper'
-        - If shirt_number is any other number (2-11, 13-25), set kit_type_required to 'Outfield'
+        - If shirt_number is any other number (2-11, 13-49), set kit_type_required to 'Outfield'
         """,
         "parameters": {
             "type": "object",
@@ -215,7 +215,7 @@ def generate_update_kit_details_schema():
                 "kit_type_required": {
                     "type": "string", 
                     "enum": ["Goalkeeper", "Outfield"],
-                    "description": "Type of kit required. Set to 'Goalkeeper' if shirt_number is 1 or 12, otherwise set to 'Outfield' for all other shirt numbers (2-11, 13-25)"
+                    "description": "Type of kit required. Set to 'Goalkeeper' if shirt_number is 1 or 12, otherwise set to 'Outfield' for all other shirt numbers (2-11, 13-49)"
                 },
                 "kit_size": {
                     "type": "string",
@@ -225,8 +225,8 @@ def generate_update_kit_details_schema():
                 "shirt_number": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 25,
-                    "description": "Shirt number chosen by player (1-25) - extract from conversation history where they chose their shirt number and it was confirmed as available"
+                    "maximum": 49,
+                    "description": "Shirt number chosen by player (1-49) - extract from conversation history where they chose their shirt number and it was confirmed as available"
                 },
                 "record_id": {
                     "type": "string",
