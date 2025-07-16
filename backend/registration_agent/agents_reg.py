@@ -14,6 +14,7 @@ from .tools.registration_tools.upload_photo_to_s3_tool import UPLOAD_PHOTO_TO_S3
 from .tools.registration_tools.update_photo_link_to_db_tool import UPDATE_PHOTO_LINK_SCHEMA
 from .tools.registration_tools.send_sms_payment_link_tool_definition import SEND_SMS_PAYMENT_LINK_TOOL
 from .tools.registration_tools.check_if_kit_needed_tool import CHECK_IF_KIT_NEEDED_TOOL
+from .tools.registration_tools.check_if_record_exists_in_db_tool import CHECK_IF_RECORD_EXISTS_IN_DB_TOOL
 import os
 from dotenv import load_dotenv
 
@@ -58,7 +59,8 @@ class Agent(BaseModel):
                 "upload_photo_to_s3": UPLOAD_PHOTO_TO_S3_TOOL,
                 "update_photo_link_to_db": UPDATE_PHOTO_LINK_SCHEMA,
                 "send_sms_payment_link": SEND_SMS_PAYMENT_LINK_TOOL,
-                "check_if_kit_needed": CHECK_IF_KIT_NEEDED_TOOL
+                "check_if_kit_needed": CHECK_IF_KIT_NEEDED_TOOL,
+                "check_if_record_exists_in_db": CHECK_IF_RECORD_EXISTS_IN_DB_TOOL
             }
             
             # Return the tool definitions for the tools specified in self.tools
@@ -94,6 +96,7 @@ class Agent(BaseModel):
         from .tools.registration_tools.update_photo_link_to_db_tool import update_photo_link_to_db
         from .tools.registration_tools.send_sms_payment_link import ai_send_sms_payment_link
         from .tools.registration_tools.check_if_kit_needed_tool import handle_check_if_kit_needed
+        from .tools.registration_tools.check_if_record_exists_in_db_tool import handle_check_if_record_exists_in_db
         
         return {
             "airtable_database_operation": handle_airtable_tool_call,
@@ -110,7 +113,8 @@ class Agent(BaseModel):
             "upload_photo_to_s3": upload_photo_to_s3,
             "update_photo_link_to_db": update_photo_link_to_db,
             "send_sms_payment_link": ai_send_sms_payment_link,
-            "check_if_kit_needed": handle_check_if_kit_needed
+            "check_if_kit_needed": handle_check_if_kit_needed,
+            "check_if_record_exists_in_db": handle_check_if_record_exists_in_db
         }
     
     def get_instructions_with_routine(self, routine_message: str = ""):

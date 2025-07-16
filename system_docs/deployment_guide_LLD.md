@@ -17,6 +17,7 @@
 6. [Verification & Health Checks](#verification--health-checks)
 7. [Troubleshooting Common Issues](#troubleshooting-common-issues)
 8. [Critical Deployment Notes](#critical-deployment-notes)
+9. [Version Tracking Requirements](#version-tracking-requirements)
 
 ---
 
@@ -52,7 +53,17 @@ AWS_PAGER="" aws --profile footballclub <command>
 - **Frontend S3 Bucket**: `utjfc-frontend-chat`
 - **CloudFront Distribution**: `E2WNKV9R9SX5XH`
 - **Region**: `eu-north-1` (Stockholm)
-- **Current Version Format**: `v1.6.13` (as of January 2025)
+- **Current Backend Version**: `v1.6.22` (as of 16th July 2025)
+
+### 🚨 CRITICAL: Version Tracking for AI Agents
+**IMPORTANT**: After each deployment, you MUST update the "Current Backend Version" above with the version number you just deployed. This ensures the next AI agent or developer knows which version to use next.
+
+**Version Format**: `vX.Y.Z` where:
+- X = Major version (breaking changes)
+- Y = Minor version (new features)
+- Z = Patch version (bug fixes, small changes)
+
+**Next version should be**: `v1.6.23` (increment patch version)
 
 ---
 
@@ -86,11 +97,19 @@ cd backend
 #### 1.2 Create Versioned Zip Archive
 **IMPORTANT**: Update version number in filename for tracking.
 
+**🚨 CRITICAL**: The zip file MUST be created from within the backend directory to ensure the Dockerfile is in the root of the zip file. If the zip contains a `backend/` subdirectory, deployment will fail with "Dockerfile missing" error.
+
 ```bash
 # Example: v1.6.14 (increment from current v1.6.13)
 zip -r ../utjfc-backend-v1.6.14.zip . \
   -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' \
      '*.log' '.venv/*' 'venv/*' '.env*' '*.db'
+```
+
+**Alternative approach if zip creation fails**:
+```bash
+# Create zip and move to project root in one command
+zip -r utjfc-backend-v1.6.14.zip . -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' '*.log' '.venv/*' 'venv/*' '.env*' '*.db' && mv utjfc-backend-v1.6.14.zip ..
 ```
 
 #### 1.3 Return to Root Directory
@@ -155,6 +174,70 @@ curl https://d1ahgtos8kkd8y.cloudfront.net/api/health
   "status": "healthy",
   "message": "UTJFC Registration Backend is running"
 }
+```
+
+#### 5.4 🚨 CRITICAL: Verify Environment Variables Are Set
+**IMPORTANT**: After deployment, always verify that ALL required environment variables are configured in production. Missing environment variables will cause runtime failures.
+
+```bash
+# Check that all required environment variables are set
+aws --profile footballclub elasticbeanstalk describe-configuration-settings \
+  --application-name "utjfc-registration-backend" \
+  --environment-name "utjfc-backend-prod-3" \
+  --no-cli-pager | grep -A 1 "aws:elasticbeanstalk:application:environment"
+```
+
+**Required Environment Variables Checklist**:
+- [ ] `OPENAI_API_KEY` - OpenAI API access
+- [ ] `AIRTABLE_API_KEY` - Airtable database access  
+- [ ] `AWS_ACCESS_KEY_ID` - AWS S3 photo upload access
+- [ ] `AWS_SECRET_ACCESS_KEY` - AWS S3 photo upload access
+- [ ] `AWS_REGION` - AWS S3 region (eu-north-1)
+- [ ] `S3_BUCKET_NAME` - S3 bucket name (utjfc-player-photos)
+- [ ] `GOCARDLESS_API_KEY` - Payment processing
+- [ ] `TWILIO_ACCOUNT_SID` - SMS notifications
+- [ ] `TWILIO_AUTH_TOKEN` - SMS notifications
+- [ ] `TWILIO_PHONE_NUMBER` - SMS sender number
+- [ ] `USE_MCP` - MCP server configuration (true)
+- [ ] `MCP_SERVER_URL` - MCP server endpoint
+
+**If any variables are missing**, add them using:
+```bash
+aws --profile footballclub elasticbeanstalk update-environment \
+  --environment-name "utjfc-backend-prod-3" \
+  --option-settings Namespace=aws:elasticbeanstalk:application:environment,OptionName=VARIABLE_NAME,Value=VARIABLE_VALUE \
+  --no-cli-pager
+```
+
+**Current AWS Credentials**: See `system_docs/aws_credentials_reference.md` for current production credentials.
+
+**⚠️ IMPORTANT**: AWS credentials are stored in a separate file that should not be committed to version control.
+
+**Test critical functionality** after deployment:
+```bash
+# Test photo upload functionality
+curl -X POST -F "file=@test.jpg" -F "session_id=test123" \
+  https://d1ahgtos8kkd8y.cloudfront.net/api/upload-async
+```
+
+**Expected Response**: Should return JSON with processing status, not 500 error.
+
+### Step 6: Update This Guide with New Version Number
+
+#### 🚨 CRITICAL FINAL STEP
+After successful deployment, **YOU MUST** update this guide:
+
+1. Navigate to line 55 in this file
+2. Update `Current Backend Version` with the version you just deployed
+3. Update the date to today's date
+4. Update `Next version should be` to increment appropriately
+5. Commit this change with message: "docs: update deployment guide with version vX.Y.Z"
+
+**Example**:
+```markdown
+- **Current Backend Version**: `v1.6.21` (as of 16th July 2025)
+...
+**Next version should be**: `v1.6.22` (increment patch version)
 ```
 
 ---
@@ -332,6 +415,20 @@ aws --profile footballclub cloudfront list-invalidations \
 ## Troubleshooting Common Issues
 
 ### Backend Deployment Issues
+
+#### Issue: "Dockerfile missing" Error
+**Symptoms**: Deployment fails with "Both 'Dockerfile' and 'Dockerrun.aws.json' are missing in your source bundle"
+
+**Cause**: Zip file was created incorrectly with backend/ subdirectory instead of from within the backend directory
+
+**Solution**:
+1. Delete the incorrect zip file
+2. Navigate to backend directory: `cd backend`
+3. Create zip from within backend directory:
+   ```bash
+   zip -r ../utjfc-backend-v1.6.21.zip . -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' '*.log' '.venv/*' 'venv/*' '.env*' '*.db'
+   ```
+4. Verify zip structure contains Dockerfile in root (not in backend/ subdirectory)
 
 #### Issue: Environment Stuck in "Updating"
 **Symptoms**: Environment status remains "Updating" for >15 minutes
@@ -563,3 +660,71 @@ This deployment guide provides complete, tested procedures for safely deploying 
 - **Verification**: Multiple validation checkpoints
 
 The procedures in this guide have been tested in production and provide reliable, repeatable deployment workflows for maintaining the UTJFC registration system.
+
+---
+
+## Version Tracking Requirements
+
+### Why Version Tracking is Critical
+
+Proper version tracking is **ESSENTIAL** for:
+- **Preventing version conflicts**: Multiple AI agents or developers must not use the same version number
+- **Audit trail**: Clear history of what was deployed when
+- **Rollback capability**: Knowing which version to rollback to if issues arise
+- **Team coordination**: Everyone knows the current production version
+
+### Version Update Checklist
+
+After **EVERY** backend deployment, you **MUST**:
+
+1. **Update Line 55** of this guide with:
+   - New version number you just deployed
+   - Today's date
+   - Example: `- **Current Backend Version**: \`v1.6.21\` (as of 16th July 2025)`
+
+2. **Update Line 65** with the next version:
+   - Increment patch version for bug fixes/small changes
+   - Increment minor version for new features
+   - Example: `**Next version should be**: \`v1.6.22\` (increment patch version)`
+
+3. **Commit the update**:
+   ```bash
+   git add system_docs/deployment_guide_LLD.md
+   git commit -m "docs: update deployment guide with version v1.6.21"
+   git push
+   ```
+
+### Version Numbering Guidelines
+
+**Format**: `vX.Y.Z`
+- **X (Major)**: Breaking changes, major architecture updates
+- **Y (Minor)**: New features, significant enhancements
+- **Z (Patch)**: Bug fixes, small improvements, configuration changes
+
+**Examples**:
+- Bug fix: v1.6.20 → v1.6.21
+- New feature: v1.6.21 → v1.7.0
+- Breaking change: v1.7.5 → v2.0.0
+
+### Checking Current Version
+
+Before starting any deployment:
+```bash
+# Check this guide for the current version (line 55)
+grep "Current Backend Version" system_docs/deployment_guide_LLD.md
+
+# Verify with AWS
+aws --profile footballclub elasticbeanstalk describe-application-versions \
+  --application-name "utjfc-registration-backend" \
+  --max-records 5 --no-cli-pager | grep VersionLabel
+```
+
+### Emergency Version Recovery
+
+If version tracking gets out of sync:
+1. Check AWS for the actual deployed version
+2. Update this guide to match reality
+3. Document the discrepancy in your commit message
+4. Continue with proper incremental versioning
+
+Remember: **Version tracking is not optional** - it's a critical part of the deployment process!

@@ -52,3 +52,6 @@ Thumbs.db
 
 # MCP Server environment file
 mcp_server/.env
+
+# AWS credentials reference file (contains sensitive production credentials)
+system_docs/aws_credentials_reference.md

@@ -20,6 +20,8 @@ from .sms_metrics_queue import queue_sms_metrics, get_sms_queue
 from .send_sms_payment_link_tool_definition import SEND_SMS_PAYMENT_LINK_TOOL
 from .check_if_kit_needed import check_if_kit_needed
 from .check_if_kit_needed_tool import CHECK_IF_KIT_NEEDED_TOOL, handle_check_if_kit_needed
+from .check_if_record_exists_in_db import check_if_record_exists_in_db
+from .check_if_record_exists_in_db_tool import CHECK_IF_RECORD_EXISTS_IN_DB_TOOL, handle_check_if_record_exists_in_db
 
 __all__ = [
     'validate_person_name',
@@ -50,5 +52,8 @@ __all__ = [
     'SEND_SMS_PAYMENT_LINK_TOOL',
     'check_if_kit_needed',
     'CHECK_IF_KIT_NEEDED_TOOL',
-    'handle_check_if_kit_needed'
+    'handle_check_if_kit_needed',
+    'check_if_record_exists_in_db',
+    'CHECK_IF_RECORD_EXISTS_IN_DB_TOOL',
+    'handle_check_if_record_exists_in_db'
 ] 

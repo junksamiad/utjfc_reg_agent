@@ -21,6 +21,6 @@ To do this, you will engage in a simple two way conversation with the parent, as
 
 CURRENT STEP INSTRUCTIONS:
 {routine_instructions}""",
-    tools=["address_validation", "address_lookup", "create_signup_payment_link", "create_payment_token", "update_reg_details_to_db", "check_shirt_number_availability", "update_kit_details_to_db", "upload_photo_to_s3", "update_photo_link_to_db", "check_if_kit_needed"],
+    tools=["address_validation", "address_lookup", "create_signup_payment_link", "create_payment_token", "update_reg_details_to_db", "check_shirt_number_availability", "update_kit_details_to_db", "upload_photo_to_s3", "update_photo_link_to_db", "check_if_kit_needed", "check_if_record_exists_in_db"],
     use_mcp=False  # Local function calling
 ) 
