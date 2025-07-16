@@ -185,6 +185,19 @@ This ensures the codebase documentation stays current and accurate for future de
 
 ## Directory Organization
 
+### Status-Based Organization Structure
+
+Features are now organized by development status using numbered directories for clear lifecycle management:
+
+```
+new_features/
+├── 01_PLANNING/           # Features in planning/specification phase
+├── 02_IN_DEVELOPMENT/     # Features actively being developed
+├── 03_IMPLEMENTED/        # Completed and deployed features
+├── 04_CANCELLED/          # Discontinued features (for reference)
+└── README.md              # This documentation
+```
+
 ### Feature Structure
 Each feature should have its own directory containing:
 - `feature_specification.md` - Main feature documentation
@@ -192,23 +205,45 @@ Each feature should have its own directory containing:
 - `tests/` - All test scripts for the feature
 - `README.md` - Feature overview and testing instructions
 
-### Current Features
-- `restart_chat_if_disconnected/` - ✅ IMPLEMENTED - Resume registration after disconnection
-  - **Status**: Ready for deployment
-  - **Branch**: `feature/restart-chat-if-disconnected`
-  - **Test Coverage**: Comprehensive test suite created
-- `extend_kit_number_range_IMPLEMENTED.md` - ✅ IMPLEMENTED - Extended kit numbers 1-49
-  - **Status**: Deployed in production
-  - **Legacy Format**: Will be migrated to new structure in future
-- `automated_payment_chasing.md` - 📋 PLANNING - Automated payment follow-up system
+### Current Features by Status
+
+#### 📋 01_PLANNING
+- `automated_payment_chasing.md` - Automated payment follow-up system
   - **Status**: Planning phase
-  - **Legacy Format**: Will be migrated to new structure when implemented
+  - **Priority**: Medium
+- `photo_resize_optimization/` - Photo resizing for FA portal compliance
+  - **Status**: Planning phase - comprehensive specification complete
+  - **Branch**: `feature/resize-photos`
+  - **Priority**: High
+
+#### 🔧 02_IN_DEVELOPMENT  
+- *(No features currently in active development)*
+
+#### ✅ 03_IMPLEMENTED
+- `restart_chat_if_disconnected/` - Resume registration after disconnection
+  - **Status**: Deployed v1.6.22
+  - **Branch**: Merged to dev
+  - **Test Coverage**: Comprehensive test suite
+- `extend_kit_number_range_IMPLEMENTED.md` - Extended kit numbers 1-49
+  - **Status**: Deployed in production
+  - **Legacy Format**: Migrated from old structure
+
+#### ❌ 04_CANCELLED
+- *(No cancelled features yet)*
+
+### Status Migration Process
+
+When a feature changes status:
+
+1. **Planning → In Development**: Move from `01_PLANNING/` to `02_IN_DEVELOPMENT/`
+2. **In Development → Implemented**: Move from `02_IN_DEVELOPMENT/` to `03_IMPLEMENTED/`
+3. **Any Status → Cancelled**: Move to `04_CANCELLED/` with cancellation notes
 
 ### Naming Convention
-- **Feature Directories**: Use kebab-case (e.g., `restart-chat-if-disconnected/`)
-- **Implemented Features**: Keep directory structure, update status in documentation
-- **Legacy Features**: Will be migrated to new structure over time
-- **Cancelled Features**: Move to `cancelled/` subdirectory if needed
+- **Directory Names**: Use snake_case (e.g., `resize_photos/`)
+- **Status Tracking**: Directory location indicates current status
+- **Legacy Files**: Keep original naming until next migration
+- **Branch Names**: Use kebab-case (e.g., `feature/resize-photos`)
 
 ---
 
