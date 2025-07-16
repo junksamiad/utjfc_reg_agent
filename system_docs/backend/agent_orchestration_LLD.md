@@ -31,12 +31,16 @@ graph TB
     B -->|No code| E[Generic Agent]
     
     C --> F[Address Validation Tools]
-    D --> G[Full Registration Tools]
+    D --> G[Full Registration Tools + Resume Detection]
     E --> H[Airtable Query Tools]
     
     F --> I[Session Context]
     G --> I
     H --> I
+    
+    G --> G1{Existing Registration?}
+    G1 -->|Yes| G2[Skip to Completion Step]
+    G1 -->|No| G3[Continue Normal Flow]
     
     I --> J[Dynamic Agent Creation]
     J --> K[Routine-Specific Instructions]
@@ -481,7 +485,8 @@ class RegistrationRoutines:
     
     ROUTINES = {
         1: """Task: Take parent's first and last name, validate format...""",
-        2: """Task: Take child's first and last name, validate format...""",
+        2: """Task: Take child's first and last name, validate format. 
+             Call check_if_record_exists_in_db to detect registration resume...""",
         3: """Task: Take child's date of birth, validate date...""",
         # ... 35 total routines
     }
@@ -493,6 +498,48 @@ class RegistrationRoutines:
     def get_instructions_with_routine(self, routine_message: str = "") -> str:
         """Inject routine instructions into base prompt."""
         return self.instructions.format(routine_instructions=routine_message)
+```
+
+#### Registration Resume Logic (Routine 2)
+```python
+# Location: registration_routines.py:10
+# New restart chat capability in routine 2
+
+def handle_routine_2_with_resume():
+    """
+    Enhanced routine 2 with registration resume detection.
+    """
+    
+    # Standard name validation
+    if not validate_child_name(child_name):
+        return {"routine_number": 2, "message": "Please provide valid name"}
+    
+    # NEW: Check for existing registration
+    existing_record = call_tool("check_if_record_exists_in_db", {
+        "player_full_name": child_name,
+        "parent_full_name": parent_name
+    })
+    
+    if not existing_record["record_found"]:
+        # New registration - continue normally
+        return {"routine_number": 3, "message": "Please provide date of birth"}
+    
+    # EXISTING REGISTRATION FOUND - Route based on previous season
+    played_last_season = existing_record["record"]["played_for_urmston_town_last_season"]
+    
+    if played_last_season == "N":
+        # Returning player needs kit
+        return {"routine_number": 32, "message": "Welcome back! Choose kit size..."}
+    
+    # Check if kit needed for existing players
+    kit_result = call_tool("check_if_kit_needed", {
+        "team": team, "age_group": age_group
+    })
+    
+    if kit_result["kit_needed"] == "Y":
+        return {"routine_number": 32, "message": "Team kit update required..."}
+    else:
+        return {"routine_number": 34, "message": "Upload passport photo..."}
 ```
 
 #### Dynamic Instruction Example
@@ -561,13 +608,14 @@ generic_tools = ["airtable_database_operation"]
 # Re-registration agent: Address validation only
 re_reg_tools = ["address_validation", "address_lookup"]
 
-# New registration agent: Full toolkit
+# New registration agent: Full toolkit including resume detection
 new_reg_tools = [
     "address_validation", "address_lookup", 
     "create_signup_payment_link", "create_payment_token",
     "update_reg_details_to_db", "check_shirt_number_availability",
     "update_kit_details_to_db", "upload_photo_to_s3",
-    "update_photo_link_to_db", "check_if_kit_needed"
+    "update_photo_link_to_db", "check_if_kit_needed",
+    "check_if_record_exists_in_db"  # NEW: Registration resume capability
 ]
 ```
 

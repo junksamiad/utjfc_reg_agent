@@ -27,24 +27,29 @@ The UTJFC registration system implements a sophisticated 35-step conversational 
 ```mermaid
 graph TB
     A[Start: Registration Code] --> B[Phase 1: Basic Info]
-    B --> C[Phase 2: Address Collection]
-    C --> D[Phase 3: Age Routing Hub]
-    D -->|U16+| E[Phase 4A: Player Contact]
-    D -->|Under 16| F[Phase 4B: Data Confirmation]
+    B --> C{Existing Registration?}
+    C -->|No| D[Phase 2: Address Collection]
+    C -->|Yes - Returning Player| E[Phase 6: Kit Selection]
+    C -->|Yes - Resume Registration| F[Phase 7: Photo Upload]
+    D --> G[Phase 3: Age Routing Hub]
+    G -->|U16+| H[Phase 4A: Player Contact]
+    G -->|Under 16| I[Phase 4B: Data Confirmation]
+    H --> I
+    I --> J[Phase 5: Payment Setup]
+    J --> E
     E --> F
-    F --> G[Phase 5: Payment Setup]
-    G --> H[Phase 6: Kit Selection]
-    H --> I[Phase 7: Photo Upload]
-    I --> J[Phase 8: Completion]
+    F --> K[Phase 8: Completion]
 ```
 
 ### Key Characteristics
 - **35 distinct routines** with specialized validation
+- **Registration resume capability** - detects existing registrations at routine 2
 - **Age-based branching** at routine 22
 - **Dynamic instruction injection** based on context
 - **Tool integration** for external service validation
 - **Error recovery** with intelligent fallbacks
 - **Business rule enforcement** throughout the flow
+- **Smart routing** - bypasses completed steps for returning users
 
 ---
 
@@ -64,14 +69,21 @@ Task:
 6) If valid: routine_number = 2, ask for child's name (using parent's first name)
 ```
 
-#### Routine 2: Child Name Collection
+#### Routine 2: Child Name Collection with Registration Resume Detection
 ```python
 # Location: registration_routines.py:10
 Task:
 1) Take child's first and last name (minimum 2 parts)
 2) Same validation as parent name
 3) If invalid: routine_number = 2
-4) If valid: routine_number = 3, ask for date of birth
+4) If valid: **Call check_if_record_exists_in_db function**
+5) **RESTART CHAT LOGIC**: Check if existing registration found
+   a) If NO record found: routine_number = 3, ask for date of birth (new registration)
+   b) If record found: Route based on 'played_for_urmston_town_last_season' field:
+      - If 'N': routine_number = 32 (returning player, needs kit)  
+      - If 'Y': Call check_if_kit_needed function:
+        * If kit NOT needed: routine_number = 34 (photo upload)
+        * If kit needed: routine_number = 32 (kit selection)
 ```
 
 #### Routine 3: Date of Birth Validation

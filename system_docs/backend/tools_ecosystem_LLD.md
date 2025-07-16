@@ -377,6 +377,53 @@ def handle_create_payment_token(arguments: dict) -> dict:
 
 ### 4. Database Operation Tools
 
+#### Registration Resume Detection
+```python
+# Location: registration_agent/tools/registration_tools/check_if_record_exists_in_db_tool.py
+CHECK_IF_RECORD_EXISTS_IN_DB_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "check_if_record_exists_in_db",
+        "description": "Search for existing registration by player and parent names",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "player_full_name": {
+                    "type": "string",
+                    "description": "Child's full name with proper capitalization"
+                },
+                "parent_full_name": {
+                    "type": "string", 
+                    "description": "Parent's full name with proper capitalization"
+                }
+            },
+            "required": ["player_full_name", "parent_full_name"]
+        }
+    }
+}
+
+def check_if_record_exists_in_db(**kwargs):
+    """
+    Core function that enables registration resume functionality.
+    
+    Purpose: Detect when users are returning to complete a registration
+    after disconnection (especially at payment SMS step).
+    
+    Process:
+    1. Search Airtable using exact name matching
+    2. Return complete record data for routing decisions
+    3. Include record_id for subsequent database operations
+    
+    Returns:
+    - success: bool - Whether search completed successfully
+    - record_found: bool - Whether matching record exists
+    - record: dict - Complete record fields for routing
+    - record_id: str - Airtable record ID for updates
+    - message: str - Status description
+    """
+    # Implementation details in check_if_record_exists_in_db.py
+```
+
 #### Registration Data Update
 ```python
 # Location: registration_agent/tools/registration_tools/update_reg_details_to_db_tool_ai_friendly.py
@@ -670,7 +717,8 @@ new_registration_tools = [
     "create_signup_payment_link", "create_payment_token", 
     "update_reg_details_to_db", "check_shirt_number_availability",
     "update_kit_details_to_db", "upload_photo_to_s3",
-    "update_photo_link_to_db", "check_if_kit_needed"
+    "update_photo_link_to_db", "check_if_kit_needed",
+    "check_if_record_exists_in_db"  # NEW: Registration resume capability
 ]
 ```
 
