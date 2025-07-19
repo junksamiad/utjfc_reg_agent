@@ -16,7 +16,7 @@ Main Functions:
 
 from .photo_optimizer import (
     optimize_player_photo,
-    resize_to_4_5_ratio,
+    resize_to_4_5_ratio_smart,
     calculate_optimal_dimensions,
     optimize_file_size,
     process_uploaded_photo
@@ -43,7 +43,7 @@ from .quality_optimizer import (
 __all__ = [
     # Main optimization functions
     'optimize_player_photo',
-    'resize_to_4_5_ratio',
+    'resize_to_4_5_ratio_smart',
     'process_uploaded_photo',
     
     # Dimension calculations

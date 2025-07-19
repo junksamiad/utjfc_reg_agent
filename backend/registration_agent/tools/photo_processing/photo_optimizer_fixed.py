@@ -1,5 +1,5 @@
 """
-Photo optimization module for UTJFC registration system.
+Fixed photo optimization module for UTJFC registration system.
 Handles photo resizing and optimization to meet FA club portal requirements with proper orientation handling.
 
 FA Portal Requirements:
@@ -56,7 +56,7 @@ def optimize_player_photo(image_bytes: bytes, filename: str) -> Tuple[bytes, Dic
     
     try:
         # Open image from bytes
-        logger.info(f"Starting photo optimization for {filename}")
+        logger.info(f"Starting fixed photo optimization for {filename}")
         image = Image.open(BytesIO(image_bytes))
         
         # Fix orientation based on EXIF data (handles rotated photos from phones)
@@ -106,7 +106,7 @@ def optimize_player_photo(image_bytes: bytes, filename: str) -> Tuple[bytes, Dic
             "exif_corrected": True
         }
         
-        logger.info(f"Photo optimization complete: {metadata}")
+        logger.info(f"Fixed photo optimization complete: {metadata}")
         return optimized_bytes, metadata
         
     except Exception as e:
@@ -311,13 +311,13 @@ def process_uploaded_photo(file_path: str) -> Tuple[Optional[str], Dict[str, Any
         if metadata.get('optimization_applied', False):
             # Generate optimized filename
             base_name, ext = os.path.splitext(file_path)
-            optimized_path = f"{base_name}_optimized.jpg"
+            optimized_path = f"{base_name}_fixed_optimized.jpg"
             
             # Save optimized image
             with open(optimized_path, 'wb') as f:
                 f.write(optimized_bytes)
             
-            logger.info(f"Saved optimized photo to: {optimized_path}")
+            logger.info(f"Saved fixed optimized photo to: {optimized_path}")
             return optimized_path, metadata
         else:
             # Return original path if optimization wasn't applied

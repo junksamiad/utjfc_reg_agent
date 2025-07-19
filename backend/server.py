@@ -486,9 +486,17 @@ async def upload_file_async_endpoint(
     if file.content_type not in allowed_types:
         return {"error": f"Invalid file type: {file.content_type}. Allowed types: {', '.join(allowed_types)}"}
     
+    # Validate file size (10MB limit)
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        return {"error": f"File too large. Maximum size allowed: 10MB. Your file: {len(content) / (1024*1024):.1f}MB"}
+    
+    # Reset file pointer for later use
+    await file.seek(0)
+    
     try:
-        # Read file content and save to temporary file
-        content = await file.read()
+        # Save file content to temporary file (content already read for validation)
         file_extension = os.path.splitext(file.filename)[1] if file.filename else '.jpg'
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
         temp_file.write(content)
@@ -1301,11 +1309,19 @@ async def upload_file_endpoint(
     if file.content_type not in allowed_types:
         return {"error": f"Invalid file type: {file.content_type}. Allowed types: {', '.join(allowed_types)}"}
     
+    # Validate file size (10MB limit)
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        return {"error": f"File too large. Maximum size allowed: 10MB. Your file: {len(content) / (1024*1024):.1f}MB"}
+    
+    # Reset file pointer for later use
+    await file.seek(0)
+    
     # Create temporary file
     temp_file = None
     try:
-        # Read file content
-        content = await file.read()
+        # Use file content already read for validation
         
         # Create temporary file with correct extension
         file_extension = os.path.splitext(file.filename)[1] if file.filename else '.jpg'

@@ -902,3 +902,9 @@ The async photo upload system provides a robust, user-friendly solution for hand
 **User Experience**: Excellent - clear feedback and progress indication  
 **Reliability**: Strong - comprehensive error recovery and retry logic  
 **Performance**: Optimized - efficient polling and memory management
+
+### Recent Infrastructure Improvements (v1.6.26-v1.6.27)
+
+**Upload Capacity Enhancement**: Backend infrastructure updated to support the full 10MB file size limit referenced in frontend validation. Previous infrastructure limitations that caused "413 Request Entity Too Large" errors for photos >2MB have been resolved through nginx configuration improvements and enhanced FastAPI validation.
+
+**Photo Optimization**: Backend photo processing is now fully operational, automatically optimizing all uploaded photos to FA portal requirements (4:5 aspect ratio) with smart EXIF-aware cropping while maintaining the same frontend user experience.
