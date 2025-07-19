@@ -4,7 +4,7 @@
 **Type**: Bug  
 **Component**: Backend - GoCardless Integration  
 **Created**: 2025-07-19  
-**Status**: OPEN  
+**Status**: RESOLVED (19th July 2025)  
 
 ## Executive Summary
 
@@ -81,12 +81,36 @@ However, this would require updating the user interface and potentially re-valid
 
 ## Implementation Checklist
 
-- [ ] Update `activate_subscription()` function to convert days 29-31 to -1
-- [ ] Add logging to track when conversions occur
-- [ ] Test with sample data containing days 29, 30, 31
-- [ ] Verify GoCardless API accepts the converted values
+- [x] Update `activate_subscription()` function to convert days 29-31 to -1
+- [x] Add logging to track when conversions occur
+- [x] Test with sample data containing days 29, 30, 31
+- [x] Verify GoCardless API accepts the converted values
 - [ ] Update any user-facing documentation about payment dates
 - [ ] Consider adding a note in the UI that days 29-31 will charge on last day of month
+
+## Resolution Summary (19th July 2025)
+
+**Fixed in**: Branch `bug-fixes`
+**Files Modified**: `backend/registration_agent/tools/registration_tools/gocardless_payment.py`
+**Implementation**: Option 1 (Auto-Convert to -1) - Recommended solution
+**Changes Made**: 
+- Added conversion logic for both ongoing and interim subscriptions
+- Days 29, 30, 31 are automatically converted to -1 (last day of month)
+- Added logging messages when conversions occur
+- Applied fix to both `ongoing_payload` and `interim_payload` creation
+
+**Code Changes**:
+1. **Lines 709-713**: Added conversion logic for ongoing subscriptions
+2. **Lines 607-611**: Added conversion logic for interim subscriptions  
+3. **Lines 722 & 620**: Updated `day_of_month` parameter to use converted values
+
+**Testing**: ✅ Verified with automated test script covering all edge cases
+**Deployment**: Ready for production deployment
+
+**Impact**: 
+- Prevents GoCardless API errors for payment days 29-31
+- Improves user experience for parents selecting end-of-month payment dates
+- Maintains backward compatibility (existing subscriptions unaffected)
 
 ## Testing Instructions
 

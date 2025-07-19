@@ -819,10 +819,10 @@ async def chat_endpoint(payload: UserPayload):
         
         # Inject structured registration data for age-based routing
         from registration_agent.routing_validation import inject_structured_registration_data
-        inject_structured_registration_data(current_session_id, "200-leopards-u9-2526")
+        inject_structured_registration_data(current_session_id, "200-leopards-u10-2526")
         
         # Add explicit registration code for AI agent to extract
-        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u9-2526")
+        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u10-2526")
         
         # Pre-populate complete conversation history (routines 1-28)
         conversation_history = [
@@ -924,10 +924,10 @@ async def chat_endpoint(payload: UserPayload):
         
         # Inject structured registration data for age-based routing
         from registration_agent.routing_validation import inject_structured_registration_data
-        inject_structured_registration_data(current_session_id, "200-leopards-u9-2526")
+        inject_structured_registration_data(current_session_id, "200-leopards-u10-2526")
         
         # Add explicit registration code for AI agent to extract
-        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u9-2526")
+        add_message_to_session_history(current_session_id, "system", "REGISTRATION_CODE: 200-leopards-u10-2526")
         
         # Pre-populate complete conversation history (routines 1-28) - same as 'lah'
         conversation_history = [
@@ -1040,7 +1040,7 @@ async def chat_endpoint(payload: UserPayload):
                 parent_phone="07835065013",
                 player_first_name="Seb",
                 player_last_name="Hayton",
-                registration_code="200-leopards-u9-2526",
+                registration_code="200-leopards-u10-2526",
                 preferred_payment_day=15,
                 monthly_amount=300  # £3.00 test amount
             )
@@ -1049,7 +1049,7 @@ async def chat_endpoint(payload: UserPayload):
             # 2. Update registration details to database
             print(f"--- Session [{current_session_id}] Updating registration details to database ---")
             db_result = update_reg_details_to_db(
-                registration_code="200-leopards-u9-2526",
+                registration_code="200-leopards-u10-2526",
                 parent_full_name="Lee Hayton",
                 parent_first_name="Lee",
                 parent_last_name="Hayton",
@@ -1092,7 +1092,7 @@ async def chat_endpoint(payload: UserPayload):
             # 3. Check shirt number availability (routine 33)
             print(f"--- Session [{current_session_id}] Checking shirt number availability ---")
             number_check = check_shirt_number_availability(
-                registration_code="200-leopards-u9-2526",
+                registration_code="200-leopards-u10-2526",
                 requested_number=19
             )
             print(f"--- Session [{current_session_id}] Number check result: {number_check} ---")
@@ -1100,7 +1100,7 @@ async def chat_endpoint(payload: UserPayload):
             # 4. Update kit details to database (routine 33) 
             print(f"--- Session [{current_session_id}] Updating kit details to database ---")
             kit_result = update_kit_details_to_db(
-                registration_code="200-leopards-u9-2526",
+                registration_code="200-leopards-u10-2526",
                 kit_size="9-10",
                 shirt_number=19
             )

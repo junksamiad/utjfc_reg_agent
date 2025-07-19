@@ -604,6 +604,12 @@ def activate_subscription(
                 interim_end_date = datetime(interim_year, interim_month + 1, 1) - timedelta(days=1)
             interim_end_date_str = interim_end_date.strftime("%Y-%m-%d")
             
+            # Convert interim day 29-31 to -1 for GoCardless compatibility
+            adjusted_interim_day = interim_start.day
+            if interim_start.day >= 29:
+                adjusted_interim_day = -1
+                print(f"📅 Converting interim payment day {interim_start.day} to -1 (last day) for GoCardless compatibility")
+            
             # Create interim subscription payload
             interim_payload = {
                 "subscriptions": {
@@ -611,7 +617,7 @@ def activate_subscription(
                     "currency": "GBP",
                     "name": f"Urmston Town Interim Payment - {player_name_clean}",
                     "interval_unit": "monthly",
-                    "day_of_month": str(interim_start.day),
+                    "day_of_month": str(adjusted_interim_day) if adjusted_interim_day != -1 else "-1",
                     "start_date": interim_start_date,
                     "end_date": interim_end_date_str,
                     "metadata": {
@@ -706,6 +712,12 @@ def activate_subscription(
         else:
             print(f"✅ Calculated ongoing start date ({ongoing_start_date}) is valid (on/after {next_possible_charge_date})")
         
+        # Convert days 29-31 to -1 (last day of month) for GoCardless compatibility
+        adjusted_payment_day = preferred_payment_day
+        if preferred_payment_day >= 29 and preferred_payment_day <= 31:
+            adjusted_payment_day = -1
+            print(f"📅 Converting payment day {preferred_payment_day} to -1 (last day) for GoCardless compatibility")
+        
         # Create main ongoing subscription
         ongoing_payload = {
             "subscriptions": {
@@ -713,7 +725,7 @@ def activate_subscription(
                 "currency": "GBP",
                 "name": "Urmston Town Monthly Subs 24-25",
                 "interval_unit": "monthly",
-                "day_of_month": str(preferred_payment_day) if preferred_payment_day != -1 else "-1",
+                "day_of_month": str(adjusted_payment_day) if adjusted_payment_day != -1 else "-1",
                 "start_date": ongoing_start_date,
                 "end_date": "2026-06-01",  # End of season (updated to match test subscription)
                 "metadata": {
