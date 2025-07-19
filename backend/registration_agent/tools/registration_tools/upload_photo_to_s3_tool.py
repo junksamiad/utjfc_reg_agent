@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-# Add HEIC support
+# Add HEIC support and photo optimization
 try:
     from PIL import Image
     from pillow_heif import register_heif_opener
@@ -16,6 +16,15 @@ try:
 except ImportError:
     HEIC_SUPPORT = False
     print("⚠️  HEIC conversion not available - install pillow-heif for HEIC support")
+
+# Add photo optimization support
+try:
+    from ..photo_processing import optimize_player_photo
+    PHOTO_OPTIMIZATION_SUPPORT = True
+    print("✅ Photo optimization support enabled")
+except ImportError as e:
+    PHOTO_OPTIMIZATION_SUPPORT = False
+    print(f"⚠️  Photo optimization not available: {e}")
 
 load_dotenv()
 
@@ -111,6 +120,59 @@ def _convert_heic_to_jpeg(file_path: str) -> str:
     except Exception as e:
         print(f"❌ Failed to convert HEIC to JPEG: {e}")
         raise e
+
+
+def _optimize_photo_for_fa_portal(file_path: str) -> tuple:
+    """
+    Optimize photo for FA portal compliance (4:5 ratio, optimal file size).
+    
+    Args:
+        file_path: Path to the photo file
+        
+    Returns:
+        tuple: (optimized_file_path, optimization_metadata, success)
+    """
+    if not PHOTO_OPTIMIZATION_SUPPORT:
+        print("⚠️  Photo optimization not available, using original photo")
+        return file_path, {"optimization_applied": False}, True
+    
+    try:
+        print(f"🔄 Optimizing photo for FA portal compliance: {file_path}")
+        
+        # Read the image file
+        with open(file_path, 'rb') as f:
+            image_bytes = f.read()
+        
+        # Get filename for format detection
+        filename = os.path.basename(file_path)
+        
+        # Optimize the photo
+        optimized_bytes, metadata = optimize_player_photo(image_bytes, filename)
+        
+        # If optimization was applied, save the optimized version
+        if metadata.get('optimization_applied', False):
+            # Generate optimized filename
+            base_path = os.path.splitext(file_path)[0]
+            optimized_path = f"{base_path}_optimized.jpg"
+            
+            # Save optimized image
+            with open(optimized_path, 'wb') as f:
+                f.write(optimized_bytes)
+            
+            optimized_size = os.path.getsize(optimized_path)
+            print(f"✅ Photo optimized: {optimized_path} ({optimized_size:,} bytes)")
+            print(f"   📊 Optimization details: {metadata}")
+            
+            return optimized_path, metadata, True
+        else:
+            # Optimization wasn't applied (disabled or error), use original
+            print(f"⚠️  Photo optimization skipped: {metadata}")
+            return file_path, metadata, True
+            
+    except Exception as e:
+        print(f"❌ Photo optimization failed: {e}")
+        print("   Using original photo as fallback")
+        return file_path, {"optimization_applied": False, "error": str(e)}, False
 
 
 def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
@@ -231,6 +293,22 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
                     "s3_url": None
                 }
         
+        # Step 4.5: Optimize photo for FA portal compliance
+        print("🔍 Step 4.5: Optimizing photo for FA portal compliance...")
+        optimization_metadata = {}
+        try:
+            optimized_path, optimization_metadata, optimization_success = _optimize_photo_for_fa_portal(file_path)
+            if optimization_success and optimized_path != file_path:
+                # Use optimized photo for upload
+                file_path = optimized_path
+                print(f"   ✅ Using optimized photo: {file_path}")
+            else:
+                print(f"   ⚠️  Using original photo: {file_path}")
+        except Exception as e:
+            print(f"   ❌ Photo optimization failed: {e}")
+            print("   Continuing with original photo")
+            optimization_metadata = {"optimization_applied": False, "error": str(e)}
+        
         # Step 5: Generate filename using player_full_name+team+age_group.ext format
         print("🔍 Step 5: Generating S3 filename...")
         file_extension = os.path.splitext(file_path)[1].lower()
@@ -266,7 +344,9 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
                         'team': validated_data.team,
                         'age_group': validated_data.age_group,
                         'upload_timestamp': datetime.now().isoformat(),
-                        'original_extension': original_extension
+                        'original_extension': original_extension,
+                        'optimization_applied': optimization_metadata.get('optimization_applied', False),
+                        'optimization_details': optimization_metadata
                     }
                 }
             )
@@ -293,6 +373,12 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
             if os.path.exists(original_heic):
                 files_to_clean.append(original_heic)
         
+        # If we optimized the photo, clean up the pre-optimization version
+        if optimization_metadata.get('optimization_applied', False) and '_optimized.jpg' in file_path:
+            pre_optimized = file_path.replace('_optimized.jpg', '_converted.jpg' if original_extension == '.heic' else os.path.splitext(file_path.replace('_optimized', ''))[1])
+            if os.path.exists(pre_optimized) and pre_optimized not in files_to_clean:
+                files_to_clean.append(pre_optimized)
+        
         for cleanup_file in files_to_clean:
             try:
                 os.remove(cleanup_file)
@@ -314,7 +400,8 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
                 "original_extension": original_extension,
                 "final_extension": file_extension,
                 "heic_converted": original_extension == '.heic',
-                "file_size_bytes": file_size
+                "file_size_bytes": file_size,
+                "photo_optimization": optimization_metadata
             }
         }
         
