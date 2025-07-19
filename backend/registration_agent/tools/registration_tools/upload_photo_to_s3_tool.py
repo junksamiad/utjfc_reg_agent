@@ -345,8 +345,8 @@ def upload_photo_to_s3(**kwargs) -> Dict[str, Any]:
                         'age_group': validated_data.age_group,
                         'upload_timestamp': datetime.now().isoformat(),
                         'original_extension': original_extension,
-                        'optimization_applied': optimization_metadata.get('optimization_applied', False),
-                        'optimization_details': optimization_metadata
+                        'optimization_applied': str(optimization_metadata.get('optimization_applied', False)),
+                        'optimization_details': str(optimization_metadata)
                     }
                 }
             )
