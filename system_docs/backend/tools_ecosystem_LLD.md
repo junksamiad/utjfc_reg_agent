@@ -585,7 +585,7 @@ UPLOAD_PHOTO_TO_S3_TOOL = {
     "type": "function",
     "function": {
         "name": "upload_photo_to_s3",
-        "description": "Upload player photo to AWS S3 with HEIC conversion",
+        "description": "Upload player photo to AWS S3 with HEIC conversion and FA portal optimization",
         "parameters": {
             "type": "object",
             "properties": {
@@ -601,7 +601,14 @@ UPLOAD_PHOTO_TO_S3_TOOL = {
 
 def upload_photo_to_s3(arguments: dict) -> dict:
     """
-    Upload photo with HEIC conversion and validation.
+    Upload photo with HEIC conversion, FA portal optimization, and validation.
+    
+    Features:
+    - Automatic HEIC to JPEG conversion
+    - 4:5 aspect ratio resize for FA portal compliance
+    - File size optimization (200-500KB target)
+    - Intelligent quality adjustment
+    - S3 metadata with optimization details
     """
     try:
         file_path = arguments.get("file_path")

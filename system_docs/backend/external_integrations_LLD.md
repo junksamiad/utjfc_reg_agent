@@ -639,7 +639,8 @@ def track_sms_delivery_status(message_sid: str) -> dict:
 
 class S3Integration:
     """
-    AWS S3 integration for player photo storage.
+    AWS S3 integration for player photo storage with automatic optimization.
+    Features: HEIC conversion, 4:5 aspect ratio resize, file size optimization.
     """
     
     def __init__(self):
