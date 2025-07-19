@@ -4,7 +4,7 @@
 **Type**: Bug  
 **Component**: Backend - GoCardless Integration  
 **Created**: 2025-07-19  
-**Status**: RESOLVED (19th July 2025)  
+**Status**: CLOSED (19th July 2025 - Deployed v1.6.28)  
 
 ## Executive Summary
 

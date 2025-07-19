@@ -53,7 +53,7 @@ AWS_PAGER="" aws --profile footballclub <command>
 - **Frontend S3 Bucket**: `utjfc-frontend-chat`
 - **CloudFront Distribution**: `E2WNKV9R9SX5XH`
 - **Region**: `eu-north-1` (Stockholm)
-- **Current Backend Version**: `v1.6.27` (as of 19th July 2025)
+- **Current Backend Version**: `v1.6.28` (as of 19th July 2025)
 
 ### 🚨 CRITICAL: Version Tracking for AI Agents
 **IMPORTANT**: After each deployment, you MUST update the "Current Backend Version" above with the version number you just deployed. This ensures the next AI agent or developer knows which version to use next.
@@ -63,7 +63,7 @@ AWS_PAGER="" aws --profile footballclub <command>
 - Y = Minor version (new features)
 - Z = Patch version (bug fixes, small changes)
 
-**Next version should be**: `v1.6.28` (increment patch version)
+**Next version should be**: `v1.6.29` (increment patch version)
 
 ---
 
