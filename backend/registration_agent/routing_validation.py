@@ -92,7 +92,8 @@ def validate_team_and_age_group(team: str, age_group: str) -> bool:
         
         # Query the team_info table
         # Using field names: short_team_name, age_group, current_season
-        formula = f"AND({{short_team_name}} = '{team_normalized}', {{age_group}} = '{age_group_normalized}', {{current_season}} = '2526')"
+        # Note: Using TRIM to handle any whitespace in database fields
+        formula = f"AND(TRIM({{short_team_name}}) = '{team_normalized}', TRIM({{age_group}}) = '{age_group_normalized}', {{current_season}} = '2526')"
         
         print(f"Airtable query formula: {formula}")
         
