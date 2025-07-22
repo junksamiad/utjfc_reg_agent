@@ -376,9 +376,19 @@ def validate_code_against_database(code_components: dict) -> Dict[str, Any]:
     """
     Validate registration code against Airtable database.
     Ensures team and age group combinations exist.
+    Includes special handling for Mens team exception.
     """
+    team = code_components['team']
+    age_group = code_components['age_group']
+    
+    # Handle special case for Mens team
+    if team.capitalize() == "Mens":
+        age_group = "Open Age"  # Override age group for Mens team
+    else:
+        age_group = age_group.lower() + 's'  # u10 -> u10s
+    
     # Query Airtable for valid team/age group combinations
-    formula = f"AND({{team}} = '{code_components['team']}', {{age_group}} = '{code_components['age_group']}')"
+    formula = f"AND({{short_team_name}} = '{team.capitalize()}', {{age_group}} = '{age_group}', {{current_season}} = '2526')"
     
     try:
         records = table.all(formula=formula)
@@ -386,7 +396,7 @@ def validate_code_against_database(code_components: dict) -> Dict[str, Any]:
         if not records:
             return {
                 "success": False,
-                "error": f"No team found for {code_components['team']} {code_components['age_group']}"
+                "error": f"No team found for {team} {age_group}"
             }
         
         return {
@@ -401,6 +411,13 @@ def validate_code_against_database(code_components: dict) -> Dict[str, Any]:
             "error": f"Database validation failed: {str(e)}"
         }
 ```
+
+#### Special Team Handling
+**Mens Team Exception**: The Mens team has unique validation rules:
+- **Team Name**: "Mens" in database (`short_team_name` = "Mens")
+- **Age Group Override**: Any age group in the code becomes "Open Age" in database
+- **Registration Code Format**: `200-mens-open-2526` (age group part can be anything)
+- **Database Query**: Always searches for `age_group = "Open Age"` regardless of code
 
 ---
 
