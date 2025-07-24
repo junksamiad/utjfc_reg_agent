@@ -1,7 +1,7 @@
 # This file will be populated with the content of simple_test_backend/main.py
 # The old simple_test_backend/main.py will be deleted by a subsequent operation. 
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, BackgroundTasks, Body
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -464,6 +464,8 @@ async def read_root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "UTJFC Registration Backend is running"}
+
+# Test timeout endpoints removed for production deployment
 
 @app.get("/upload-status/{session_id}")
 async def get_upload_processing_status(session_id: str):

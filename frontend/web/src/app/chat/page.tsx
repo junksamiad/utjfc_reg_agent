@@ -48,6 +48,93 @@ function getAgentState(): { last_agent: string | null; routine_number: number | 
     };
 }
 
+// --- Timeout and retry utility functions ---
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 28000): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout - the server is taking longer than expected');
+        }
+        throw error;
+    }
+};
+
+const fetchWithRetry = async (
+    url: string,
+    options: RequestInit,
+    maxRetries: number = 3,
+    initialDelay: number = 1000,
+    dispatch: React.Dispatch<ChatAction>
+): Promise<Response> => {
+    let lastError: Error;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetchWithTimeout(url, options, 28000);
+            
+            // Success! 
+            if (response.status === 504) {
+                throw new Error('Gateway timeout - server processing took too long');
+            }
+            
+            return response;
+        } catch (error) {
+            lastError = error as Error;
+            
+            if (
+                attempt < maxRetries && 
+                (lastError.message.includes('timeout') || lastError.message.includes('504'))
+            ) {
+                // Show retry message to user
+                const retryMessageId = `retry-${Date.now()}-${attempt}`;
+                const retryMessage = `Apologies for the extended delay, it seems the AI servers are very busy at present. Please bear with me for a moment whilst I try again. (Attempt ${attempt + 2} of ${maxRetries + 1})`;
+                
+                dispatch({ 
+                    type: 'START_ASSISTANT_MESSAGE', 
+                    payload: { 
+                        id: retryMessageId, 
+                        agentName: 'System' 
+                    } 
+                });
+                
+                dispatch({ 
+                    type: 'APPEND_DELTA', 
+                    payload: { 
+                        id: retryMessageId, 
+                        delta: retryMessage 
+                    } 
+                });
+                
+                dispatch({ 
+                    type: 'COMPLETE_ASSISTANT_MESSAGE', 
+                    payload: { id: retryMessageId } 
+                });
+                
+                // Exponential backoff
+                const delay = initialDelay * Math.pow(2, attempt);
+                console.log(`[RETRY] Waiting ${delay}ms before attempt ${attempt + 2}`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            
+            // If not a timeout or max retries reached, break
+            break;
+        }
+    }
+    
+    throw lastError!;
+};
+
 function clearAgentState(): void {
     sessionStorage.removeItem('last_agent');
     sessionStorage.removeItem('routine_number');
@@ -529,13 +616,19 @@ export default function ChatPage() {
             
             console.log('Sending request with payload:', requestPayload);
             
-            const response = await fetch(config.CHAT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+            const response = await fetchWithRetry(
+                config.CHAT_URL, 
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestPayload), 
                 },
-                body: JSON.stringify(requestPayload), 
-            });
+                3,     // maxRetries
+                1000,  // initialDelay
+                dispatch
+            );
 
             if (!response.ok) {
                 const errorData = await response.text();
@@ -555,8 +648,21 @@ export default function ChatPage() {
 
         } catch (error) {
             console.error("Failed to send message to simple backend:", error);
-            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred with simple backend";
-            dispatch({ type: 'SET_ERROR', payload: { errorContent: errorMessage } });
+            
+            // Provide user-friendly error message based on error type
+            let userMessage = "An error occurred while processing your request.";
+            
+            if (error instanceof Error) {
+                if (error.message.includes('timeout')) {
+                    userMessage = "Apologies, but it seems there is too much traffic on the AI servers. Please could you try resubmitting your last response and hopefully we can process your request this time.";
+                } else if (error.message.includes('network')) {
+                    userMessage = "Network connection issue. Please check your internet connection and try again.";
+                } else {
+                    userMessage = error.message;
+                }
+            }
+            
+            dispatch({ type: 'SET_ERROR', payload: { errorContent: userMessage } });
         }
     }, [dispatch, scrollToMessageTop, scrollToVeryBottom]);
 

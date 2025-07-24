@@ -98,6 +98,7 @@ const fetchWithRetry = async (
     initialDelay: number = 1000
 ) => {
     let lastError: Error;
+    let retryMessageId: string | null = null;
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
@@ -119,19 +120,24 @@ const fetchWithRetry = async (
                 (lastError.message.includes('timeout') || lastError.message.includes('504'))
             ) {
                 // Show retry message to user
-                dispatch({ 
-                    type: 'START_ASSISTANT_MESSAGE', 
-                    payload: { 
-                        id: `retry-${Date.now()}`, 
-                        agentName: 'System' 
-                    } 
-                });
+                if (!retryMessageId) {
+                    // First retry - create the message
+                    retryMessageId = `retry-${Date.now()}`;
+                    dispatch({ 
+                        type: 'START_ASSISTANT_MESSAGE', 
+                        payload: { 
+                            id: retryMessageId, 
+                            agentName: 'System' 
+                        } 
+                    });
+                }
                 
-                const retryMessage = `Apologies for the extended delay, it seems the AI servers are very busy at present. Please bear with me for a moment whilst I try again.`;
+                // Update message with attempt counter
+                const retryMessage = `Apologies for the extended delay, it seems the AI servers are very busy at present. Please bear with me for a moment whilst I try again. (Attempt ${attempt + 2} of ${maxRetries + 1})`;
                 dispatch({ 
                     type: 'UPDATE_ASSISTANT_MESSAGE', 
                     payload: { 
-                        id: `retry-${Date.now()}`, 
+                        id: retryMessageId, 
                         content: retryMessage 
                     } 
                 });
@@ -269,27 +275,89 @@ if (uploadResponse && 'processing_id' in uploadResponse) {
 - [ ] Add metrics/logging for timeout occurrences
 - [ ] Document the retry behavior for users
 
+## Testing Strategy
+
+### Backend Test Script
+Create `backend/test_timeout_scenarios.py`:
+```python
+import asyncio
+import time
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+# Test endpoint that simulates various timeout scenarios
+attempt_counter = {}
+
+@app.post("/test-timeout/{scenario}")
+async def test_timeout(scenario: str, request: Request):
+    session_id = (await request.json()).get('session_id', 'default')
+    
+    if scenario == "always-timeout":
+        # Always timeout
+        await asyncio.sleep(35)
+        return JSONResponse({"response": "Should never see this"})
+    
+    elif scenario == "succeed-on-retry":
+        # Succeed on 2nd attempt
+        attempt_counter[session_id] = attempt_counter.get(session_id, 0) + 1
+        if attempt_counter[session_id] < 2:
+            await asyncio.sleep(35)  # Timeout on first attempt
+        else:
+            return JSONResponse({"response": "Success on retry!"})
+    
+    elif scenario == "flaky-success":
+        # Random success/timeout
+        if time.time() % 2 > 1:
+            await asyncio.sleep(35)
+        else:
+            return JSONResponse({"response": "Lucky success!"})
+    
+    return JSONResponse({"response": "Test complete"})
+```
+
+### Frontend Test Implementation
+Create `frontend/web/src/app/test-timeout/page.tsx`:
+```typescript
+// Test page with buttons to trigger different scenarios
+export default function TestTimeoutPage() {
+    const testScenarios = [
+        { name: "Always Timeout", endpoint: "/test-timeout/always-timeout" },
+        { name: "Succeed on Retry", endpoint: "/test-timeout/succeed-on-retry" },
+        { name: "Flaky Success", endpoint: "/test-timeout/flaky-success" },
+    ];
+    
+    // Include the fetchWithTimeout and fetchWithRetry implementations
+    // Add buttons to trigger each scenario
+    // Display results and timing information
+}
+```
+
 ## Testing Instructions
 
-1. **Simulate Timeout**:
-   - Add artificial delay in backend endpoint: `await asyncio.sleep(35)`
-   - Verify frontend detects timeout at 28 seconds
-   - Confirm retry attempts are made with exponential backoff
+1. **Unit Test - Timeout Detection**:
+   ```bash
+   # Run from frontend directory
+   npm test -- --testNamePattern="fetchWithTimeout"
+   ```
 
-2. **Test Retry Success**:
-   - Configure backend to succeed on 2nd attempt
-   - Verify user sees retry status messages
-   - Confirm final response is displayed correctly
+2. **Integration Test - Retry Mechanism**:
+   ```bash
+   # Start test backend
+   cd backend && python test_timeout_scenarios.py
+   
+   # In another terminal, run frontend tests
+   cd frontend/web && npm run dev
+   # Navigate to http://localhost:3000/test-timeout
+   ```
 
-3. **Test Max Retries**:
-   - Force all retries to fail
-   - Verify user-friendly error message is shown
-   - Confirm user can try again manually
-
-4. **Test Different Error Types**:
-   - Network errors (disconnect internet)
-   - 500 server errors (should not retry)
-   - 504 gateway timeouts (should retry)
+3. **Manual Testing Checklist**:
+   - [ ] Verify timeout occurs at 28 seconds (not 30)
+   - [ ] Confirm retry message appears with attempt counter
+   - [ ] Check exponential backoff timing (1s, 2s, 4s)
+   - [ ] Ensure final error message is user-friendly
+   - [ ] Verify timer continues counting (doesn't reset)
+   - [ ] Confirm photo uploads bypass retry logic
+   - [ ] Test with actual slow AI responses
 
 ## Additional Context
 
