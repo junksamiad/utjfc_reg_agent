@@ -509,7 +509,7 @@ FROM node:20-slim AS base
 1. **Branding**: Still using default Next.js home page
 2. **Dark Mode**: Implemented but not user-toggleable
 3. **Accessibility**: Basic ARIA labels but could be enhanced
-4. **Error Recovery**: Could improve retry mechanisms
+4. **Error Recovery**: Enhanced with timeout retry mechanism (v1.6.30-007)
 
 ---
 

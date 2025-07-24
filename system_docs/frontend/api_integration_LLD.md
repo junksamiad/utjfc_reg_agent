@@ -90,7 +90,7 @@ const environmentConfigs = {
     
     production: {
         baseURL: 'https://d1ahgtos8kkd8y.cloudfront.net/api',
-        timeout: 60000,
+        timeout: 28000, // Client-side timeout (2s before CloudFront's 30s limit)
         retries: 3,
         enableLogging: false,
         enableMocking: false
@@ -597,7 +597,7 @@ class APIError extends Error {
             case 404:
                 return 'Service not found. Please try again later.';
             case 408:
-                return 'Request timed out. Please try again.';
+                return 'Apologies, but it seems there is too much traffic on the AI servers. Please could you try resubmitting your last response and hopefully we can process your request this time.';
             case 413:
                 return 'File too large. Please select a smaller image.';
             case 422:
@@ -638,6 +638,77 @@ const isTimeoutError = (error: Error): boolean => {
 ```
 
 ### 5.2 Retry Mechanism
+
+#### 5.2.1 CloudFront Timeout Handling (v1.6.30-007)
+```typescript
+// Client-side timeout detection to handle CloudFront's 30-second limit
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 28000): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout - the server is taking longer than expected');
+        }
+        throw error;
+    }
+};
+
+// Enhanced retry with user-friendly messages
+const fetchWithRetry = async (
+    url: string,
+    options: RequestInit,
+    maxRetries: number = 3,
+    initialDelay: number = 1000,
+    dispatch: React.Dispatch<ChatAction>
+): Promise<Response> => {
+    let lastError: Error;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetchWithTimeout(url, options, 28000);
+            
+            if (response.status === 504) {
+                throw new Error('Gateway timeout - server processing took too long');
+            }
+            
+            return response;
+        } catch (error) {
+            lastError = error as Error;
+            
+            if (
+                attempt < maxRetries && 
+                (lastError.message.includes('timeout') || lastError.message.includes('504'))
+            ) {
+                // Show retry message to user
+                const retryMessage = `Apologies for the extended delay, it seems the AI servers are very busy at present. Please bear with me for a moment whilst I try again. (Attempt ${attempt + 2} of ${maxRetries + 1})`;
+                
+                // Display retry message via chat UI
+                dispatch(showRetryMessage(retryMessage));
+                
+                // Exponential backoff
+                const delay = initialDelay * Math.pow(2, attempt);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            
+            break;
+        }
+    }
+    
+    throw lastError!;
+};
+```
+
+#### 5.2.2 General Retry Configuration
 ```typescript
 // Retry configuration
 interface RetryConfig {
