@@ -24,7 +24,8 @@ def parse_registration_code(message: str):
     - PLAYER_NAME: FirstName-Surname (required for 100 codes only)
     """
     # Regex pattern for registration codes (case-insensitive)
-    pattern = r'^(100|200)-([A-Za-z0-9_]+)-([Uu]\d+)-(2526)(?:-([A-Za-z]+)-([A-Za-z]+))?$'
+    # Updated to accept "open" for Mens team age group
+    pattern = r'^(100|200)-([A-Za-z0-9_]+)-([Uu]\d+|[Oo][Pp][Ee][Nn])-(2526)(?:-([A-Za-z]+)-([A-Za-z]+))?$'
     
     match = re.match(pattern, message.strip(), re.IGNORECASE)
     if not match:
@@ -80,14 +81,19 @@ def validate_team_and_age_group(team: str, age_group: str) -> bool:
         # Normalize team name for comparison (capitalize first letter)
         team_normalized = team.capitalize()
         
-        # Normalize age group for comparison (ensure 'u' is lowercase and add 's' suffix for table format)
-        age_group_normalized = age_group.lower() + 's'  # u10 -> u10s, u12 -> u12s
+        # Handle special case for Mens team
+        if team_normalized == "Mens":
+            age_group_normalized = "Open Age"
+        else:
+            # Normalize age group for comparison (ensure 'u' is lowercase and add 's' suffix for table format)
+            age_group_normalized = age_group.lower() + 's'  # u10 -> u10s, u12 -> u12s
         
         print(f"Validating team: '{team_normalized}' for age group: '{age_group_normalized}'")
         
         # Query the team_info table
         # Using field names: short_team_name, age_group, current_season
-        formula = f"AND({{short_team_name}} = '{team_normalized}', {{age_group}} = '{age_group_normalized}', {{current_season}} = '2526')"
+        # Note: Using TRIM to handle any whitespace in database fields
+        formula = f"AND(TRIM({{short_team_name}}) = '{team_normalized}', TRIM({{age_group}}) = '{age_group_normalized}', {{current_season}} = '2526')"
         
         print(f"Airtable query formula: {formula}")
         
