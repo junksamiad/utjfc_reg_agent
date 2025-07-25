@@ -112,7 +112,19 @@ zip -r ../utjfc-backend-v1.6.14.zip . \
 zip -r utjfc-backend-v1.6.14.zip . -x '*.pyc' '__pycache__/*' '*.pytest_cache*' 'test_*.py' '*.log' '.venv/*' 'venv/*' '.env*' '*.db' && mv utjfc-backend-v1.6.14.zip ..
 ```
 
-#### 1.3 Return to Root Directory
+#### 1.3 🚨 CRITICAL: Verify No Sensitive Files
+**IMPORTANT**: Always verify the zip file does NOT contain sensitive files before proceeding.
+
+```bash
+# Check for .env files or other sensitive content
+cd ..
+unzip -l utjfc-backend-v1.6.14.zip | grep -E "\.env|credentials|secret|token" | grep -v ".py"
+
+# If ANY .env or sensitive files are found, DELETE the zip and recreate it
+# The output should be EMPTY. If you see any files listed, STOP and fix the issue.
+```
+
+#### 1.4 Return to Root Directory
 ```bash
 cd ..
 ```
@@ -212,6 +224,13 @@ aws --profile footballclub elasticbeanstalk update-environment \
 **Current AWS Credentials**: See `system_docs/aws_credentials_reference.md` for current production credentials.
 
 **⚠️ IMPORTANT**: AWS credentials are stored in a separate file that should not be committed to version control.
+
+**🚨 API KEY SECURITY**: 
+- NEVER include .env files in deployment packages
+- If API keys are accidentally exposed, rotate them immediately in both:
+  1. Local .env file
+  2. AWS Elastic Beanstalk console (Configuration → Software → Environment properties)
+- Always verify zip contents before deployment using the verification step above
 
 **Test critical functionality** after deployment:
 ```bash
